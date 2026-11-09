@@ -1196,11 +1196,22 @@ Log messages should contain IDs, sizes, and outcomes, never message text, prompt
 tool arguments, or tool results. Config snapshots, audit output, and
 credential-bearing URLs and command-line options retain their credential masking.
 
+Gateway agent ingress returns replies through results and session transcripts
+without echoing them to service logs. Nested-agent replies are not printed to
+logs. Interactive `openclaw agent` commands still print replies to stdout.
+Stalled and stuck session diagnostics retain session IDs, ages, tool names, cron
+metadata, and recovery outcomes without copying assistant replies from transcripts.
+
 `logging.redactPatterns` replaces the default regex string list for logs and
 diagnostics. Built-in structural protections for form bodies, structured
 authorization headers, and bare AWS secret access keys always apply, including
 when this list is customized. Redaction is best-effort; review diagnostic
 exports before sharing them.
+
+If the list contains malformed or rejected patterns, OpenClaw skips those entries,
+keeps valid patterns, and adds the default protections. It warns once per process
+without printing the rejected values. Correct `logging.redactPatterns` in your
+config; directory inspection and Doctor can still report the config error.
 
 Tool arguments and results are not secret-masked. This includes model context,
 session transcripts, tool events and summaries in the Control UI, session-history

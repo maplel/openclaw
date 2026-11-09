@@ -87,6 +87,10 @@ import { captureUpdateFinalizationDoctorOutput } from "./update-finalization-out
 
 export { withPrePluginUpdateDoctorEnv } from "./update-command-fresh-doctor-env.js";
 
+// Isolated workers serve an older updater whose executor fence is not admitted here.
+const servesOlderUpdater = () =>
+  Reflect.get(globalThis, Symbol.for("openclaw.updateCompat.olderUpdater")) === true;
+
 export async function runUpdateFinalizationDoctorInFreshProcess(params: {
   phase: "pre-plugin" | "post-plugin";
   root: string;
@@ -199,7 +203,7 @@ export async function runUpdateFinalizationDoctorInFreshProcess(params: {
       env: { ...commandOptions.env, ...sectionTiming.env },
     };
     const doctorArgv =
-      doctorConfigWrites && executorFence && runId
+      doctorConfigWrites && executorFence && runId && !servesOlderUpdater()
         ? [...workerCommand, "--doctor"]
         : [params.nodeRunner ?? resolveNodeRunner(), ...args];
     doctorStartedAt = Date.now();
@@ -211,7 +215,7 @@ export async function runUpdateFinalizationDoctorInFreshProcess(params: {
       exitCode: null,
     };
     let child: Awaited<ReturnType<typeof runUpdateDoctorProcess>>;
-    if (doctorConfigWrites && executorFence && runId) {
+    if (doctorConfigWrites && executorFence && runId && !servesOlderUpdater()) {
       const snapshot = await readUpdateConfigSnapshot(resolveConfigPath());
       assertCurrent();
       child = await withUpdateDoctorChild(
@@ -438,15 +442,12 @@ export async function runUpdateFinalizationDoctorInFreshProcess(params: {
       params.onDoctorStep?.(doctorStep);
     }
     if (params.databaseBackup) {
-      const step: UpdateStepResult = {
-        name: "database migration writes",
-        command: "record Doctor database write fingerprints",
-        cwd: params.root,
-        durationMs: 0,
-        exitCode: 0,
-      };
-      recordUpdateDatabaseWrites(params.databaseBackup, doctorResult?.databaseWrites, step);
-      params.onDoctorStep?.(step);
+      const receipt = recordUpdateDatabaseWrites(
+        params.databaseBackup,
+        doctorResult?.databaseWrites,
+        { name: `${params.phase} doctor` },
+      );
+      params.onDoctorStep?.(receipt);
     }
     if (doctorResult?.warnings?.length) {
       params.onWarnings?.(doctorResult.warnings);

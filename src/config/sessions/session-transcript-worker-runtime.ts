@@ -195,12 +195,16 @@ export function retainSessionHistoryWorkerDatabase(
                       ...input,
                       database,
                       validation: validation?.validation,
-                      projectionReceipt: projectionReceipt && {
-                        ...projectionReceipt,
-                        ...(input.kind === "history-page" && !projectionReceipt.entrySessionKey
-                          ? { contextOnly: true }
-                          : {}),
-                      },
+                      projectionReceipt:
+                        projectionReceipt &&
+                        (input.kind === "history-page"
+                          ? {
+                              ...projectionReceipt,
+                              entrySessionKey: undefined,
+                              facts: undefined,
+                              contextOnly: true,
+                            }
+                          : projectionReceipt),
                     } satisfies SessionTranscriptWorkerRequest;
                   },
                   {
@@ -245,8 +249,7 @@ export function retainSessionHistoryWorkerDatabase(
                 received.kind === "session-cleanup" ||
                 received.kind === "session-exact-entries" ||
                 received.kind === "session-entry-current" ||
-                received.kind === "session-runtime-target" ||
-                received.kind === "session-diagnostic-text") &&
+                received.kind === "session-runtime-target") &&
               received.source
             ) {
               knownSource = true;

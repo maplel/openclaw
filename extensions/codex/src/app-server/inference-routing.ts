@@ -344,6 +344,7 @@ async function prepareCodexInferenceRoute(params: {
         assertClient();
         return createCodexInferenceProxy({
           upstream: target,
+          configurationIdentity: key,
           assertCurrent: assertClient,
           oauth: owner.oauth,
           preserveAzureUrlFeatures,
@@ -455,27 +456,6 @@ export async function prepareCodexInferenceThreadConfig(params: {
     retained?.route ?? (await prepareCodexInferenceRoute({ ...params, effectiveConfig }));
   if (!route) {
     return undefined;
-  }
-  if (
-    binding?.clientId === params.clientId &&
-    !getCodexInferenceThread(params.client, binding.threadId)
-  ) {
-    const { thread } = await params.client.request(
-      "thread/read",
-      { threadId: binding.threadId, includeTurns: false },
-      {
-        signal: params.signal,
-        assertCurrent: params.assertCurrent,
-        withCurrent: params.authority?.withCurrent,
-      },
-    );
-    params.signal?.throwIfAborted();
-    params.assertCurrent();
-    if (thread.id !== binding.threadId || thread.status?.type !== "notLoaded") {
-      throw new Error(
-        "Codex loaded thread has no owned inference route; reconnect before retrying",
-      );
-    }
   }
   const provider = owner.handles.get(route)?.provider;
   if (!provider) {

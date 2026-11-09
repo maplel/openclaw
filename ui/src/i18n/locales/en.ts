@@ -1344,6 +1344,11 @@ export const en: TranslationMap & {
     addEntry: "Add Entry",
     key: "Key",
     removeEntry: "Remove entry",
+    renameRejected: "Rename not applied. The original key was kept. {reason}",
+    renameDuplicateKey: "This key is already in use.",
+    renameInvalidKey: "Choose a key that matches this setting's constraints.",
+    renameChangeRejected:
+      "The containing setting did not accept this rename. Review its documentation and constraints before trying another name.",
     renameRedactedBlocked:
       "This entry holds a stored secret. Add the new key with its value, then remove this one.",
     schemaUnavailable: "Schema unavailable.",
@@ -3355,7 +3360,6 @@ export const en: TranslationMap & {
       },
       restartRecovery: {
         label: "System · restart recovery",
-        summary: "Gateway restarted. Resuming your interrupted request.",
         interrupted:
           "The Gateway restarted. Automatic recovery was interrupted before the agent could resume. Send a message to continue.",
         cancelled:

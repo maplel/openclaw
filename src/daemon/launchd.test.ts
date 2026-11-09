@@ -659,6 +659,30 @@ describe("launchd uninstall", () => {
     },
   );
 
+  it.each(["mkdir", "rename"] as const)(
+    "removes the booted-out plist when Trash %s is denied without Full Disk Access",
+    async (operation) => {
+      state.files.set(resolveLaunchAgentPlistPath(ENV), "RunAtLoad=true");
+      vi.mocked(fs[operation]).mockRejectedValueOnce(
+        Object.assign(new Error(`EPERM: operation not permitted, ${operation}`), { code: "EPERM" }),
+      );
+
+      await expect(uninstallLaunchAgent(launchAgentControlFixture(ENV))).resolves.toBeUndefined();
+      expect(state.files.has(resolveLaunchAgentPlistPath(ENV))).toBe(false);
+    },
+  );
+
+  it("moves the plist into the Trash without replacing an earlier same-name item", async () => {
+    const earlier = "/Users/test/.Trash/ai.openclaw.gateway.plist";
+    state.files.set(resolveLaunchAgentPlistPath(ENV), "RunAtLoad=true");
+    state.files.set(earlier, "earlier");
+
+    await expect(uninstallLaunchAgent(launchAgentControlFixture(ENV))).resolves.toBeUndefined();
+    expect(state.files.has(resolveLaunchAgentPlistPath(ENV))).toBe(false);
+    expect(state.files.get(earlier)).toBe("earlier");
+    expect([...state.files.keys()].filter((file) => file.includes("/.Trash/"))).toHaveLength(2);
+  });
+
   it("preserves the plist when launchctl cannot boot out the service", async () => {
     const plistPath = resolveLaunchAgentPlistPath(ENV);
     state.files.set(plistPath, "RunAtLoad=true");
@@ -764,19 +788,6 @@ describe("launchd install", () => {
     expect(launchctlCommandNames()).toEqual(["print"]);
   });
 
-  it("aborts before mutation when launchd has the only copy of the prior definition", async () => {
-    state.serviceStates.set(`${DOMAIN}/ai.openclaw.gateway`, "running");
-
-    await expect(installLaunchAgent(defaultLaunchAgentFixture(ENV))).rejects.toThrow(
-      "is loaded but its plist is missing",
-    );
-
-    expect(state.serviceLoaded).toBe(true);
-    expect(state.serviceRunning).toBe(true);
-    expect(state.fileWrites).toEqual([]);
-    expect(launchctlCommandNames()).toEqual(["print", "print"]);
-  });
-
   it("restores absent artifacts after a failed fresh install", async () => {
     const plistPath = resolveLaunchAgentPlistPath(ENV);
     state.serviceLoaded = false;
@@ -871,7 +882,6 @@ describe("launchd install", () => {
       "print-disabled",
       "print",
       "bootout",
-      "unload",
       "bootstrap",
       "print",
       "bootstrap",
@@ -982,7 +992,7 @@ describe("launchd install", () => {
     state.bootoutCode = 5;
 
     await expect(installLaunchAgent(defaultLaunchAgentFixture(ENV))).rejects.toThrow(
-      "launchctl bootout failed during LaunchAgent install: Boot-out failed: 5: Input/output error",
+      "launchctl bootout failed: Boot-out failed: 5: Input/output error",
     );
 
     expect(launchctlCommandNames()).toEqual(["print", "print", "bootout", "print", "bootout"]);

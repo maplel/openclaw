@@ -57,6 +57,7 @@ const writeAdmissions = new AsyncLocalStorage<{
 
 type HandoffDatabaseOwner = {
   <T>(write: boolean, operation: (db: HandoffDatabase) => T): T;
+  readonly databasePath: string;
   forExisting(identity: ManagedUpdateLeaseDatabaseIdentity): HandoffDatabaseOwner;
   retainReadConnection(this: void): { [Symbol.dispose](): void };
   transact<T>(db: HandoffDatabase, operation: () => T, options: SqliteTransactionOptions): T;
@@ -124,7 +125,9 @@ export async function prepareManagedHandoffLeaseDatabaseIdentity(
 ) {
   const withDatabase = await prepareManagedHandoffLeaseDatabase(databasePath);
   assertCurrent?.();
-  return withDatabase(true, () => captureManagedUpdateLeaseDatabaseIdentity(databasePath));
+  return withDatabase(true, () =>
+    captureManagedUpdateLeaseDatabaseIdentity(withDatabase.databasePath),
+  );
 }
 
 const text = z.string().min(1).max(4096);
@@ -567,6 +570,7 @@ export function createManagedHandoffLeaseDatabase(
     );
   }
   return Object.assign(withDatabase, {
+    databasePath,
     forExisting(identity: ManagedUpdateLeaseDatabaseIdentity) {
       return createManagedHandoffLeaseDatabase(identity.databasePath, identity, writeLockRoot);
     },

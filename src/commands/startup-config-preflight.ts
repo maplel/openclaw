@@ -190,7 +190,22 @@ async function prepareStartupConfig(
     // Finish that producer's bootstrap after read admission releases its snapshot,
     // before webhook history or other runtime tables are consumed.
     if (!isStatePostgres()) {
-      initializeNativeOpenClawStateDatabase({ env });
+      const [
+        { withStateDatabaseColdAdmission },
+        { OPENCLAW_SQLITE_BUSY_TIMEOUT_MS },
+        { resolveOpenClawStateSqlitePath },
+      ] = await Promise.all([
+        import("../infra/gateway-state-owner.js"),
+        import("../state/openclaw-state-db-contract.js"),
+        import("../state/openclaw-state-db.paths.js"),
+      ]);
+      withStateDatabaseColdAdmission(
+        {
+          databasePath: resolveOpenClawStateSqlitePath(env),
+          busyTimeoutMs: OPENCLAW_SQLITE_BUSY_TIMEOUT_MS,
+        },
+        () => initializeNativeOpenClawStateDatabase({ env }),
+      );
     }
     const { HISTORICAL_WEBHOOK_CHANNELS, recordUnwrittenWebhookCompletion } =
       await import("./doctor/shared/legacy-webhook-pins.js");
@@ -231,7 +246,16 @@ async function prepareStartupConfig(
       read.pluginMetadataSnapshot
         ? getPluginMetadataSnapshotCache(read.pluginMetadataSnapshot)
         : getPluginCache(),
-      () => refreshStartupPluginQuarantine({ cfg: read.snapshot.sourceConfig, env, measure }),
+      () =>
+        refreshStartupPluginQuarantine({
+          cfg: read.snapshot.sourceConfig,
+          env,
+          measure,
+          beforePersistentEffect: async () => {
+            await beforeStatePreparation(read.snapshot);
+            assertLeaseCurrent();
+          },
+        }),
     );
     setActiveDegradedPlugins(verification.quarantinedPlugins);
     recordStartupMigrationWarnings([

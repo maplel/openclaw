@@ -47,8 +47,10 @@ import {
   type QualificationAdmissionDispatch,
 } from "./lib/full-release-dispatch-request.mts";
 import { execPlainGh } from "./lib/plain-gh.mjs";
+import { validateCandidateChangelog } from "./lib/release-candidate-changelog.mts";
 import { parseReleaseContextRef, resolveReleaseContextIdentity } from "./lib/release-context.mjs";
 import { resolveQualificationBaselines } from "./lib/release-upgrade-baseline.mjs";
+import { classifyReleaseTrain, parseReleaseVersion } from "./lib/release-version.mjs";
 import { validatePackageSourceRef } from "./package-source-preflight.mjs";
 import {
   validateCandidateActorPermissionWithGithub,
@@ -81,6 +83,9 @@ const ADMISSION_WORKFLOW = "openclaw-release-prepare.yml";
 const WITNESS_KIND = "openclaw.full-release-dispatch-inputs/v1";
 const WITNESS_FILE = "dispatch-inputs.json";
 const MAX_WITNESS_ARCHIVE_BYTES = 256 * 1024;
+// Extended-stable candidates trail main by tens of thousands of paths; the
+// tooling-lag diff alone exceeds execFileSync's 1 MiB default.
+const MAX_LOCAL_COMMAND_OUTPUT_BYTES = 256 * 1024 * 1024;
 const RUN_PAGE_SIZE = 20;
 const MAX_RUN_PAGES = 5;
 const GH_READ_OPTIONS = {
@@ -100,6 +105,7 @@ const RERUN_GROUPS = new Set([
   "windows-node",
   "live-e2e",
   "package",
+  "qualified-package",
   "qa-parity",
   "qa-live",
   "npm-telegram",
@@ -241,6 +247,7 @@ function run(command: string, args: string[], options: CommandOptions = {}) {
   }
   const output = execFileSync(command, args, {
     encoding: "utf8",
+    maxBuffer: MAX_LOCAL_COMMAND_OUTPUT_BYTES,
     stdio: options.stdio ?? ["ignore", "pipe", "inherit"],
   });
   return typeof output === "string" ? output.trim() : "";
@@ -620,7 +627,19 @@ export function verifyTargetRef(
   if (!targetRef) {
     return targetSha;
   }
-  const identity = resolveReleaseContextIdentity(targetRef, targetVersion);
+  let identity: ReturnType<typeof resolveReleaseContextIdentity>;
+  try {
+    identity = resolveReleaseContextIdentity(targetRef, targetVersion);
+  } catch (error) {
+    const context = parseReleaseContextRef(targetRef);
+    const preparation =
+      context?.kind === "release tag"
+        ? `Prepare the candidate from a commit whose package.json version matches ${context.ref}, push that tag, then rerun with its candidate SHA.`
+        : `Update package.json on ${targetRef} to the intended release version, commit and push the release branch, then rerun with the new candidate SHA.`;
+    throw new Error(`${error instanceof Error ? error.message : String(error)} ${preparation}`, {
+      cause: error,
+    });
+  }
   if (!identity) {
     throw new Error("Target ref must be a canonical OpenClaw release branch or tag");
   }
@@ -789,6 +808,37 @@ function preflightCandidateSigningProvenance(
     `Release candidate provenance verified for ${targetSha}${actor ? ` (${actor})` : " (main-ancestor)"}`,
   );
   return actor;
+}
+
+// pnpm release:candidate applies these gates after validation finishes; check
+// them first so an unpublishable candidate never spends a validation run.
+// Extended-stable publication does not use that checklist.
+function validatePublishCandidateChangelog(
+  targetSha: string,
+  targetContextRef: string,
+  targetVersion: string,
+) {
+  const packaged = parseReleaseVersion(targetVersion);
+  if (packaged && classifyReleaseTrain(packaged) === "extended-stable") {
+    return;
+  }
+  const releaseTag =
+    resolveReleaseContextIdentity(targetContextRef, targetVersion)?.releaseTag ??
+    `v${targetVersion}`;
+  try {
+    validateCandidateChangelog({
+      rootDir: process.cwd(),
+      repository: REPOSITORY,
+      tag: releaseTag,
+      targetSha,
+    });
+  } catch (error) {
+    throw new Error(
+      `Candidate ${targetSha} would fail the pnpm release:candidate changelog gates for ${releaseTag}: ${error instanceof Error ? error.message : String(error)}. Fix the release notes or contribution record on the release branch (its recorded target must be reachable from the candidate), then validate the new candidate SHA.`,
+      { cause: error },
+    );
+  }
+  console.log(`Release notes and contribution record pass the ${releaseTag} candidate gates`);
 }
 
 function targetVersionForTarget(targetSha: string): string {
@@ -1713,7 +1763,11 @@ function releaseDecisionAvailable(parentRunId: string, parentRunAttempt: number)
   }
 }
 
-function waitForWorkflowRun(parentRunId: string, workflowSha: string, record?: DispatchRecord) {
+function waitForWorkflowRun(
+  parentRunId: string,
+  workflowSha: string,
+  record?: DispatchRecord,
+): "success" | "pending" {
   let lastSummary = "";
   let consecutiveErrors = 0;
   const startedAt = Date.now();
@@ -1759,6 +1813,27 @@ function waitForWorkflowRun(parentRunId: string, workflowSha: string, record?: D
       }
       if (decision.state === "ready") {
         const releaseDecision = tryReadReleaseDecision(parentRunId, attempt, workflowSha);
+        if (
+          releaseDecision?.state === "blocked_diagnostics_running" &&
+          suite.status === "completed" &&
+          stringValue(suite.conclusion) &&
+          suite.conclusion !== "success"
+        ) {
+          throw new Error(
+            `Full Release Validation concluded ${stringValue(suite.conclusion).toLowerCase()}: https://github.com/openclaw/openclaw/actions/runs/${parentRunId}`,
+          );
+        }
+        if (
+          releaseDecision?.state === "blocked_diagnostics_running" &&
+          suite.status !== "completed"
+        ) {
+          console.log(formatReleaseStateOutcome(releaseDecision));
+          console.log(
+            `Full Release Validation remains active: https://github.com/openclaw/openclaw/actions/runs/${parentRunId}`,
+          );
+          console.log(`Continue with: pnpm frv watch --run ${parentRunId}`);
+          return "pending";
+        }
         if (releaseDecision && releaseDecisionStopsForeground(releaseDecision.state)) {
           throw new Error(
             `${formatReleaseStateOutcome(releaseDecision)}\nhttps://github.com/openclaw/openclaw/actions/runs/${parentRunId}`,
@@ -1773,7 +1848,7 @@ function waitForWorkflowRun(parentRunId: string, workflowSha: string, record?: D
     }
     if (suite?.status === "completed" && stringValue(suite.conclusion)) {
       if (suite.conclusion === "success") {
-        return suite;
+        return "success";
       }
       throw new Error(
         `Full Release Validation concluded ${stringValue(suite.conclusion, "unknown").toLowerCase()}: https://github.com/openclaw/openclaw/actions/runs/${parentRunId}`,
@@ -2091,6 +2166,9 @@ async function main() {
   validatePackageSourceRef(targetSha, {
     allowUnreleasedChangelog: args.inputs.allow_unreleased_changelog === "true",
   });
+  if (args.inputs.validation_purpose === "publish") {
+    validatePublishCandidateChangelog(targetSha, targetContextRef, targetVersion);
+  }
   if (trustedWorkflowHarness.contract === "1") {
     args.inputs.reuse_evidence = "false";
   }
@@ -2381,15 +2459,16 @@ async function executeFrozenDispatch(options: {
     }
     if (parentRunId) {
       console.log(`Parent run: https://github.com/openclaw/openclaw/actions/runs/${parentRunId}`);
-      waitForWorkflowRun(parentRunId, workflowSha, record);
-      parentConclusion = "success";
-      verifyReleaseEvidence(
-        parentRunId,
-        // Admission may have advanced P with main before its POST.
-        record?.admission?.workflowSha ?? admissionWorkflowSha ?? workflowSha,
-        candidateOwned ? args.admissionWorkflowRef : args.trustedWorkflowRef,
-      );
-      evidenceVerified = true;
+      parentConclusion = waitForWorkflowRun(parentRunId, workflowSha, record);
+      if (parentConclusion === "success") {
+        verifyReleaseEvidence(
+          parentRunId,
+          // Admission may have advanced P with main before its POST.
+          record?.admission?.workflowSha ?? admissionWorkflowSha ?? workflowSha,
+          candidateOwned ? args.admissionWorkflowRef : args.trustedWorkflowRef,
+        );
+        evidenceVerified = true;
+      }
     }
   } catch (error) {
     operationError = error instanceof Error ? error : new Error(String(error));

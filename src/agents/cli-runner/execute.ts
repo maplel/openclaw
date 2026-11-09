@@ -34,6 +34,7 @@ import {
   buildCliLiveOwnerKey,
   restartCliLiveSession,
 } from "./cli-live-session-registry.js";
+import { resolveCliSessionId } from "./cli-run-recovery.js";
 import { executeDeps } from "./execute-deps.js";
 import { createCliEventHandlers } from "./execute-events.js";
 import {
@@ -167,9 +168,18 @@ export async function executePreparedCliRun(
       : undefined;
   const nodeSystemPrompt = nodePlacement && shouldSendSystemPrompt ? systemPromptArg : undefined;
 
-  const basePrompt = cliSessionIdToUse
+  const attemptPrompt = cliSessionIdToUse
     ? params.prompt
     : (context.openClawHistoryPrompt ?? params.prompt);
+  // Recovery reuses preparation. Only the same native resume receives this handoff.
+  const basePrompt = composeCliPromptContext(attemptPrompt, {
+    prependContext:
+      useResume &&
+      cliSessionIdToUse === resolveCliSessionId(context.reusableCliSession) &&
+      !params.forkCliSessionOnResume
+        ? context.resumeContext
+        : undefined,
+  });
   let prompt =
     params.controlOperation !== undefined
       ? basePrompt
@@ -470,6 +480,7 @@ export async function executePreparedCliRun(
         assertCurrent();
         const resolvedExecutionArgs = context.backendResolved.resolveExecutionArgs?.({
           config: params.config,
+          agentId: params.agentId,
           workspaceDir: context.workspaceDir,
           provider: params.provider,
           modelId: context.modelId,
@@ -493,6 +504,7 @@ export async function executePreparedCliRun(
               : params.cliToolAvailability,
           hostOwnedTools: context.hostOwnedTools,
           useResume,
+          ...(params.controlOperation === "compact" ? { controlOperation: "compact" } : {}),
           baseArgs: baseArgsWithSkills,
         });
         if (

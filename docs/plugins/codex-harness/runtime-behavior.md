@@ -339,6 +339,11 @@ does not reserve it against a subsequent native reload.
 
 ## Runtime boundaries
 
+Native provider throttling and overload retain their structured status whether
+Codex rejects turn startup or reports a failed turn. Both paths use OpenClaw's
+shared retry and failure guidance in channel chats and the Control UI. Temporary
+throttling does not inherit a subscription usage-limit reset cooldown.
+
 The Codex harness changes the low-level embedded agent executor only.
 
 - OpenClaw dynamic tools are supported. Codex asks OpenClaw to execute
@@ -364,3 +369,6 @@ The Codex harness changes the low-level embedded agent executor only.
 For hook layers, supported V1 surfaces, native permission handling, queue
 steering, Codex feedback upload mechanics, and compaction details, see
 [Codex harness runtime](/plugins/codex-harness-runtime).
+
+Temporary native capability, hook, and tool-catalog probes close and await their isolated
+app-server processes. Shared-client probes release only their borrowed lease.

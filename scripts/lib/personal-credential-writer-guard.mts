@@ -163,12 +163,14 @@ const authCredentialCallers = new Map<string, readonly string[]>([
     ],
   ],
   // Enrollment preserves credential bytes with a CAS in the existing admitted transaction.
-  // Guard both worker entry points and their host dispatch; no raw writer escapes this chain.
+  // Doctor uses the native agent transaction only with exclusive maintenance, live admission
+  // and the same credential CAS/commit fence. Keep its exact host edge, not a file exemption.
   [
     key(authEnrollment, "enrollAuthProfileAuthorizationInDatabase"),
     [
       key(authWorker, "authProfiles.enrollAuthorization"),
       key("src/agents/auth-profiles/inline-usage.worker.ts", "bindSqliteWorkerBackend/execute"),
+      key(authEnrollmentRuntime, "enrollOwnedAuthProfileAuthorization"),
     ],
   ],
   [
@@ -311,6 +313,9 @@ const genericCredentialCallers = new Map<string, readonly string[]>([
     [
       key("src/state/openclaw-state-worker-runtime.ts", "executeSharedStateCommand"),
       key("src/commands/doctor/shared/legacy-webhook-pins.ts", "recordUnwrittenWebhookCompletion"),
+      // Exclusive Doctor repair records only sessions.relative-store.v1.<path hash> fingerprints.
+      // This receipt prevents retained originals from resurrecting later-deleted conversations.
+      key("src/commands/doctor-relative-session-store.ts", "repairRelativeSessionStores"),
     ],
   ],
   [
@@ -510,7 +515,8 @@ const callers = new Map<string, readonly string[]>([
     key(sessionArtifacts, "copySessionNodeArtifactsForRepair"),
     [
       key(sessionEntries, "deleteLegacySessionEntryRows"),
-      key("src/config/sessions/legacy-main-session-migration-operations.ts", "copyClaimCrossStore"),
+      // Extracted offline claim-copy transaction retains the same sharing checks.
+      key("src/config/sessions/session-claim-repair-copy.ts", "copySessionClaimForRepair"),
       key(
         "src/config/sessions/session-accessor.sqlite-canonical-repair.ts",
         "copySqliteSessionOwnedStateForRepair",

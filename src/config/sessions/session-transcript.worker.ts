@@ -376,10 +376,6 @@ serveOwnedWorkerTasks(
             );
         return { kind: "session-identity-evidence" as const, evidence };
       }
-      if (request.kind === "session-diagnostic-text") {
-        const { readSessionDiagnosticText } = await import("./session-entry-read.worker.js");
-        return readSessionDiagnosticText(request);
-      }
       if (request.kind === "session-entry-read" || request.kind === "session-runtime-target") {
         const { readSessionEntryWorkerRequest } = await import("./session-entry-read.worker.js");
         return readSessionEntryWorkerRequest(request);
@@ -573,8 +569,8 @@ serveOwnedWorkerTasks(
         );
       }
       if (request.kind === "session-entries") {
-        const { prepareSessionMemoryEntries } = await import("./session-memory-entry.worker.js");
-        return { entries: await prepareSessionMemoryEntries(request.entries) };
+        const { deliverSessionMemoryEntries } = await import("./session-memory-entry.worker.js");
+        return await deliverSessionMemoryEntries(request.entries, channel, control);
       }
       return await runWithSessionTranscriptReadFence(
         request.admission,

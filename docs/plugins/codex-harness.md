@@ -15,6 +15,17 @@ native compaction, and app-server execution. OpenClaw still owns chat
 channels, session files, model selection, OpenClaw dynamic tools, approvals,
 media delivery, and the visible transcript mirror.
 
+If Codex discards an unused native thread, the next turn starts a replacement
+through the existing thread lifecycle and logs a warning. A binding with recorded
+conversation history is preserved when its native thread cannot be found;
+OpenClaw reports the error instead of silently starting over.
+
+Managed inference proxy restarts do not replace an otherwise reusable native
+thread. Thread identity uses the proxy's upstream provider and routing policy, not
+its temporary loopback address. Upstream, authentication-profile, and creation-time
+policy changes still invalidate thread reuse; live requests continue through the
+current owned proxy.
+
 ## Shared output projection
 
 Codex uses the shared native harness projection owners for bounded tool output,
@@ -22,6 +33,10 @@ attributed assistant and tool messages, and presentation callback settlement.
 The shared settlement owner preserves callback order and joins pending
 presentation work before terminal delivery. Projection draining stays under the
 attempt cancellation and settlement deadline.
+
+After a transient provider retry, final-answer recovery uses the original
+persisted user prompt and the completed tool results. It can produce a summary
+when the native turn finishes without text, without running those tools again.
 
 The Codex adapter retains native item identities, protocol parsing, approvals,
 hook handling, and transcript provenance. Constructed messages are persisted
