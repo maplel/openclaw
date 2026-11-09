@@ -1,4 +1,9 @@
 import { hasCommandProcessCleanupError } from "../process/exec-result.js";
+import {
+  assertAtlasCandidateSource,
+  assertAtlasUpdateTarget,
+  readAtlasUpdateSource,
+} from "./atlas-update-source.js";
 import { resolveControlUiAssetHealth } from "./control-ui-assets.js";
 import { readPackageVersion } from "./package-json.js";
 import { DEV_BRANCH, type UpdateChannel } from "./update-channels.js";
@@ -62,7 +67,9 @@ export async function updateGitCheckout(params: {
       // Read-only status must not refresh the installed index before admission.
       ...(argv[0] === "git" ? { env: { ...options.env, GIT_OPTIONAL_LOCKS: "0" } } : {}),
     });
-  const channel: UpdateChannel = opts.channel ?? "dev";
+  const atlasUpdateSource = opts.atlasUpdateSource ?? (await readAtlasUpdateSource(gitRoot));
+  assertAtlasUpdateTarget(atlasUpdateSource, opts.devTarget);
+  const channel: UpdateChannel = atlasUpdateSource ? "dev" : (opts.channel ?? "dev");
   if (channel === "extended-stable") {
     return {
       status: "error",
@@ -377,6 +384,7 @@ export async function updateGitCheckout(params: {
         return { status: "ok" as const };
       };
       const fetched = await fetchGitUpdateTarget({
+        atlasUpdateSource,
         root: inspectionRoot,
         step: inspectionStep,
         workStep: inspectionWorkStep,
@@ -389,11 +397,10 @@ export async function updateGitCheckout(params: {
         return { status: "error" as const, reason: fetched.reason ?? "fetch-failed" };
       }
       const inspectTarget = async (revision: string, root = inspectionRoot) => {
+        const inspection = { root, revision, timeoutMs, runCommand: runInspectionCommand };
+        await assertAtlasCandidateSource(atlasUpdateSource, inspection);
         await prepareGitMutation({
-          runCommand: runInspectionCommand,
-          root,
-          revision,
-          timeoutMs,
+          ...inspection,
           beforeGitMutation: opts.inspectGitTarget,
         });
       };

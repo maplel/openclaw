@@ -1,4 +1,5 @@
 import { createMemo } from "solid-js";
+import type { UpdateScheduleState } from "../../api/types.ts";
 import {
   formatUpdateCampaignLabel,
   formatUpdateTargetLabel,
@@ -6,6 +7,19 @@ import {
 import { SettingsStatus } from "../../components/solid/settings-ui.tsx";
 import { getLocale, t } from "../../lib/reactive/i18n.ts";
 import type { UpdatesViewProps } from "./updates-types.ts";
+
+export function formatOfficialReleaseLabel(
+  official: NonNullable<UpdateScheduleState["officialRelease"]>,
+) {
+  return official.status === "unavailable"
+    ? t("updates.officialUnavailable", { error: official.error })
+    : t(
+        official.status === "pending-sync"
+          ? "updates.officialPendingSync"
+          : "updates.officialCurrent",
+        { version: official.latestVersion },
+      );
+}
 
 export function UpdatesStatus(props: UpdatesViewProps) {
   const status = createMemo(() => {

@@ -119,7 +119,12 @@ describe("update.status effective channel", () => {
     expect(refreshGatewayUpdateStatusMock).not.toHaveBeenCalled();
   });
 
-  it("prefers the current config channel over the startup schedule", async () => {
+  it("prefers the current config channel for a known upstream installation", async () => {
+    lifecycle.installStatus = {
+      root: null,
+      status: { root: null, installKind: "package", packageManager: "npm" },
+      installReceipt: null,
+    };
     getUpdateScheduleMock.mockReturnValue({ channel: "beta", autoEnabled: true });
     const { updateHandlers } = await import("./update.js");
     const respond = vi.fn();
@@ -140,6 +145,49 @@ describe("update.status effective channel", () => {
     );
     expect(getUpdateEffectiveChannelMock).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ["stable", "known"],
+    ["beta", "known"],
+    ["stable", "cold"],
+    ["beta", "cold"],
+  ] as const)(
+    "keeps Atlas ownership ahead of stale %s config (%s installation)",
+    async (channel, discovery) => {
+      const installStatus = {
+        root: null,
+        status: {
+          root: null,
+          installKind: "git" as const,
+          packageManager: "pnpm" as const,
+          atlasUpdateSource: {
+            repositoryUrl: "https://github.com/maplel/openclaw",
+            branch: "main",
+          },
+        },
+        installReceipt: null,
+      };
+      if (discovery === "known") {
+        lifecycle.installStatus = installStatus;
+      } else {
+        getUpdateEffectiveChannelMock.mockImplementationOnce(async () => {
+          lifecycle.installStatus = installStatus;
+          return "dev";
+        });
+      }
+      const { updateHandlers } = await import("./update.js");
+      const respond = vi.fn();
+      await updateHandlers["update.status"]!({
+        params: {},
+        respond,
+        context: { getRuntimeConfig: () => ({ update: { channel } }) },
+      } as never);
+      expect(respond).toHaveBeenCalledWith(
+        true,
+        expect.objectContaining({ effectiveChannel: "dev" }),
+      );
+    },
+  );
 
   it("awaits the current config's checkout refresh before reporting its schedule", async () => {
     const { updateHandlers } = await import("./update.js");
@@ -213,6 +261,11 @@ describe("update.status effective channel", () => {
   });
 
   it("prepares the latest update sentinel before responding", async () => {
+    lifecycle.installStatus = {
+      root: null,
+      status: { root: null, installKind: "package", packageManager: "npm" },
+      installReceipt: null,
+    };
     getUpdateAvailableMock.mockReturnValueOnce({
       currentVersion: "1.0.0",
       latestVersion: "2.0.0",

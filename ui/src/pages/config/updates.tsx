@@ -32,7 +32,7 @@ import { registerSettingsEnglish } from "../../i18n/locales/en-settings.ts";
 import { formatDateTimeMs, formatTimeAgo } from "../../lib/format.ts";
 import { projectNativeDeviceSettings } from "../../lib/reactive/application-native.ts";
 import { getLocale, registerEnglishCatalog, t } from "../../lib/reactive/i18n.ts";
-import { UpdatesStatus } from "./updates-status.tsx";
+import { formatOfficialReleaseLabel, UpdatesStatus } from "./updates-status.tsx";
 import { UPDATES_CHANNELS, type UpdatesChannel, type UpdatesViewProps } from "./updates-types.ts";
 
 registerEnglishCatalog(registerSettingsEnglish);
@@ -428,9 +428,11 @@ export function Updates(props: UpdatesViewProps) {
     );
   };
   const runTarget = () => run()?.target.sha ?? run()?.target.version ?? run()?.target.tag;
-  const settings = createMemo(() =>
-    readUpdatesSettings(props.configObject, props.update.updateSchedule),
-  );
+  const atlasSource = () => props.update.updateSchedule?.atlasSource;
+  const settings = createMemo(() => ({
+    ...readUpdatesSettings(props.configObject, props.update.updateSchedule),
+    ...(atlasSource() ? { channel: "dev" as const, extendedStable: false } : {}),
+  }));
   const channelOptions = createMemo<Array<{ value: UpdatesChannel; label: string }>>(() => [
     { value: "stable", label: t("updates.channel.stable") },
     { value: "beta", label: t("updates.channel.beta") },
@@ -496,20 +498,35 @@ export function Updates(props: UpdatesViewProps) {
         <BuildFacts {...props} />
         <RecordedAttempt {...props} />
         <SettingsSection title={t("updates.page.policyTitle")}>
-          <SettingsRow
-            title={t("updates.page.channel")}
-            description={t("updates.page.channelDescription")}
-            stacked
-            control={
-              <SettingsSegmented
-                value={settings().channel}
-                options={channelOptions()}
-                ariaLabel={t("updates.page.channel")}
-                disabled={props.configBusy}
-                onChange={props.onChannelChange}
+          <Show
+            when={!atlasSource()}
+            fallback={
+              <SettingsRow
+                title={t("updates.atlasSource")}
+                description={t("updates.atlasSourceHint")}
+                control={
+                  <SettingsValue
+                    value={`${atlasSource()?.repositoryUrl} · ${atlasSource()?.branch}`}
+                  />
+                }
               />
             }
-          />
+          >
+            <SettingsRow
+              title={t("updates.page.channel")}
+              description={t("updates.page.channelDescription")}
+              stacked
+              control={
+                <SettingsSegmented
+                  value={settings().channel}
+                  options={channelOptions()}
+                  ariaLabel={t("updates.page.channel")}
+                  disabled={props.configBusy}
+                  onChange={props.onChannelChange}
+                />
+              }
+            />
+          </Show>
           <SettingsToggleRow
             title={t("updates.page.checkForUpdates")}
             description={t("updates.page.checkForUpdatesDescription")}
@@ -539,6 +556,17 @@ export function Updates(props: UpdatesViewProps) {
           />
         </SettingsSection>
         <SettingsSection title={t("updates.page.statusTitle")}>
+          <Show when={props.update.updateSchedule?.officialRelease}>
+            <SettingsRow
+              title={t("updates.officialStable")}
+              description={t("updates.officialHint")}
+              control={
+                <SettingsValue
+                  value={formatOfficialReleaseLabel(props.update.updateSchedule!.officialRelease!)}
+                />
+              }
+            />
+          </Show>
           <SettingsRow
             title={t("updates.page.scheduleStatus")}
             description={

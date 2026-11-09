@@ -47,6 +47,9 @@ export function getGatewayUpdateSchedule(
     ...(campaign ? { campaign } : {}),
   };
   const install = currentUpdateCheckLifecycle().installStatus;
+  if (install?.status.atlasUpdateSource) {
+    Object.assign(result, { atlasSource: install.status.atlasUpdateSource });
+  }
   return install && (install.status.error?.timeoutMs || install.status.installKind === "immutable")
     ? withUpdateInstallStatus(result, install.status, true, install.installReceipt, install.root)
     : result;
@@ -64,12 +67,11 @@ export function refreshGatewayUpdateStatus(getConfig: () => OpenClawConfig): Pro
     .run(async (signal) => {
       const scheduleAtStart = getUpdateSchedule();
       const configured = normalizeUpdateChannel(cfg.update?.channel);
-      const channel =
-        configured ??
-        resolveEffectiveUpdateChannel({
-          currentVersion: VERSION,
-          ...(await lifecycle.initialize()).status,
-        }).channel;
+      const channel = resolveEffectiveUpdateChannel({
+        configChannel: configured,
+        currentVersion: VERSION,
+        ...(await lifecycle.initialize()).status,
+      }).channel;
       if (channel !== "dev" && (await lifecycle.initialize()).status.installKind !== "immutable") {
         return;
       }

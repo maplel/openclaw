@@ -3,6 +3,11 @@ import os from "node:os";
 import path from "node:path";
 import { normalizeStringEntries } from "@openclaw/normalization-core/string-normalization";
 import { hasCommandProcessCleanupError } from "../process/exec-result.js";
+import {
+  atlasGitFetchTarget,
+  ATLAS_UPDATE_TRACKING_REF,
+  type AtlasUpdateSource,
+} from "./atlas-update-source.js";
 import { hasErrnoCode } from "./errno.js";
 import { executeGitCommand, gitNullConfigPath, normalizeGitPathForFilesystem } from "./git-exec.js";
 import {
@@ -359,6 +364,7 @@ async function resolveChannelTag(
 }
 
 export async function fetchGitUpdateTarget(params: {
+  atlasUpdateSource?: AtlasUpdateSource | null;
   root: string;
   channel: UpdateChannel;
   devTarget?: DevUpdateTarget;
@@ -379,6 +385,34 @@ export async function fetchGitUpdateTarget(params: {
   const refreshedRemotes: string[] = [];
   let devSource: (GitFetchTarget & { revision?: string }) | null = null;
   const result = (ok: boolean) => ({ ok, refreshedRemotes, ...(devSource ? { devSource } : {}) });
+  if (params.atlasUpdateSource) {
+    if (
+      channel !== "dev" ||
+      (devTarget &&
+        (devTarget.mode !== "tracked" || devTarget.upstreamRef !== ATLAS_UPDATE_TRACKING_REF))
+    ) {
+      throw new Error("Atlas updates only accept the tracked maplel/openclaw main target.");
+    }
+    devSource = atlasGitFetchTarget(params.atlasUpdateSource);
+    const fetched = await runStep(
+      work(
+        name,
+        "fetch",
+        "--no-tags",
+        "--no-prune",
+        "--no-prune-tags",
+        "--no-recurse-submodules",
+        "--",
+        devSource.remote,
+        devSource.mergeRef,
+      ),
+    );
+    if (isFailedUpdateStep(fetched)) {
+      return result(false);
+    }
+    refreshedRemotes.push(devSource.remote);
+    return result(true);
+  }
   if (channel === "dev" && devTarget?.mode === "detached" && isFullGitObjectId(devTarget.ref)) {
     // A pinned commit needs no remote freshness. Probe privately without allowing
     // promised-object hydration; the normal candidate/transfer owners still verify its contents.

@@ -2,6 +2,7 @@ import { confirm, isCancel } from "@clack/prompts";
 import { selectStyled } from "../../../packages/terminal-core/src/prompt-select-styled.js";
 import { stylePromptMessage } from "../../../packages/terminal-core/src/prompt-style.js";
 import { theme } from "../../../packages/terminal-core/src/theme.js";
+import { readAtlasUpdateSource } from "../../infra/atlas-update-source.js";
 import {
   normalizeUpdateChannel,
   resolveUpdateChannelDisplay,
@@ -59,6 +60,7 @@ export async function updateWizardCommand(opts: UpdateWizardOptions = {}): Promi
     ? normalizeUpdateChannel(configSnapshot.config.update?.channel)
     : null;
   const channelInfo = resolveUpdateChannelDisplay({
+    atlasUpdateSource: await readAtlasUpdateSource(root),
     configChannel,
     currentVersion: VERSION,
     installKind: updateStatus.installKind,

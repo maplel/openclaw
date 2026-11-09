@@ -24,9 +24,39 @@ vi.mock("./update-global.js", () => ({ detectGlobalInstallManagerForRoot: async 
 
 const dirs = useAutoCleanupTempDirTracker(afterEach);
 afterEach(() => {
+  vi.unstubAllGlobals();
   vi.useRealTimers();
   vi.restoreAllMocks();
   vi.resetAllMocks();
+});
+
+it("discovers the official release for an Atlas package without admitting npm targets", async () => {
+  const root = dirs.make("openclaw-atlas-package-");
+  const atlasUpdateSource = { repositoryUrl: "https://github.com/maplel/openclaw", branch: "main" };
+  await fs.writeFile(
+    path.join(root, "package.json"),
+    JSON.stringify({ name: "openclaw", openclaw: { atlasUpdateSource } }),
+  );
+  mocks.root.mockResolvedValue(root);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => Response.json({ version: "2099.1.1" })),
+  );
+  const signal = new AbortController().signal;
+  const prepared = await prepareStartupUpdateInstall(
+    () => resolveStartupInstallStatus(false, signal),
+    "stable",
+    signal,
+  );
+  expect(prepared.channel).toBe("dev");
+  expect(prepared.readOnlySchedule).toMatchObject({
+    autoEnabled: false,
+    atlasSource: atlasUpdateSource,
+    officialRelease: { status: "pending-sync", latestVersion: "2099.1.1" },
+  });
+  expect(prepared.readOnlySchedule?.target).toBeUndefined();
+  expect(prepared.readOnlySchedule?.campaign).toBeUndefined();
+  expect(mocks.git).not.toHaveBeenCalled();
 });
 
 it.each(["root", "current", "release"] as const)(

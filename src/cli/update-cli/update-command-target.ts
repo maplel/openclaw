@@ -2,15 +2,18 @@ import path from "node:path";
 import { theme } from "../../../packages/terminal-core/src/theme.js";
 import { resolveStateDir } from "../../config/paths.js";
 import { isBunRuntime } from "../../daemon/runtime-binary.js";
+import {
+  atlasUpdateTargetError,
+  readAtlasUpdateSource,
+  resolveAtlasUpdateRoute,
+} from "../../infra/atlas-update-source.js";
 import { createLowDiskSpaceWarning } from "../../infra/disk-space.js";
 import { formatErrorMessage } from "../../infra/errors.js";
 import { SqliteReadOnlyInspectionContentionError } from "../../infra/sqlite-readonly-worker-protocol.js";
 import { assessInitialUpdateSnapshotCapacity } from "../../infra/update-candidate-snapshot.js";
 import {
   channelToNpmTag,
-  DEFAULT_GIT_CHANNEL,
   EXTENDED_STABLE_TAG_UNSUPPORTED_REASON,
-  resolveEffectiveUpdateChannel,
 } from "../../infra/update-channels.js";
 import { fetchNpmPackageTargetStatus } from "../../infra/update-check-package-target.js";
 import {
@@ -77,22 +80,6 @@ import type { ManagedServiceRootRedirect } from "./update-command-service-contex
 import { resolveManagedServicePackageUpdatePlan } from "./update-command-service-plan.js";
 import type { UpdateCommandRecoveryState } from "./update-command-service.js";
 import { reportPreMutationUpdateResult } from "./update-command-terminal.js";
-
-/** A fresh profile must be initialized by an identified, schema-declaring target. */
-export async function resolveFreshUpdateMetadata(target: {
-  targetVersion: string | null;
-  packageTargetSchemaVersions?: OpenClawSchemaVersions;
-  refuseUpdate: RefuseUpdate;
-}) {
-  if (target.targetVersion && target.packageTargetSchemaVersions) {
-    return { version: target.targetVersion, schemaVersions: target.packageTargetSchemaVersions };
-  }
-  const failure = createUpdatePreflightFailure(
-    target.targetVersion ? "target-schema-metadata" : "target-registry-dist-tag",
-  );
-  await target.refuseUpdate("target-metadata-preflight", failure.message, failure.failureFacts);
-  return undefined;
-}
 
 /** Describe the selected plan without changing roots, runtime, or service authority. */
 function printManagedServicePackageUpdatePlan(params: {
@@ -248,7 +235,8 @@ export async function resolveUpdateCommandTarget(
       recordUpdateCommandTarget(opts.run, {
         step: { step: "installation-inspection", status: "in_progress" },
       });
-      if (requestedChannel === "extended-stable" && installKind === "git") {
+      const atlasUpdateSource = await readAtlasUpdateSource(discoveredRoot);
+      if (!atlasUpdateSource && requestedChannel === "extended-stable" && installKind === "git") {
         await refuseUpdate("unsupported_git_channel");
         return undefined;
       }
@@ -289,15 +277,16 @@ export async function resolveUpdateCommandTarget(
         return undefined;
       }
 
-      const channel =
-        (opts.sourceUpdate ? DEFAULT_GIT_CHANNEL : requestedChannel) ??
-        storedChannel ??
-        (installKind === "git"
-          ? DEFAULT_GIT_CHANNEL
-          : resolveEffectiveUpdateChannel({
-              currentVersion: VERSION,
-              installKind,
-            }).channel);
+      const explicitTag = normalizeTag(opts.tag);
+      const { channel, switchToGit, switchToPackage } = resolveAtlasUpdateRoute({
+        atlasUpdateSource,
+        sourceUpdate: Boolean(opts.sourceUpdate),
+        requestedChannel,
+        storedChannel,
+        installKind,
+        explicitTag,
+        currentVersion: VERSION,
+      });
       if (channel === "extended-stable" && installKind === "git") {
         await refuseUpdate("unsupported_git_channel");
         return undefined;
@@ -306,12 +295,6 @@ export async function resolveUpdateCommandTarget(
       // documented dev contract is a git checkout. Exception: --tag is a one-run
       // package-target override, so it keeps a stored-dev package install on the
       // package path; only an explicitly requested dev channel outranks it.
-      const explicitTag = normalizeTag(opts.tag);
-      const switchToGit =
-        installKind !== "git" &&
-        (requestedChannel === "dev" || (channel === "dev" && explicitTag === null));
-      const switchToPackage =
-        requestedChannel !== null && requestedChannel !== "dev" && installKind === "git";
       updateInstallKind = switchToGit ? "git" : switchToPackage ? "package" : installKind;
       if (updateInstallKind !== "package") {
         root = discoveredRoot;
@@ -341,6 +324,11 @@ export async function resolveUpdateCommandTarget(
       }
 
       const unsupportedMainTag = updateInstallKind === "package" && explicitTag === "main";
+      const sourceError = atlasUpdateTargetError(atlasUpdateSource, { explicitTag, devTarget });
+      if (sourceError) {
+        await refuseUpdate("atlas-update-source-only", sourceError);
+        return undefined;
+      }
       if ((channel === "extended-stable" && explicitTag) || unsupportedMainTag) {
         await refuseUpdate(
           unsupportedMainTag

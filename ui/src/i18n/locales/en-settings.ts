@@ -831,6 +831,13 @@ const enSettings = {
     },
   },
   updates: {
+    atlasSource: "Atlas repository",
+    atlasSourceHint: "Updates are installed only from the Atlas repository's main branch.",
+    officialStable: "Official stable release",
+    officialPendingSync: "{version} · Newer than installed Atlas",
+    officialCurrent: "{version} · Atlas baseline is current",
+    officialUnavailable: "Official release check unavailable: {error}",
+    officialHint: "Information only. Sync and verify official changes in Atlas before upgrading.",
     device: {
       title: "This Mac",
       version: "App version",

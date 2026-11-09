@@ -202,6 +202,29 @@ const UpdateImmutableInstallSchema = closedObject({
 export const UpdateScheduleStateSchema = closedObject({
   channel: NonEmptyString,
   autoEnabled: Type.Boolean(),
+  atlasSource: Type.Optional(
+    closedObject({
+      repositoryUrl: NonEmptyString,
+      branch: NonEmptyString,
+    }),
+  ),
+  /** Informational only: never an install target or automatic-update campaign. */
+  officialRelease: Type.Optional(
+    Type.Union([
+      closedObject({
+        status: Type.Union([Type.Literal("current"), Type.Literal("pending-sync")]),
+        currentVersion: NonEmptyString,
+        latestVersion: NonEmptyString,
+        checkedAtMs: Type.Integer({ minimum: 0 }),
+      }),
+      closedObject({
+        status: Type.Literal("unavailable"),
+        currentVersion: NonEmptyString,
+        checkedAtMs: Type.Integer({ minimum: 0 }),
+        error: NonEmptyString,
+      }),
+    ]),
+  ),
   install: Type.Optional(
     closedObject({
       kind: Type.Union([

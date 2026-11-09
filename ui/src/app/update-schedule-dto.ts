@@ -211,6 +211,7 @@ export function readUpdateScheduleValue(value: unknown): UpdateScheduleState | n
     return null;
   }
   const rawInstall = isRecord(value.install) ? value.install : null;
+  const official = readOfficialRelease(value.officialRelease);
   const rawInstallKind = rawInstall?.kind;
   const installKind =
     rawInstallKind === "package" ||
@@ -239,6 +240,17 @@ export function readUpdateScheduleValue(value: unknown): UpdateScheduleState | n
   return {
     channel: value.channel,
     autoEnabled: value.autoEnabled,
+    ...(isRecord(value.atlasSource) &&
+    value.atlasSource.repositoryUrl === "https://github.com/maplel/openclaw" &&
+    value.atlasSource.branch === "main"
+      ? {
+          atlasSource: {
+            repositoryUrl: value.atlasSource.repositoryUrl,
+            branch: value.atlasSource.branch,
+          },
+        }
+      : {}),
+    ...(official ? { officialRelease: official } : {}),
     ...(installKind
       ? {
           install: {
@@ -251,6 +263,36 @@ export function readUpdateScheduleValue(value: unknown): UpdateScheduleState | n
     ...(target ? { target } : {}),
     ...(campaign ? { campaign } : {}),
   };
+}
+
+function readOfficialRelease(value: unknown): UpdateScheduleState["officialRelease"] {
+  if (
+    !isRecord(value) ||
+    !isNonEmptyProtocolString(value.currentVersion) ||
+    !isBoundedInteger(value.checkedAtMs, 0)
+  ) {
+    return undefined;
+  }
+  if (value.status === "unavailable" && isNonEmptyProtocolString(value.error)) {
+    return {
+      status: value.status,
+      currentVersion: value.currentVersion,
+      checkedAtMs: value.checkedAtMs,
+      error: value.error,
+    };
+  }
+  if (
+    (value.status === "current" || value.status === "pending-sync") &&
+    isNonEmptyProtocolString(value.latestVersion)
+  ) {
+    return {
+      status: value.status,
+      currentVersion: value.currentVersion,
+      checkedAtMs: value.checkedAtMs,
+      latestVersion: value.latestVersion,
+    };
+  }
+  return undefined;
 }
 
 export function readUpdateSchedule(hello: GatewayHelloOk | null): UpdateScheduleState | null {

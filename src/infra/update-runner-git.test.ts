@@ -66,6 +66,50 @@ describe("Git checkout execution", () => {
 
   const advanceRemote = () => advanceFixtureRemote(remote);
 
+  async function prepareAtlasDistribution() {
+    const manifestPath = path.join(remote, "package.json");
+    const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
+    manifest.openclaw = {
+      ...manifest.openclaw,
+      atlasUpdateSource: { repositoryUrl: "https://github.com/maplel/openclaw", branch: "main" },
+    };
+    await fs.writeFile(manifestPath, JSON.stringify(manifest));
+    await git(remote, "add", ".");
+    await git(remote, "commit", "-m", "Atlas distribution");
+    await git(root, "pull", "--ff-only");
+    beforeSha = await git(root, "rev-parse", "HEAD");
+    await writeRuntime(root, beforeSha, path.join(directory, "shared-store"), "node_modules/.pnpm");
+    // Git's native URL mapping keeps this test entirely within its temporary repositories.
+    await git(
+      root,
+      "config",
+      `url.${remote.replaceAll("\\", "/")}.insteadOf`,
+      "https://github.com/maplel/openclaw.git",
+    );
+    await git(root, "remote", "set-url", "origin", path.join(directory, "unavailable-official"));
+  }
+
+  it("updates Atlas from its own main despite stable policy and conflicting tracking config", async () => {
+    await prepareAtlasDistribution();
+    const target = await advanceRemote();
+    const result = await update({ channel: "stable" });
+    expect(result).toMatchObject({ status: "ok", after: { sha: target } });
+    await expectRuntime(root, target);
+  });
+
+  it("does not execute a candidate that would discard Atlas update-source ownership", async () => {
+    await prepareAtlasDistribution();
+    const manifestPath = path.join(remote, "package.json");
+    const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
+    delete manifest.openclaw.atlasUpdateSource;
+    await fs.writeFile(manifestPath, JSON.stringify(manifest));
+    await advanceRemote();
+    await expect(update()).rejects.toThrow("must preserve the maplel/openclaw main update source");
+    expect(events).toEqual([]);
+    expect(stopped).toBe(false);
+    expect(await git(root, "rev-parse", "HEAD")).toBe(beforeSha);
+  });
+
   function update(opts: Partial<Omit<UpdateRunnerOptions, "prepareGitExposure">> = {}) {
     const { runGitDoctor, ...overrides } = opts;
     return updateGitCheckout({

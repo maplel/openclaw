@@ -8,6 +8,7 @@ import { isRestartEnabled } from "../../config/commands.flags.js";
 import { resolveConfigPath } from "../../config/paths.js";
 import { extractDeliveryInfo } from "../../config/sessions.js";
 import { resolveGatewayInstallEntrypoint } from "../../daemon/gateway-entrypoint.js";
+import { readAtlasUpdateSource } from "../../infra/atlas-update-source.js";
 import { resolvePathViaExistingAncestorSync } from "../../infra/boundary-path.js";
 import { isTruthyEnvValue } from "../../infra/env.js";
 import { formatErrorMessage } from "../../infra/errors.js";
@@ -299,6 +300,7 @@ export const updateHandlers: GatewayRequestHandlers = {
         return;
       }
       const effectiveChannel = resolveEffectiveUpdateChannel({
+        atlasUpdateSource: await readAtlasUpdateSource(installRoot ?? null),
         configChannel,
         currentVersion: VERSION,
         installKind: status.installKind,

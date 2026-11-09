@@ -310,7 +310,13 @@ async function cloneGitCheckoutTransactionally(
   const runOperation = async (): Promise<GitCheckoutResult> => {
     result = await runUpdateStep({
       name: "git-clone",
-      argv: ["git", "clone", GIT_CLONE_BLOB_FILTER, UPSTREAM_REPOSITORY_URL, stagingDir],
+      argv: [
+        "git",
+        "clone",
+        GIT_CLONE_BLOB_FILTER,
+        params.repositoryUrl ?? UPSTREAM_REPOSITORY_URL,
+        stagingDir,
+      ],
       env: params.env,
       timeoutMs: params.timeoutMs,
       progress: params.progress,
@@ -454,6 +460,7 @@ async function cloneGitCheckoutTransactionally(
 }
 
 export async function ensureGitCheckout(params: {
+  repositoryUrl?: string;
   dir: string;
   timeoutMs: number;
   progress?: UpdateStepProgress;

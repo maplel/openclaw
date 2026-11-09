@@ -130,9 +130,10 @@ export const updateStatusHandlers: GatewayRequestHandlers = {
       mark("identity");
       let currentConfig = context?.getRuntimeConfig?.() ?? config;
       let effectiveChannel =
+        (lifecycle.installStatus?.status.atlasUpdateSource ? ("dev" as const) : undefined) ??
         normalizeUpdateChannel(currentConfig?.update?.channel) ??
         (currentConfig ? undefined : normalizeUpdateChannel(getUpdateSchedule()?.channel));
-      if (!effectiveChannel) {
+      if (!effectiveChannel || !lifecycle.installStatus) {
         try {
           effectiveChannel = await getUpdateEffectiveChannel();
         } catch (err) {
@@ -140,7 +141,11 @@ export const updateStatusHandlers: GatewayRequestHandlers = {
         }
         currentConfig = context?.getRuntimeConfig?.() ?? currentConfig;
         effectiveChannel =
-          normalizeUpdateChannel(currentConfig?.update?.channel) ?? effectiveChannel;
+          (currentUpdateCheckLifecycle().installStatus?.status.atlasUpdateSource
+            ? ("dev" as const)
+            : undefined) ??
+          normalizeUpdateChannel(currentConfig?.update?.channel) ??
+          effectiveChannel;
       }
       const schedule = currentConfig
         ? effectiveChannel

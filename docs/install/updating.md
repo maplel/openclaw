@@ -33,6 +33,30 @@ backup.
 
 ## Update implementation contract
 
+### Atlas distribution
+
+Atlas declares its update source in `package.json` under
+`openclaw.atlasUpdateSource`: `https://github.com/maplel/openclaw`, branch `main`.
+Git update discovery, the Control UI, and the CLI use this source even when an
+older configuration selects `stable` or tracks the official repository.
+Atlas package installations transition to a checkout of that same repository.
+Package `--tag` overrides and detached Git targets are not Atlas update sources.
+
+The Updates page reports the official npm `latest` version separately as
+information. A newer official release means **newer than the installed Atlas
+baseline**, not an installable target. This notice does not claim that the release
+is missing from the Atlas repository; the repository may already be ahead of the
+installed build. Official lookup failures are displayed without changing the
+Atlas target. Upgrade buttons and automatic updates consume only Atlas Git
+targets; failure to fetch Atlas does not fall back to official packages or tags.
+
+To follow official releases, merge the selected official stable release into
+the Atlas repository, retain the distribution metadata and local changes, test,
+and publish the resulting Atlas `main`. Candidates must retain that metadata so
+the next upgrade continues to use Atlas. This does not create an automatic sync
+job or change an existing running installation. Immutable installations retain
+their external supervisor's update ownership.
+
 Update inspection and snapshot workers bind plugin metadata discovery to the
 selected installation's state directory, including requests from older installed
 updaters. A different profile's database version must not block that inspection.

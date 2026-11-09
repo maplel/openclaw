@@ -4,6 +4,7 @@ import { sameFileIdentity } from "@openclaw/fs-safe/advanced";
 import { theme } from "../../../packages/terminal-core/src/theme.js";
 import { resolveStateDir } from "../../config/paths.js";
 import type { OpenClawConfig } from "../../config/types.openclaw.js";
+import { readAtlasUpdateSource } from "../../infra/atlas-update-source.js";
 import { readRegularFile } from "../../infra/fs-safe.js";
 import type { PackageUpdateTransaction } from "../../infra/package-update-swap-contract.js";
 import { hasNodeErrorCode } from "../../infra/path-guards.js";
@@ -396,6 +397,7 @@ export async function updateGitInstall(params: {
   ) => Promise<void>;
 }): Promise<UpdateRunResult> {
   const assertCurrent = params.assertCurrent;
+  const atlasUpdateSource = await readAtlasUpdateSource(params.root);
   let updateRoot = params.switchToGit ? resolveGitInstallDir() : params.root;
   const effectiveTimeout = params.timeoutMs ?? DEFAULT_UPDATE_STEP_TIMEOUT_MS;
   const pkgOwnership = createSystemPackageOwnershipInspection(effectiveTimeout);
@@ -503,6 +505,7 @@ export async function updateGitInstall(params: {
       timeoutMs: params.timeoutMs ?? UPDATE_RUNNER_TIMEOUT_MS,
       startedAt: params.startedAt,
       opts: {
+        ...(atlasUpdateSource ? { atlasUpdateSource } : {}),
         timeoutMs: params.timeoutMs,
         sourceRuntimePrepared: params.sourceRuntimePrepared,
         progress: params.progress,
@@ -559,6 +562,7 @@ export async function updateGitInstall(params: {
   try {
     const checkout = params.switchToGit
       ? await ensureGitCheckout({
+          ...(atlasUpdateSource ? { repositoryUrl: `${atlasUpdateSource.repositoryUrl}.git` } : {}),
           dir: updateRoot,
           env: installEnv,
           timeoutMs: effectiveTimeout,

@@ -67,6 +67,7 @@ type StatusManagedService = {
 export function resolveStatusUpdateChannelInfo(params: {
   updateConfigChannel?: string | null;
   update: {
+    atlasUpdateSource?: UpdateCheckResult["atlasUpdateSource"];
     installKind?: UpdateCheckResult["installKind"];
     git?: {
       tag?: string | null;
@@ -75,6 +76,7 @@ export function resolveStatusUpdateChannelInfo(params: {
   };
 }) {
   return resolveUpdateChannelDisplay({
+    atlasUpdateSource: params.update.atlasUpdateSource,
     configChannel: normalizeUpdateChannel(params.updateConfigChannel),
     currentVersion: VERSION,
     installKind: params.update.installKind ?? "unknown",

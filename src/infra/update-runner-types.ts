@@ -43,6 +43,7 @@ type GitUpdateTarget = {
 };
 
 export type UpdateRunnerOptions = {
+  atlasUpdateSource?: import("./atlas-update-source.js").AtlasUpdateSource;
   sourceRuntimePrepared?: boolean;
   channel?: UpdateChannel;
   devTarget?: DevUpdateTarget;
