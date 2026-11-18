@@ -1,26 +1,28 @@
+import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { normalizeNullableString } from "@openclaw/normalization-core/string-coerce";
 import { normalizeStringEntries } from "@openclaw/normalization-core/string-normalization";
 import { hasCommandProcessCleanupError } from "../process/exec-result.js";
-import { stageAtlasArm64Release } from "./atlas-arm64-release.js";
+import {
+  prepareAtlasArm64Candidate,
+  verifyAtlasArm64FastForward,
+} from "./atlas-arm64-preflight.js";
 import { resolveControlUiAssetHealth } from "./control-ui-assets.js";
-import { hasErrnoCode } from "./errno.js";
+import { hasErrnoCode, ignoreMissingPath } from "./errno.js";
 import { formatErrorMessage } from "./errors.js";
 import { readPackageManagerSpec } from "./package-json.js";
+import { resolveExternalPackageRuntimeEntrypointUrl } from "./runtime-process-url.js";
 import { DEV_BRANCH } from "./update-channels.js";
 import { resolveDevUpdateTargetRevision, type DevUpdateTarget } from "./update-dev-target.js";
-import {
-  resolveGitUpdateTrackingRef,
-  readGitTargetSchemaVersions,
-  type GitFetchTarget,
-} from "./update-git-metadata.js";
+import { resolveGitUpdateTrackingRef, type GitFetchTarget } from "./update-git-metadata.js";
+import { warnOnUpdateCleanupFailure } from "./update-maintenance.js";
 import {
   parsePnpmPackageManagerVersion,
   resolveUpdateBuildManager,
 } from "./update-package-manager.js";
 import { UpdatePreMutationError } from "./update-pre-mutation-error.js";
 import { isFailedUpdateStep } from "./update-run-step.js";
-import { DEFAULT_UPDATE_STEP_TIMEOUT_MS } from "./update-run-timeouts.js";
 import { runStep } from "./update-runner-command.js";
 import { cleanupGitPreflight } from "./update-runner-git-cleanup.js";
 import {
@@ -30,6 +32,7 @@ import {
   createPreflightRoot,
   gitCleanCheckArgs,
   prepareCandidateCommandEnv,
+  readGitHead,
   resolveBuildEnv,
   resolveDevPreflightLintEnv,
   resolveTagFetchRef,
@@ -39,6 +42,7 @@ import {
   shouldRunDevPreflightLint,
 } from "./update-runner-git-commands.js";
 import { prepareGitCandidateNodeRuntime } from "./update-runner-git-node-preflight.js";
+import { readGitTargetSchemaVersions } from "./update-runner-git-schema.js";
 import { runClassifiedGitStep, runGitCleanCheckStep } from "./update-runner-git-steps.js";
 import type { CommandRunner, UpdateRunResult, UpdateRunnerOptions } from "./update-runner-types.js";
 import type { UpdateStepResult } from "./update-step-result.js";
@@ -126,67 +130,6 @@ async function resolveExplicitTarget(params: {
   return null;
 }
 
-async function resolveUpstreamCandidates(params: {
-  gitRoot: string;
-  needsCheckoutMain: boolean;
-  refreshedRemotes: readonly string[];
-  devSource?: GitFetchTarget & { revision?: string };
-  step: StepFactory;
-}): Promise<
-  | {
-      status: "ok";
-      sha: string;
-      candidates: string[];
-      selectedDevUpstream: string | null;
-      localDevBranchExists: boolean | null;
-    }
-  | { status: "error" | "skipped"; reason: NonNullable<UpdateRunResult["reason"]> }
-> {
-  const step = createGitStepFactory(params.gitRoot, params.step);
-  let localDevBranchExists: boolean | null = null;
-  if (params.needsCheckoutMain) {
-    const localMainStep = await runStep(
-      step("git-show-branch", "show-ref", "--verify", `refs/heads/${DEV_BRANCH}`),
-    );
-    localDevBranchExists = localMainStep.exitCode === 0;
-  }
-  const readGit = async (...args: string[]) => {
-    const result = await runStep(step("upstream-check", ...args));
-    return !isFailedUpdateStep(result) ? result.stdoutTail?.trim() || null : null;
-  };
-  const source = params.devSource;
-  if (!source || (source.remote !== "." && !params.refreshedRemotes.includes(source.remote))) {
-    return { status: "skipped", reason: "no-upstream" };
-  }
-  const upstreamRef = await resolveGitUpdateTrackingRef(readGit, DEV_BRANCH, source);
-  if (!upstreamRef) {
-    return { status: "skipped", reason: "no-upstream" };
-  }
-  const upstreamSha = await readGit("rev-parse", "--verify", `${upstreamRef}^{commit}`);
-  if (!upstreamSha) {
-    return { status: "error", reason: "no-upstream-sha" };
-  }
-  // Local branches are operator state, not remote cache refs to publish after admission.
-  const selectedDevUpstream = upstreamRef.startsWith("refs/heads/") ? null : upstreamRef;
-  const revListStep = await runStep(
-    step("git-rev-list", "rev-list", `--max-count=${PREFLIGHT_MAX_COMMITS}`, upstreamSha),
-  );
-  if (isFailedUpdateStep(revListStep)) {
-    return { status: "error", reason: "preflight-revlist-failed" };
-  }
-  const candidates = normalizeStringEntries((revListStep.stdoutTail ?? "").split("\n"));
-  if (candidates.length === 0) {
-    return { status: "error", reason: "preflight-no-candidates" };
-  }
-  return {
-    status: "ok",
-    sha: upstreamSha,
-    candidates,
-    selectedDevUpstream,
-    localDevBranchExists,
-  };
-}
-
 type PreflightCandidateResult =
   | { status: "ok"; candidateSha: string }
   | { status: "manager-unavailable"; reason: string }
@@ -260,17 +203,11 @@ async function testPreflightCandidate(
       return { status: classifyPreflightFailure(rebase) };
     }
   }
-  const candidateHead = await params.runCommand(
-    ["git", "-C", params.worktreeDir, "rev-parse", "HEAD"],
-    {
-      cwd: params.worktreeDir,
-      timeoutMs: params.timeoutMs,
-    },
-  );
-  if (candidateHead.code !== 0 || !candidateHead.stdout.trim()) {
+  const resolvedSha = await readGitHead(params.worktreeDir, params.runCommand, params.timeoutMs);
+  if (!resolvedSha) {
     return { status: "failed" };
   }
-  const candidateSha = candidateHead.stdout.trim();
+  const candidateSha = resolvedSha;
   // A local rebase can change package metadata from the fetched base revision.
   await params.beforeCandidate(candidateSha);
   await params.referenceSource?.copyBuildInputs(params.worktreeDir);
@@ -294,7 +231,24 @@ async function testPreflightCandidate(
   ): Promise<PreflightCandidateResult> {
     // Global source exposure can run package lifecycle scripts. Validate and retain
     // the resulting candidate only after that preparation finishes.
-    await params.prepareGitExposure?.(params.worktreeDir, candidateSha, env);
+    if (params.prepareGitExposure) {
+      await params.prepareGitExposure(params.worktreeDir, candidateSha, env);
+      // Exposure can run another install. Its final topology owns the
+      // packaged plugin dependency links rather than the earlier build graph.
+      const metadataScript = fileURLToPath(
+        resolveExternalPackageRuntimeEntrypointUrl("sourcePluginMetadata", params.worktreeDir),
+      );
+      if ((await fs.stat(metadataScript).catch(ignoreMissingPath))?.isFile()) {
+        const relink = await runCandidateCheck(
+          "bundled-plugin-dependency-links",
+          ["node", metadataScript],
+          env,
+        );
+        if (relink) {
+          return { status: classifyPreflightFailure(relink) };
+        }
+      }
+    }
     await restoreWorkspace?.();
     params.steps.push(...((await params.validateCandidate(params.worktreeDir)) ?? []));
     // Activation checks out candidateSha and promotes only generated runtime paths.
@@ -326,29 +280,9 @@ async function testPreflightCandidate(
     return { status: "ok", candidateSha };
   }
   if (params.atlasArm64) {
-    const artifact = await runStep({
-      ...params.workStep(
-        "preflight-atlas-arm64",
-        ["fetch Atlas Linux ARM64 release", candidateSha],
-        params.worktreeDir,
-      ),
-      runCommand: async () => {
-        try {
-          await stageAtlasArm64Release({
-            root: params.worktreeDir,
-            stagingRoot: params.preflightRoot,
-            sha: candidateSha,
-            timeoutMs: params.workTimeoutMs ?? DEFAULT_UPDATE_STEP_TIMEOUT_MS,
-          });
-          return { code: 0, stdout: "", stderr: "" };
-        } catch (error) {
-          return { code: 1, stdout: "", stderr: formatErrorMessage(error) };
-        }
-      },
-    });
-    return isFailedUpdateStep(artifact)
-      ? { status: "atlas-artifact-failed" }
-      : validateStagedRuntime(nodeRuntime.env);
+    return (await prepareAtlasArm64Candidate(params, candidateSha))
+      ? validateStagedRuntime(nodeRuntime.env)
+      : { status: "atlas-artifact-failed" };
   }
   if (params.referenceSource) {
     const version = parsePnpmPackageManagerVersion(
@@ -561,31 +495,47 @@ export async function runGitCandidatePreflight(params: {
       }
     }
   } else {
-    const upstream = await resolveUpstreamCandidates(params);
-    if (upstream.status !== "ok") {
-      return upstream;
+    if (params.needsCheckoutMain) {
+      const localMainStep = await runStep(
+        step("git-show-branch", "show-ref", "--verify", `refs/heads/${DEV_BRANCH}`),
+      );
+      localDevBranchExists = localMainStep.exitCode === 0;
     }
-    candidates = upstream.candidates;
-    selectedDevUpstream = upstream.selectedDevUpstream;
-    localDevBranchExists = upstream.localDevBranchExists;
+    const readGit = async (...args: string[]) => {
+      const result = await runStep(step("upstream-check", ...args));
+      return !isFailedUpdateStep(result) ? result.stdoutTail?.trim() || null : null;
+    };
+    const source = params.devSource;
+    if (!source || (source.remote !== "." && !params.refreshedRemotes.includes(source.remote))) {
+      return { status: "skipped", reason: "no-upstream" };
+    }
+    const upstreamRef = await resolveGitUpdateTrackingRef(readGit, DEV_BRANCH, source);
+    if (!upstreamRef) {
+      return { status: "skipped", reason: "no-upstream" };
+    }
+    const upstreamSha = await readGit("rev-parse", "--verify", `${upstreamRef}^{commit}`);
+    if (!upstreamSha) {
+      return { status: "error", reason: "no-upstream-sha" };
+    }
+    // Local branches are operator state, not remote cache refs to publish after admission.
+    selectedDevUpstream = upstreamRef.startsWith("refs/heads/") ? null : upstreamRef;
+    const revListStep = await runStep(
+      step("git-rev-list", "rev-list", `--max-count=${PREFLIGHT_MAX_COMMITS}`, upstreamSha),
+    );
+    if (isFailedUpdateStep(revListStep)) {
+      return { status: "error", reason: "preflight-revlist-failed" };
+    }
+    candidates = normalizeStringEntries((revListStep.stdoutTail ?? "").split("\n"));
+    if (candidates.length === 0) {
+      return { status: "error", reason: "preflight-no-candidates" };
+    }
   }
 
   if (params.atlasArm64) {
     // Releases are built for the exact Atlas main tip, never an older candidate.
     candidates = candidates.slice(0, 1);
-    if (params.beforeSha && params.beforeSha !== candidates[0]) {
-      const ancestry = await runStep(
-        step(
-          "atlas-arm64-fast-forward",
-          "merge-base",
-          "--is-ancestor",
-          params.beforeSha,
-          candidates[0]!,
-        ),
-      );
-      if (isFailedUpdateStep(ancestry)) {
-        return { status: "error", reason: "atlas-arm64-source-not-fast-forward" };
-      }
+    if (!(await verifyAtlasArm64FastForward(step, params.beforeSha, candidates[0]!))) {
+      return { status: "error", reason: "atlas-arm64-source-not-fast-forward" };
     }
   }
 
@@ -733,7 +683,19 @@ export async function runGitCandidatePreflight(params: {
         });
   } finally {
     if (!cleanupUncertain) {
-      const cleanup = () => cleanupGitPreflight(params, worktreeDir, preflightRoot);
+      const cleanup = () =>
+        cleanupGitPreflight(params, worktreeDir, preflightRoot).catch(async (error: unknown) => {
+          await warnOnUpdateCleanupFailure(error, preflightRoot, async (message) => {
+            const warning = params.steps.findLast((entry) => entry.name === "preflight-cleanup");
+            if (!warning) {
+              return console.warn(message);
+            }
+            warning.advisory = { kind: "recoverable-maintenance", message };
+            const { progress, stepIndex: index, totalSteps: total } = step(warning.name);
+            await progress?.onStepComplete?.({ ...warning, index, total });
+          });
+          return false;
+        });
       if (tested?.status !== "ok" || !params.retainCleanup?.(cleanup)) {
         await cleanup();
       }

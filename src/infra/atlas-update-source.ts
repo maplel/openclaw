@@ -8,7 +8,7 @@ import {
 } from "./update-channels.js";
 import type { DevUpdateTarget } from "./update-dev-target.js";
 import type { UpdateInstallKind } from "./update-install-kind.js";
-import type { CommandRunner } from "./update-runner-types.js";
+import type { CommandRunner, UpdateRunnerOptions } from "./update-runner-types.js";
 
 export type AtlasUpdateSource = {
   repositoryUrl: string;
@@ -16,6 +16,21 @@ export type AtlasUpdateSource = {
 };
 
 export const ATLAS_UPDATE_TRACKING_REF = "refs/remotes/atlas/main";
+
+export async function resolveAtlasGitRuntimeSource(
+  root: string,
+  opts: Pick<UpdateRunnerOptions, "atlasUpdateSource" | "channel" | "devTarget">,
+) {
+  const atlasUpdateSource = opts.atlasUpdateSource ?? (await readAtlasUpdateSource(root));
+  assertAtlasUpdateTarget(atlasUpdateSource, opts.devTarget);
+  const channel: UpdateChannel = atlasUpdateSource ? "dev" : (opts.channel ?? "dev");
+  return {
+    atlasUpdateSource,
+    channel,
+    atlasArm64:
+      Boolean(atlasUpdateSource) && process.platform === "linux" && process.arch === "arm64",
+  };
+}
 
 export function parseAtlasUpdateSource(value: unknown): AtlasUpdateSource | null {
   const manifest = asNullableRecord(value);

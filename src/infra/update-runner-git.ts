@@ -1,12 +1,9 @@
+import { classifyDoctorMaintenanceRefusal } from "../commands/doctor-maintenance-inspection.js";
 import { hasCommandProcessCleanupError } from "../process/exec-result.js";
-import {
-  assertAtlasCandidateSource,
-  assertAtlasUpdateTarget,
-  readAtlasUpdateSource,
-} from "./atlas-update-source.js";
+import { resolveAtlasGitRuntimeSource } from "./atlas-update-source.js";
 import { resolveControlUiAssetHealth } from "./control-ui-assets.js";
 import { readPackageVersion } from "./package-json.js";
-import { DEV_BRANCH, type UpdateChannel } from "./update-channels.js";
+import { DEV_BRANCH } from "./update-channels.js";
 import { getUpdateDoctorConfigFailureReason } from "./update-doctor-config.js";
 import { createUpdateErrorFact } from "./update-failure-facts.js";
 import {
@@ -19,7 +16,8 @@ import { UpdateRequesterRevokedError } from "./update-requester-authority.js";
 import { isFailedUpdateStep } from "./update-run-step.js";
 import { reportUpdateStepCompletion, runStep } from "./update-runner-command.js";
 import { settleGitUpdateCleanup } from "./update-runner-git-cleanup.js";
-import { gitCleanCheckArgs } from "./update-runner-git-commands.js";
+import { gitCleanCheckArgs, readGitHead } from "./update-runner-git-commands.js";
+import { createGitMutationInspector } from "./update-runner-git-inspection.js";
 import {
   readCurrentGitUpdateRecovery,
   recordGitRollbackOutcome,
@@ -67,9 +65,10 @@ export async function updateGitCheckout(params: {
       // Read-only status must not refresh the installed index before admission.
       ...(argv[0] === "git" ? { env: { ...options.env, GIT_OPTIONAL_LOCKS: "0" } } : {}),
     });
-  const atlasUpdateSource = opts.atlasUpdateSource ?? (await readAtlasUpdateSource(gitRoot));
-  assertAtlasUpdateTarget(atlasUpdateSource, opts.devTarget);
-  const channel: UpdateChannel = atlasUpdateSource ? "dev" : (opts.channel ?? "dev");
+  const { atlasUpdateSource, channel, atlasArm64 } = await resolveAtlasGitRuntimeSource(
+    gitRoot,
+    opts,
+  );
   if (channel === "extended-stable") {
     return {
       status: "error",
@@ -396,14 +395,11 @@ export async function updateGitCheckout(params: {
       if (!fetched.ok) {
         return { status: "error" as const, reason: fetched.reason ?? "fetch-failed" };
       }
-      const inspectTarget = async (revision: string, root = inspectionRoot) => {
-        const inspection = { root, revision, timeoutMs, runCommand: runInspectionCommand };
-        await assertAtlasCandidateSource(atlasUpdateSource, inspection);
-        await prepareGitMutation({
-          ...inspection,
-          beforeGitMutation: opts.inspectGitTarget,
-        });
-      };
+      const inspectTarget = createGitMutationInspector(
+        { root: inspectionRoot, timeoutMs, runCommand: runInspectionCommand },
+        opts.inspectGitTarget,
+        atlasUpdateSource,
+      );
       const selected = await selectGitInspectionTarget({
         gitRoot: inspectionRoot,
         // Clone publication moves the repository, so its owner supplies stationary
@@ -420,8 +416,7 @@ export async function updateGitCheckout(params: {
         beforeSha,
         beforeRuntimeVerified: recovery.serviceRestartSafe,
         sourceRuntimePrepared: opts.sourceRuntimePrepared,
-        atlasArm64:
-          Boolean(atlasUpdateSource) && process.platform === "linux" && process.arch === "arm64",
+        atlasArm64,
         beforeGitStaging: opts.beforeGitStaging,
         needsCheckoutMain,
         timeoutMs,
@@ -436,18 +431,15 @@ export async function updateGitCheckout(params: {
           return true;
         },
         prepareCandidate: async (root, cleanupRoot) => {
-          const candidate = await runInspectionCommand(["git", "-C", root, "rev-parse", "HEAD"], {
-            cwd: root,
-            timeoutMs,
-          });
-          if (candidate.code !== 0 || !candidate.stdout.trim()) {
+          const candidateSha = await readGitHead(root, runInspectionCommand, timeoutMs);
+          if (!candidateSha) {
             throw new Error("Cannot inspect the validated Git update");
           }
-          await inspectTarget(candidate.stdout.trim(), root);
+          await inspectTarget(candidateSha, root);
           if (opts.publishGitCheckout) {
             // A new checkout must settle its destination before runtime relocation
             // records absolute paths. Candidate build/validation has already finished.
-            if ((await importCandidate(candidate.stdout.trim())).status !== "ok") {
+            if ((await importCandidate(candidateSha)).status !== "ok") {
               throw new Error("Cannot import the admitted Git update");
             }
             gitRoot = await opts.publishGitCheckout();
@@ -622,12 +614,20 @@ export async function updateGitCheckout(params: {
     // Source conversion migrates only after its prepared global exposure is swapped.
     if (!opts.prepareGitExposure) {
       stateMigrationStarted = true;
-      recovery = { serviceRestartSafe: false, reason: "state-migration-started" };
+      recovery = {
+        serviceRestartSafe: false,
+        reason: "state-migration-started",
+        dataAtRisk: "state-migrated-no-rollback",
+      };
       const doctorSteps: UpdateStepResult[] = [];
       let doctorStep: UpdateStepResult | null;
       try {
         doctorStep = await opts.runGitDoctor(gitRoot, doctorSteps);
       } catch (error) {
+        const refusal = classifyDoctorMaintenanceRefusal(error);
+        if (refusal.kind === "data-at-risk") {
+          recovery.dataAtRisk = refusal.reason;
+        }
         steps.push(...doctorSteps);
         throw error;
       }

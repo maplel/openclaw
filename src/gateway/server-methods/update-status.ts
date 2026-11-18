@@ -42,9 +42,11 @@ import {
   prepareLatestUpdateRestartSentinel,
 } from "../server-update-sentinel.js";
 import type { GatewayRequestHandlers } from "./types.js";
+import { atlasSyncHandlers } from "./update-atlas-sync.js";
 import { assertValidParams } from "./validation.js";
 
 export const updateStatusHandlers: GatewayRequestHandlers = {
+  ...atlasSyncHandlers,
   "update.status": async ({ params, respond, context }) => {
     if (!assertValidParams(params, validateUpdateStatusParams, "update.status", respond)) {
       return;

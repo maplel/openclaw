@@ -1,6 +1,11 @@
 name: Sync Atlas with OpenClaw stable
-run-name: "Atlas sync ${{ inputs.version }}"
+run-name: >-
+  ${{ github.event_name == 'pull_request'
+      && format('Verify Atlas PR #{0}', github.event.pull_request.number)
+      || format('Atlas sync {0}', inputs.version) }}
 on:
+  pull_request:
+    branches: [main]
   workflow_dispatch:
     inputs:
       version:
@@ -9,7 +14,7 @@ on:
         type: string
 
 concurrency:
-  group: atlas-sync-stable-main
+  group: ${{ github.event_name == 'pull_request' && format('atlas-verify-pr-{0}', github.event.pull_request.number) || 'atlas-sync-stable-main' }}
   cancel-in-progress: false
 
 permissions:
@@ -18,7 +23,7 @@ permissions:
 jobs:
   prepare:
     name: Prepare pull request
-    if: github.repository == 'maplel/openclaw' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'maplel/openclaw' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
       head: ${{ steps.candidate.outputs.head }}
@@ -92,13 +97,27 @@ jobs:
   verify:
     name: Verify candidate
     needs: prepare
-    if: needs.prepare.outputs.head != ''
+    if: >-
+      ${{ !cancelled() && github.repository == 'maplel/openclaw' &&
+          ((github.event_name == 'pull_request' &&
+            github.event.pull_request.head.repo.full_name == github.repository &&
+            startsWith(github.event.pull_request.head.ref, 'atlas-sync/manual-')) ||
+           (github.event_name == 'workflow_dispatch' && needs.prepare.result == 'success' &&
+            needs.prepare.outputs.head != '')) }}
     runs-on: ubuntu-24.04-arm
+    env:
+      ATLAS_COMMIT: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || needs.prepare.outputs.head }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.prepare.outputs.head }}
+          ref: ${{ env.ATLAS_COMMIT }}
           persist-credentials: false
+      - name: Verify candidate checkout
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$ATLAS_COMMIT"
+          printf 'Candidate commit: `%s`\n' "$actual" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24.22.1"
@@ -111,6 +130,12 @@ jobs:
           node -e 'const s = require("./package.json").openclaw?.atlasUpdateSource; if (s?.repositoryUrl !== "https://github.com/maplel/openclaw" || s.branch !== "main") process.exit(1)'
           pnpm test src/agents/tool-schema-hints.test.ts src/infra/atlas-official-release.test.ts src/infra/atlas-update-discovery.test.ts src/infra/atlas-update-source.test.ts src/infra/atlas-arm64-release.test.ts src/gateway/server-methods/update-atlas-sync.test.ts ui/src/pages/config/updates-atlas.test.ts
           pnpm test src/infra/update-runner-git.test.ts -t "updates Atlas from its own main|preserves Atlas when the exact ARM64 package is unavailable"
+      - name: Typecheck Atlas core and Control UI
+        if: github.event_name == 'pull_request'
+        run: |
+          pnpm gateway:validators:check
+          pnpm tsgo:core
+          pnpm tsgo:ui
       - name: Build Atlas
         run: pnpm build:ci-artifacts
       - name: Verify relocatable Linux ARM64 artifact before merge
@@ -127,7 +152,7 @@ jobs:
   land:
     name: Merge pull request
     needs: [prepare, verify]
-    if: needs.verify.result == 'success'
+    if: github.event_name == 'workflow_dispatch' && needs.verify.result == 'success'
     runs-on: ubuntu-latest
     outputs:
       sha: ${{ steps.merge.outputs.sha }}
@@ -155,7 +180,7 @@ jobs:
     name: Build Linux ARM64 artifact
     needs: [prepare, land]
     if: >-
-      ${{ !cancelled() && needs.prepare.result == 'success' &&
+      ${{ !cancelled() && github.event_name == 'workflow_dispatch' && needs.prepare.result == 'success' &&
           (needs.land.result == 'success' || needs.prepare.outputs.current != '') }}
     runs-on: ubuntu-24.04-arm
     outputs:
@@ -210,7 +235,7 @@ jobs:
   publish-runtime:
     name: Publish Linux ARM64 artifact
     needs: build-runtime
-    if: ${{ !cancelled() && needs.build-runtime.result == 'success' }}
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && needs.build-runtime.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
