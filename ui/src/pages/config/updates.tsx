@@ -404,6 +404,7 @@ function GatewayUpdates(props: UpdatesViewProps) {
     );
   };
   const publishedAtlasReady = () => props.atlasSync?.readyToInstall === true;
+  const requiresAtlasPackage = () => Boolean(atlasSource() || props.atlasSync);
   const checkingInstallTarget = () => props.update.updateStatusRefreshing && !publishedAtlasReady();
   const checkRequired = () =>
     Boolean(
@@ -634,8 +635,10 @@ function GatewayUpdates(props: UpdatesViewProps) {
         <SettingsRow
           title={t("updates.page.updateNow")}
           description={t(
-            props.atlasSync
-              ? "updates.atlasSync.installHint"
+            requiresAtlasPackage()
+              ? publishedAtlasReady()
+                ? "updates.atlasSync.installHint"
+                : "updates.atlasSync.installUnavailable"
               : formatUpdateTargetLabel(props.update.updateSchedule, props.update.updateAvailable)
                 ? "updates.page.updateNowDescription"
                 : "updates.page.noKnownUpdateDescription",
@@ -650,7 +653,7 @@ function GatewayUpdates(props: UpdatesViewProps) {
                 props.updateBusy ||
                 checkingInstallTarget() ||
                 !props.canUpdate ||
-                props.atlasSync?.awaitingPackage ||
+                (requiresAtlasPackage() && !publishedAtlasReady()) ||
                 checkRequired()
               }
               onClick={() => void updateNow()}

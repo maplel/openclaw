@@ -1302,6 +1302,7 @@ const enSettings = {
       hint: "Sync the official release, run verification, and publish the Linux ARM64 package.",
       installHint:
         "Download and verify the Linux ARM64 package, then install it and restart the Gateway.",
+      installUnavailable: "No published ARM64 update is available for this board.",
       start: "Sync and publish",
       running: "GitHub Actions is preparing the release.",
       published: "Linux ARM64 package published. Ready to install.",
