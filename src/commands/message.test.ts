@@ -1,3 +1,4 @@
+import path from "node:path";
 import { expectDefined } from "@openclaw/normalization-core";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChannelPlugin } from "../channels/plugins/types.plugin.js";
@@ -55,6 +56,22 @@ vi.mock("../cli/command-secret-targets.js", () => ({
   getScopedChannelsCommandSecretTargets,
 }));
 
+const owner = vi.hoisted(() => ({
+  request: vi.fn(),
+  online: false,
+}));
+vi.mock("../cli/local-state-owner.js", () => ({
+  runWithLocalStateOwner: (options: {
+    onForeignOwner: (scope: unknown) => Promise<unknown>;
+    runLocal: (scope: unknown) => Promise<unknown>;
+  }) => {
+    const scope = { signal: new AbortController().signal, assertCurrent: () => {} };
+    return owner.online
+      ? options.onForeignOwner({ ...scope, requestOwner: owner.request })
+      : options.runLocal(scope);
+  },
+}));
+
 const runMessageActionMock = vi.hoisted(() =>
   vi.fn(async ({ action, params }: RunMessageActionParams): Promise<MessageActionResult> => {
     const base = {
@@ -89,6 +106,7 @@ beforeEach(() => {
   vi.stubEnv("DISCORD_BOT_TOKEN", "");
   testConfig = {};
   vi.clearAllMocks();
+  owner.online = false;
   applyPluginAutoEnable.mockImplementation(({ config }) => ({ config, changes: [] }));
 });
 
@@ -198,6 +216,38 @@ function expectBroadcastPlan(
 }
 
 describe("messageCommand", () => {
+  it("sends through the live state owner without replaying an uncertain send locally", async () => {
+    owner.online = true;
+    owner.request.mockRejectedValueOnce(new Error("connection lost after dispatch"));
+    await expect(
+      runMessageCommand({
+        replyTo: "original",
+        mediaUrls: ["./photo.png", "https://media.example/photo.png"],
+      }),
+    ).rejects.toThrow("connection lost");
+    expect(owner.request).toHaveBeenCalledWith(
+      "message.action",
+      expect.objectContaining({
+        action: "send",
+        channel: "telegram",
+        gatewayOwnsSend: true,
+        params: expect.objectContaining({
+          target: "123456",
+          replyTo: "original",
+          mediaUrls: [path.resolve("./photo.png"), "https://media.example/photo.png"],
+        }),
+      }),
+    );
+    expect(runMessageActionMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps a send preview local even when a Gateway owns delivery", async () => {
+    owner.online = true;
+    await runMessageCommand({ dryRun: true });
+    expect(readOnlyMessageActionCall().params.dryRun).toBe(true);
+    expect(owner.request).not.toHaveBeenCalled();
+  });
+
   it("includes aggregate broadcast failure and every target row in JSON output", async () => {
     const results: Extract<MessageActionResult, { kind: "broadcast" }>["payload"]["results"] = [
       { channel: "telegram", to: "123", ok: true },

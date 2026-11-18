@@ -36,6 +36,10 @@ import { startGatewayMaintenanceTimers } from "../server-maintenance.js";
 import { gatewayProfile } from "../server/client-fixtures.test-support.js";
 import { createGatewayMaintenanceStateForTest } from "../test-helpers.maintenance-state.js";
 import { registerSendDeliveryAttemptTests } from "./send.delivery-attempt.test-support.js";
+import {
+  registerGatewayCoreOwnerSendTests,
+  registerGatewayNativeOwnerSendTest,
+} from "./send.owner-routing.test-support.js";
 import { registerSendSessionRoutingTests } from "./send.session-routing.test-support.js";
 import {
   agentRuntimeClientForTests as agentRuntimeClient,
@@ -454,6 +458,12 @@ describe("gateway send conversation ownership", () => {
     });
     mocks.sendPoll.mockResolvedValue({ messageId: "poll-1" });
     mocks.getChannelPlugin.mockImplementation((channel: string) => routePlugin(channel));
+  });
+
+  registerGatewayNativeOwnerSendTest({
+    mocks,
+    runMessageActionRequest,
+    registerMessageActionPlugin,
   });
 
   it.each([
@@ -1438,36 +1448,7 @@ describe("gateway send conversation ownership", () => {
       ]);
     });
 
-    it("routes the account default through one canonical gateway send", async () => {
-      plugin.outbound!.deliveryMode = "gateway";
-      const { respond } = await runMessageActionRequest(
-        {
-          channel: "twitch",
-          params: { message: "hello" },
-          accountId: "secondary",
-        },
-        directCliClient(),
-      );
-      const response = firstRespondCall(respond);
-      expect(response[2]).toBeUndefined();
-      expect(response[0]).toBe(true);
-      expect(response[1]).toMatchObject({
-        channel: "twitch",
-        to: "secondary-room",
-        via: "gateway",
-        deliveryStatus: "sent",
-        result: { messageId: "core-send" },
-      });
-      expect(mocks.deliverOutboundPayloads).toHaveBeenCalledOnce();
-      expect(deliveryCall()).toMatchObject({
-        to: "secondary-room",
-        accountId: "secondary",
-        payloads: [expect.objectContaining({ text: "hello" })],
-      });
-      expect(lastDispatchChannelMessageActionCall()?.deliveryRetryOwner).toBeUndefined();
-      expect(lastDispatchChannelMessageActionCall()?.skipQueue).toBe(false);
-      expect(mocks.appendAssistantMessageToSessionTranscript).not.toHaveBeenCalled();
-    });
+    registerGatewayCoreOwnerSendTests({ mocks, runMessageActionRequest, getPlugin: () => plugin });
 
     it("rejects a channel without canonical outbound send capability", async () => {
       plugin.outbound = undefined;
