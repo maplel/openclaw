@@ -32,7 +32,6 @@ it("links failed sync runs and enables board installation once an ARM64 package 
         busy: false,
         canStart: true,
         state: "conflict",
-        awaitingPackage: true,
         runUrl,
         start,
       },
@@ -103,12 +102,47 @@ it("renders official pending-sync as information without changing the Atlas upgr
       update: { updateSchedule: { ...updateSchedule, officialRelease: undefined } },
     }),
   );
-  const wasDisabled = row("Update Gateway…").querySelector("button")!.disabled;
+  expect(row("Update Gateway…").querySelector("button")!.disabled).toBe(true);
   mountUpdates(createUpdatesViewProps({ update: { updateSchedule } }));
   expect(row("Official stable release").textContent).toContain(
     "2099.1.1 · Newer than installed Atlas",
   );
   expect(row("Atlas repository").textContent).toContain("maplel/openclaw · main");
-  expect(row("Update Gateway…").querySelector("button")!.disabled).toBe(wasDisabled);
+  expect(row("Update Gateway…").querySelector("button")!.disabled).toBe(true);
   expect(updateSchedule?.target).toBeUndefined();
+});
+
+it("disables both Atlas actions after the published package is installed", () => {
+  const sha = "a".repeat(40);
+  const start = vi.fn();
+  const install = vi.fn(async () => {});
+  const { mountUpdates, row } = createUpdatesViewDom();
+  mountUpdates(
+    createUpdatesViewProps({
+      update: {
+        updateSchedule: {
+          channel: "dev",
+          autoEnabled: false,
+          atlasSource: { repositoryUrl: "https://github.com/maplel/openclaw", branch: "main" },
+          install: { kind: "git", git: { status: "current", currentSha: sha, upstreamSha: sha } },
+          officialRelease: {
+            status: "current",
+            currentVersion: "2026.11.5",
+            latestVersion: "2026.11.5",
+            checkedAtMs: 1000,
+          },
+        },
+      },
+      atlasSync: { busy: false, canStart: false, state: "published", readyToInstall: false, start },
+      onUpdateNow: install,
+    }),
+  );
+  const syncButton = row("Official stable release").querySelector("button")!;
+  const installButton = row("Update Gateway…").querySelector("button")!;
+  expect(syncButton.disabled).toBe(true);
+  expect(installButton.disabled).toBe(true);
+  syncButton.click();
+  installButton.click();
+  expect(start).not.toHaveBeenCalled();
+  expect(install).not.toHaveBeenCalled();
 });

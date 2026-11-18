@@ -46,11 +46,14 @@ export function UpdatesPage(props: {
   const config = createMemo(() => projectApplicationConfig(props.context.config));
   const snapshot = () => gateway().read().snapshot;
   const schedule = () => overlays().read().updateSchedule;
+  const canReadAtlasSync = () =>
+    canCallGatewayMethod(snapshot(), "update.atlasSync.status", "operator.admin");
+  const requiresAtlasPackage = () => {
+    const current = schedule();
+    return current ? Boolean(current.atlasSource) : canReadAtlasSync();
+  };
   const clientForSync = createMemo(() =>
-    schedule()?.atlasSource &&
-    canCallGatewayMethod(snapshot(), "update.atlasSync.status", "operator.admin")
-      ? snapshot().client
-      : null,
+    schedule()?.atlasSource && canReadAtlasSync() ? snapshot().client : null,
   );
   const release = () => schedule()?.officialRelease;
   const syncVersion = () => {
@@ -137,7 +140,6 @@ export function UpdatesPage(props: {
       ? { kind: "git" as const, upstreamRef: "refs/remotes/atlas/main", upstreamSha: sha }
       : undefined;
   };
-  const awaitingPackage = () => syncVersion() !== undefined && !publishedTarget();
   const canStartSync = () =>
     configured() === true &&
     schedule()?.autoEnabled === false &&
@@ -186,11 +188,10 @@ export function UpdatesPage(props: {
         commandScope={snapshot().client ?? props.context.overlays}
         captureCommandPresentation={props.captureCommandPresentation}
         atlasSync={
-          clientForSync()
+          requiresAtlasPackage()
             ? {
                 busy: starting() || run()?.state === "running",
                 canStart: canStartSync(),
-                awaitingPackage: awaitingPackage(),
                 readyToInstall: Boolean(publishedTarget()),
                 state: run()?.state,
                 version: run()?.version,
@@ -234,12 +235,12 @@ export function UpdatesPage(props: {
           props.context.runtimeConfig.patchForm(["update", "auto", "enabled"], enabled)
         }
         onUpdateNow={async () => {
-          if (clientForSync() && awaitingPackage()) {
+          const target = publishedTarget();
+          if (requiresAtlasPackage() && !target) {
             return;
           }
           const context = props.context;
           const update = overlays().read();
-          const target = publishedTarget();
           return confirmAndStartUpdate({
             isCurrentTarget: context.overlays.captureUpdateTarget(),
             startGatewayUpdate: () => void context.overlays.runUpdate(target),
