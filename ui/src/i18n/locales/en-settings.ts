@@ -1305,6 +1305,7 @@ const enSettings = {
       start: "Sync and publish",
       running: "GitHub Actions is preparing the release.",
       published: "Linux ARM64 package published. Ready to install.",
+      publishedPackage: "Linux ARM64 package published.",
       unpublished: "This sync did not publish a Linux ARM64 package. Run the sync again.",
       conflict: "Merge conflict. Open the run for details.",
       testsFailed: "Verification failed. Open the run for details.",

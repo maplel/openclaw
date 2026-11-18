@@ -49,7 +49,14 @@ it("links failed sync runs and enables board installation once an ARM64 package 
   mountUpdates(
     createUpdatesViewProps({
       update: { updateSchedule },
-      atlasSync: { busy: false, canStart: false, state: "published", runUrl, start },
+      atlasSync: {
+        busy: false,
+        canStart: false,
+        state: "published",
+        readyToInstall: true,
+        runUrl,
+        start,
+      },
       onUpdateNow: install,
     }),
   );
@@ -57,6 +64,24 @@ it("links failed sync runs and enables board installation once an ARM64 package 
   row("Update Gateway…").querySelector("button")!.click();
   expect(install).toHaveBeenCalledOnce();
   expect(start).toHaveBeenCalledOnce();
+  mountUpdates(
+    createUpdatesViewProps({
+      update: {
+        updateSchedule,
+        updateStatusRefreshing: true,
+        updateStatusBanner: { tone: "danger", text: "Installation failed" },
+      },
+      atlasSync: {
+        busy: false,
+        canStart: false,
+        state: "published",
+        version: "2026.11.5",
+        readyToInstall: true,
+        start,
+      },
+    }),
+  );
+  expect(row("Status").textContent).toContain("Installation failed");
 });
 
 it("renders official pending-sync as information without changing the Atlas upgrade action", () => {

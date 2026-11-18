@@ -71,7 +71,6 @@ export function UpdatesPage(props: {
   });
   let timer: ReturnType<typeof setTimeout> | undefined;
   let generation = 0;
-  let refreshedRunId: number | undefined;
 
   async function refreshAtlasSync(
     client: NonNullable<ReturnType<typeof clientForSync>>,
@@ -91,9 +90,6 @@ export function UpdatesPage(props: {
       setStatusError(undefined);
       if (result.run?.state === "running") {
         timer = setTimeout(() => void refreshAtlasSync(client, owner, result.run?.id), 5000);
-      } else if (result.run?.state === "published" && refreshedRunId !== result.run.id) {
-        refreshedRunId = result.run.id;
-        void props.context.overlays.refreshUpdateStatus();
       }
     } catch (cause) {
       if (owner === generation && clientForSync() === client) {
@@ -106,7 +102,6 @@ export function UpdatesPage(props: {
   const bindAtlasSync = (client: NonNullable<ReturnType<typeof clientForSync>>) => {
     clearTimeout(timer);
     const owner = ++generation;
-    refreshedRunId = undefined;
     setConfigured(undefined);
     setRun(null);
     setError(undefined);
@@ -119,15 +114,27 @@ export function UpdatesPage(props: {
     };
   };
 
-  const publishedTarget = () => {
+  const publishedRelease = () => {
     const published = run();
-    const git = schedule()?.install?.git;
+    const official = release();
     return published?.state === "published" &&
-      published.version === syncVersion() &&
-      published.sha &&
-      published.sha === git?.upstreamSha &&
-      git.status === "behind"
-      ? { kind: "git" as const, upstreamRef: "refs/remotes/atlas/main", upstreamSha: published.sha }
+      official &&
+      official.status !== "unavailable" &&
+      published.version === official.latestVersion
+      ? published
+      : undefined;
+  };
+  const publishedTarget = () => {
+    const sha = publishedRelease()?.sha;
+    const git = schedule()?.install?.git;
+    // The publication RPC has already verified the package against live Atlas main.
+    // Installation still checks the exact revision and ancestry before activation.
+    return sha &&
+      git?.currentSha &&
+      git.currentSha !== sha &&
+      git.status !== "ahead" &&
+      git.status !== "diverged"
+      ? { kind: "git" as const, upstreamRef: "refs/remotes/atlas/main", upstreamSha: sha }
       : undefined;
   };
   const awaitingPackage = () => syncVersion() !== undefined && !publishedTarget();
@@ -135,7 +142,7 @@ export function UpdatesPage(props: {
     configured() === true &&
     schedule()?.autoEnabled === false &&
     syncVersion() !== undefined &&
-    !publishedTarget() &&
+    !publishedRelease() &&
     canCallGatewayMethod(snapshot(), "update.atlasSync.start", "operator.admin");
 
   async function startAtlasSync() {
@@ -184,6 +191,7 @@ export function UpdatesPage(props: {
                 busy: starting() || run()?.state === "running",
                 canStart: canStartSync(),
                 awaitingPackage: awaitingPackage(),
+                readyToInstall: Boolean(publishedTarget()),
                 state: run()?.state,
                 version: run()?.version,
                 detail:
