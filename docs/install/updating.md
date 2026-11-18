@@ -42,6 +42,31 @@ older configuration selects `stable` or tracks the official repository.
 Atlas package installations transition to a checkout of that same repository.
 Package `--tag` overrides and detached Git targets are not Atlas update sources.
 
+In **Settings → Updates**, **Sync and merge** sends the displayed official
+stable version to the Atlas GitHub Actions workflow. The workflow merges the
+official tag into a candidate branch, opens a PR, verifies the candidate and
+merges its tested head into `main`. A conflict, failed check, or rejected merge
+stops the run. The page links to its GitHub run, which lists conflicting files
+or links to the candidate PR and its check results.
+
+With automatic updates turned off, **Update now** installs the resulting Atlas
+release separately. Sync runs on GitHub and does not restart the Gateway.
+
+To enable this page action, configure the following for the Atlas deployment.
+
+- Set `OPENCLAW_ATLAS_SYNC_TOKEN_FILE` in the Gateway service environment to a
+  private file containing a repository-scoped credential with Actions write
+  access on `maplel/openclaw`. This credential only dispatches and reads the
+  sync workflow in the Gateway.
+- Configure `ATLAS_SYNC_REPOSITORY_TOKEN` in GitHub Actions for the same
+  repository. The workflow uses it to push the candidate branch, open the PR,
+  and merge into `main`. Allow Contents, Pull requests, and Workflows writes
+  for those operations. The verification job does not receive this secret.
+- Keep existing repository merge rules in force. Enable strict up-to-date
+  branch protection when other processes can update `main` concurrently.
+  The workflow compares the current base before asking GitHub to merge the
+  exact tested PR head.
+
 The Updates page reports the official npm `latest` version separately as
 information. A newer official release means **newer than the installed Atlas
 baseline**, not an installable target. This notice does not claim that the release
@@ -53,8 +78,8 @@ targets; failure to fetch Atlas does not fall back to official packages or tags.
 To follow official releases, merge the selected official stable release into
 the Atlas repository, retain the distribution metadata and local changes, test,
 and publish the resulting Atlas `main`. Candidates must retain that metadata so
-the next upgrade continues to use Atlas. This does not create an automatic sync
-job or change an existing running installation. Immutable installations retain
+the next upgrade continues to use Atlas. The sync workflow runs on demand.
+Immutable installations retain
 their external supervisor's update ownership.
 
 Update inspection and snapshot workers bind plugin metadata discovery to the

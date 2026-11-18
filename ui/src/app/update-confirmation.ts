@@ -87,6 +87,8 @@ export type ConfirmAndStartUpdateParams = {
   /** Owner-held target captured before loading or showing confirmation. */
   isCurrentTarget: () => boolean;
   startGatewayUpdate: () => void;
+  /** The operator already pressed the Atlas install button for a completed sync. */
+  startOnOpen?: boolean;
   /**
    * Streams the update lifecycle so the dialog can stay open and report it.
    * A surface that cannot supply one closes on confirm instead of holding a

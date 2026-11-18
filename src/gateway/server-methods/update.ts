@@ -81,6 +81,7 @@ import {
   resolveGatewayUpdateAdmission,
   reportImmutableGatewayUpdateRefusal,
 } from "./update-admission.js";
+import { atlasSyncHandlers } from "./update-atlas-sync.js";
 import { recordGatewayUpdateOutcome } from "./update-outcome-observation.js";
 import { updateReportHandler } from "./update-report.js";
 import { updateStatusHandlers } from "./update-status.js";
@@ -88,6 +89,7 @@ import { updateStatusHandlers } from "./update-status.js";
 const MANAGED_HANDOFF_ALREADY_RUNNING_REASON = "managed-service-handoff-already-running";
 
 export const updateHandlers: GatewayRequestHandlers = {
+  ...atlasSyncHandlers,
   ...updateStatusHandlers,
   "update.report": updateReportHandler,
   "update.run": async (request) => {

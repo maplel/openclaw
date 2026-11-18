@@ -559,11 +559,47 @@ export function Updates(props: UpdatesViewProps) {
           <Show when={props.update.updateSchedule?.officialRelease}>
             <SettingsRow
               title={t("updates.officialStable")}
-              description={t("updates.officialHint")}
+              description={t(props.atlasSync ? "updates.atlasSync.hint" : "updates.officialHint")}
               control={
-                <SettingsValue
-                  value={formatOfficialReleaseLabel(props.update.updateSchedule!.officialRelease!)}
-                />
+                <div>
+                  <SettingsValue
+                    value={formatOfficialReleaseLabel(
+                      props.update.updateSchedule!.officialRelease!,
+                    )}
+                  />
+                  <Show when={props.atlasSync}>
+                    {(sync) => (
+                      <div>
+                        <button
+                          type="button"
+                          class="btn btn--sm"
+                          disabled={!sync().canStart || sync().busy || props.updateBusy}
+                          onClick={() => sync().start()}
+                        >
+                          {t("updates.atlasSync.start")}
+                        </button>
+                        <div role="status">
+                          <Show when={sync().state}>
+                            {(state) => (
+                              <div>
+                                {sync().version ? `${sync().version} · ` : ""}
+                                {t(`updates.atlasSync.${state()}`)}
+                              </div>
+                            )}
+                          </Show>
+                          <Show when={sync().detail}>{(detail) => <div>{detail()}</div>}</Show>
+                        </div>
+                        <Show when={sync().runUrl}>
+                          {(url) => (
+                            <a href={url()} target="_blank" rel="noopener noreferrer">
+                              {t("updates.atlasSync.run")}
+                            </a>
+                          )}
+                        </Show>
+                      </div>
+                    )}
+                  </Show>
+                </div>
               }
             />
           </Show>

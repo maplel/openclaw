@@ -4,8 +4,19 @@ import type { ApplicationUpdateOverlaySnapshot } from "../../app/overlays-types.
 export const UPDATES_CHANNELS = ["stable", "beta", "dev", "extended-stable"] as const;
 export type UpdatesChannel = (typeof UPDATES_CHANNELS)[number];
 
+export type AtlasSyncControl = {
+  busy: boolean;
+  canStart: boolean;
+  state?: "running" | "merged" | "current" | "conflict" | "testsFailed" | "failed";
+  version?: string;
+  detail?: string;
+  runUrl?: string;
+  start: () => void;
+};
+
 export type UpdatesViewProps = {
   update: ApplicationUpdateOverlaySnapshot;
+  atlasSync?: AtlasSyncControl;
   nativeDeviceSettings?: NativeDeviceSettingsCapability | null;
   configObject: Record<string, unknown>;
   gatewayVersion: string | null;

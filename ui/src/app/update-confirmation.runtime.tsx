@@ -538,5 +538,8 @@ export async function confirmAndStartUpdateRuntime(
       });
     }
     draw();
+    if (params.startOnOpen && !viaNativeApp && !params.existingRun) {
+      void confirm();
+    }
   });
 }

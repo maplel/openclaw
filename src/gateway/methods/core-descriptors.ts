@@ -742,4 +742,6 @@ export const CORE_GATEWAY_METHOD_SPECS = [
   ["ui.command.result", "ui-command", "operator.read", "2026.10"],
   ["mcp.events.list", "mcp-events", "operator.read", "2026.10"],
   ["projects.checkoutOptions", "projects", "operator.read", "2026.10"],
+  ["update.atlasSync.status", "update", "operator.admin", "2026.11"],
+  ["update.atlasSync.start", "update", "operator.admin", "2026.11", CONTROL_PLANE_WRITE],
 ] as const satisfies readonly CoreGatewayMethodSpecRow[];
