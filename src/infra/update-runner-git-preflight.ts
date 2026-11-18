@@ -203,10 +203,11 @@ async function testPreflightCandidate(
       return { status: classifyPreflightFailure(rebase) };
     }
   }
-  const candidateSha = await readGitHead(params.worktreeDir, params.runCommand, params.timeoutMs);
-  if (!candidateSha) {
+  const resolvedSha = await readGitHead(params.worktreeDir, params.runCommand, params.timeoutMs);
+  if (!resolvedSha) {
     return { status: "failed" };
   }
+  const candidateSha = resolvedSha;
   // A local rebase can change package metadata from the fetched base revision.
   await params.beforeCandidate(candidateSha);
   await params.referenceSource?.copyBuildInputs(params.worktreeDir);
