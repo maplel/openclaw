@@ -130,6 +130,7 @@ jobs:
           node -e 'const s = require("./package.json").openclaw?.atlasUpdateSource; if (s?.repositoryUrl !== "https://github.com/maplel/openclaw" || s.branch !== "main") process.exit(1)'
           pnpm test src/agents/tool-schema-hints.test.ts src/infra/atlas-official-release.test.ts src/infra/atlas-update-discovery.test.ts src/infra/atlas-update-source.test.ts src/infra/atlas-arm64-release.test.ts src/gateway/server-methods/update-atlas-sync.test.ts ui/src/pages/config/updates-atlas.test.ts ui/src/pages/config/updates-page.atlas.test.ts
           pnpm test src/infra/update-runner-git.test.ts -t "updates Atlas from its own main|preserves Atlas when the exact ARM64 package is unavailable"
+          pnpm test src/infra/deferred-plugin-migrations.test.ts src/config/io.deferred-plugin-migrations.test.ts --maxWorkers=1
       - name: Typecheck Atlas core and Control UI
         if: github.event_name == 'pull_request'
         run: |
@@ -206,6 +207,7 @@ jobs:
           node -e 'const s = require("./package.json").openclaw?.atlasUpdateSource; if (s?.repositoryUrl !== "https://github.com/maplel/openclaw" || s.branch !== "main") process.exit(1)'
           pnpm test src/agents/tool-schema-hints.test.ts src/infra/atlas-official-release.test.ts src/infra/atlas-update-discovery.test.ts src/infra/atlas-update-source.test.ts src/infra/atlas-arm64-release.test.ts src/gateway/server-methods/update-atlas-sync.test.ts ui/src/pages/config/updates-atlas.test.ts ui/src/pages/config/updates-page.atlas.test.ts
           pnpm test src/infra/update-runner-git.test.ts -t "updates Atlas from its own main|preserves Atlas when the exact ARM64 package is unavailable"
+          pnpm test src/infra/deferred-plugin-migrations.test.ts src/config/io.deferred-plugin-migrations.test.ts --maxWorkers=1
       - name: Build Atlas
         run: pnpm build:ci-artifacts
       - name: Pack and validate the runtime

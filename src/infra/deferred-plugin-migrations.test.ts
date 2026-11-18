@@ -404,6 +404,40 @@ describe("deferred configured-plugin migrations", () => {
     },
   );
 
+  it("publishes after Doctor appends earlier plugin IDs to its existing migration records", () => {
+    const { env } = fixture();
+    const existing = { ...pending, pluginId: "existing-owner" };
+    const discovered = { ...pending, pluginId: "atlas-new-owner" };
+    writePending(env, existing);
+    const existingRecords = readDeferredPluginMigrations({ env });
+    writePending(env, discovered);
+
+    const expectedPending = [...existingRecords, discovered];
+    expect(readDeferredPluginMigrations({ env })).toEqual([discovered, existing]);
+    const publish = vi.fn(() => "published");
+    const onConflict = vi.fn(() => "conflict");
+    expect(withDeferredPluginMigrationsCurrent({ env, expectedPending }, publish)).toBe(
+      "published",
+    );
+    expect(withDeferredPluginMigrationsCurrent({ env, expectedPending, onConflict }, publish)).toBe(
+      "published",
+    );
+    expect(onConflict).not.toHaveBeenCalled();
+    expect(publish).toHaveBeenCalledTimes(2);
+    expect(
+      withDeferredPluginMigrationsCurrent(
+        {
+          env,
+          expectedPending: [existing, { ...discovered, requiresStateMigration: true }],
+          onConflict,
+        },
+        publish,
+      ),
+    ).toBe("conflict");
+    expect(onConflict).toHaveBeenCalledWith([discovered, existing]);
+    expect(publish).toHaveBeenCalledTimes(2);
+  });
+
   it("reports bounded obligation differences and the settlement phase through the worker", async () => {
     const { env } = fixture();
     await recordDeferredPluginMigrations({ env, pending: [pending] });
