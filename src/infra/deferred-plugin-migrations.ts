@@ -259,12 +259,22 @@ export const deferredPluginMigrationReadOperations = {
   }),
 } satisfies WorkerOperationHandlers<EngineConnection>;
 
+function samePendingGeneration(
+  current: readonly DeferredPluginMigration[],
+  expected: readonly DeferredPluginMigration[],
+): boolean {
+  // Doctor appends newly discovered owners; SQLite reads rows in key order.
+  const byPluginId = (left: DeferredPluginMigration, right: DeferredPluginMigration) =>
+    left.pluginId < right.pluginId ? -1 : left.pluginId > right.pluginId ? 1 : 0;
+  return isDeepStrictEqual(current.toSorted(byPluginId), expected.toSorted(byPluginId));
+}
+
 function assertPendingGeneration(
   current: readonly DeferredPluginMigration[],
   expected: readonly DeferredPluginMigration[],
   phase: string,
 ): void {
-  if (!isDeepStrictEqual(current, expected)) {
+  if (!samePendingGeneration(current, expected)) {
     throw new DeferredPluginMigrationConflictError(current, { expected, phase });
   }
 }
@@ -453,7 +463,7 @@ export function withDeferredPluginMigrationsCurrent<T>(
   const result = runOpenClawStateWriteTransaction(
     ({ db }) => {
       const pending = pendingMigrationRecords(readPendingMigrationRows(db));
-      if (!isDeepStrictEqual(pending, expectedPending) && params.onConflict) {
+      if (params.onConflict && !samePendingGeneration(pending, expectedPending)) {
         // Commit preservation facts against these rows; callers refuse publication after return.
         return params.onConflict(pending);
       }
