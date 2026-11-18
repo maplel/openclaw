@@ -7,13 +7,15 @@ const { readFile, assertCurrent } = vi.hoisted(() => ({
   assertCurrent: vi.fn(),
 }));
 vi.mock("node:fs/promises", () => ({ readFile }));
-vi.mock("../../infra/update-status-state.js", () => ({
+vi.mock("../../infra/update-status-state.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../infra/update-status-state.js")>()),
   getUpdateSchedule: () => ({
     atlasSource: { repositoryUrl: "https://github.com/maplel/openclaw", branch: "main" },
     officialRelease: { status: "pending-sync", latestVersion: "2026.11.5" },
   }),
 }));
-vi.mock("./session-mutation-guards.js", () => ({
+vi.mock("./session-mutation-guards.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./session-mutation-guards.js")>()),
   readGatewayRequestMutationAuthority: () => ({ assertCurrent }),
 }));
 
