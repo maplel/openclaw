@@ -6,6 +6,7 @@ describe("channel ingress drain lifecycle", () => {
     const abort = new AbortController();
     const calls: string[] = [];
     const bound = bindIngressLifecycleToReplyOptions({
+      retryAbandonedInput: true,
       abortSignal: abort.signal,
       onAdoptionFinalizing: () => {
         calls.push("finalizing");
@@ -33,6 +34,7 @@ describe("channel ingress drain lifecycle", () => {
 
     expect(bound.turnAdoptionLifecycle).toMatchObject({
       admission: "exclusive",
+      retryAbandonedInput: true,
       abortSignal: abort.signal,
       deferredHeartbeatIntervalMs: 1_234,
     });

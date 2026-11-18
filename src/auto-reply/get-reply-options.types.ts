@@ -136,6 +136,8 @@ type TurnAdoptionAdmission = "exclusive" | "cancel-only";
  * Single surface for durable ingress, gateway cancel identity, and reply-lane transfer.
  */
 export type TurnAdoptionLifecycle = {
+  /** An abandoned durable delivery is being retried before adoption. */
+  retryAbandonedInput?: true;
   /**
    * Admission isolation mode (closed). Exclusive isolates collect identity per
    * lifecycle; cancel-only shares via ownerKey. Never inferred from onAbandoned.

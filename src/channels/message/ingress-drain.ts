@@ -27,7 +27,10 @@ import {
   createIngressDeadLetterNotifier,
   type IngressDeadLetterNotice,
 } from "./ingress-dead-letter-notice.js";
-import type { ChannelIngressDispatchLifecycle } from "./ingress-drain-lifecycle.js";
+import {
+  bindIngressRetryDisposition,
+  type ChannelIngressDispatchLifecycle,
+} from "./ingress-drain-lifecycle.js";
 import {
   activeClaimKey,
   createIngressSettleOwner,
@@ -375,6 +378,7 @@ export function createChannelIngressDrainOwner<
     state: ActiveHandlerState<TPayload, TMetadata>,
   ): ChannelIngressDispatchLifecycle => {
     return {
+      ...bindIngressRetryDisposition(state.claim, (options) => releaseUnadopted(state, options)),
       abortSignal: state.abortController.signal,
       readLaneBacklog: async () => {
         const { pending, claims } = await readUnsettled();
@@ -447,14 +451,6 @@ export function createChannelIngressDrainOwner<
         }
         // Keep recovery armed until disposition commits; removeActive clears it after success.
         await state.settleOnce(() => applyFailureDisposition(state.claim, error));
-      },
-      onCancelled: async () => {
-        // Cancellation means ownership ended before delivery, so preserve every
-        // prior retry fact while reopening the canonical row for replacement.
-        await releaseUnadopted(state, { recordAttempt: false });
-      },
-      onAbandoned: async () => {
-        await releaseUnadopted(state, { lastError: "turn-abandoned" });
       },
     };
   };

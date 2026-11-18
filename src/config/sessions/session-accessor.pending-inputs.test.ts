@@ -331,6 +331,39 @@ it.each([
   },
 );
 
+it("recovers the same abandoned channel delivery under its new dispatch run", async () => {
+  const key = "channel-user:v1:feishu-dm-input";
+  const input = {
+    ...message("first", "hello"),
+    idempotencyKey: key,
+    __openclaw: { senderId: "owner" },
+  };
+  const first = await stage("first-dispatch", { message: input });
+  first.finish("cancelled");
+  await first.settled?.();
+  const redelivery = { message: input, durableChannelSourceId: key };
+  await expect(stage("retry", { message: input })).rejects.toThrow("idempotency key conflicts");
+  await expect(
+    stage("retry", { ...redelivery, message: { ...input, content: "changed" } }),
+  ).rejects.toThrow("idempotency key conflicts");
+  await expect(
+    stage("retry", { ...redelivery, message: { ...input, __openclaw: { senderId: "other" } } }),
+  ).rejects.toThrow("idempotency key conflicts");
+  const resumed = await stage("retry", redelivery);
+  expect(resumed.inputId).toBe(first.inputId);
+  expect(storedInputs()).toMatchObject([{ state: "queued", run_id: "retry" }]);
+  await expect(stage("concurrent", redelivery)).rejects.toThrow();
+  expect(await promote(resumed)).toMatchObject(appendResult(first.inputId));
+  resumed.finish("interrupted");
+  await resumed.settled?.();
+  const duplicate = await stage("duplicate", redelivery);
+  await duplicate.validateCommittedReplay?.();
+  expect(duplicate.inputId).toBe(first.inputId);
+  expect(await promote(duplicate)).toMatchObject(appendResult(first.inputId, false));
+  expect(await submitted(key)).toEqual(input);
+  expect((await pendingInputs()).total).toBe(0);
+});
+
 it("rolls transcript promotion and custody consumption back together", async () => {
   const receipt = await stage("atomic");
   const before = await readTranscript();

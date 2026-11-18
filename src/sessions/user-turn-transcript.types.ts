@@ -246,6 +246,7 @@ export type UserTurnTranscriptRecorder = {
     runId: string;
     recoverySource?: import("../gateway/operator-run-recovery-source.codec.js").QueuedOperatorRecoverySource;
     retryCancelled?: boolean;
+    durableChannelSourceId?: string;
     storageTarget?: UserTurnPersistenceOptions["storageTarget"];
     lifecycleAdmission?: SessionInputLifecycleAdmission;
     assertCurrent: () => void;

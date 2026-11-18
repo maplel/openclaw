@@ -2,6 +2,8 @@ import type { ChannelIngressQueueRecord } from "./ingress-queue.types.js";
 
 /** Full pre-adoption -> adoption ownership lifecycle for one claimed event. */
 export type ChannelIngressDispatchLifecycle = {
+  /** The durable claim was previously released before turn adoption. */
+  retryAbandonedInput?: true;
   /** Pre-adoption only. After adopt the drain treats this signal as inert. */
   abortSignal: AbortSignal;
   /**
@@ -40,6 +42,21 @@ export type ChannelIngressDispatchLifecycle = {
   onAbandoned: () => void | Promise<void>;
 };
 
+const ABANDONED_TURN = "turn-abandoned";
+
+/** Carry prior abandonment into reply admission and preserve the queue disposition for the next claim. */
+export function bindIngressRetryDisposition(
+  claim: Pick<ChannelIngressQueueRecord<unknown>, "lastError">,
+  release: (options: { lastError?: string; recordAttempt?: boolean }) => Promise<void>,
+): Pick<ChannelIngressDispatchLifecycle, "retryAbandonedInput" | "onCancelled" | "onAbandoned"> {
+  return {
+    retryAbandonedInput: claim.lastError === ABANDONED_TURN ? true : undefined,
+    // Cancellation releases the claim for replacement without modifying its prior retry facts.
+    onCancelled: () => release({ recordAttempt: false }),
+    onAbandoned: () => release({ lastError: ABANDONED_TURN }),
+  };
+}
+
 /** Maps a drain lifecycle onto the reply-lane ownership surface. */
 export function bindIngressLifecycleToReplyOptions(lifecycle: ChannelIngressDispatchLifecycle): {
   turnAdoptionLifecycle: Omit<
@@ -50,6 +67,7 @@ export function bindIngressLifecycleToReplyOptions(lifecycle: ChannelIngressDisp
   return {
     turnAdoptionLifecycle: {
       admission: "exclusive",
+      retryAbandonedInput: lifecycle.retryAbandonedInput,
       onAdopted: lifecycle.onAdopted,
       onDeferred: lifecycle.onDeferred,
       onDeferredHeartbeat: lifecycle.onDeferredHeartbeat,

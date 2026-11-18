@@ -300,6 +300,20 @@ describe("Feishu durable ingress", () => {
     });
   });
 
+  it("retains abandoned input recovery only when every buffered source is being redelivered", () => {
+    const retry = createLifecycle({ retryAbandonedInput: true });
+    expect(retry.lifecycle?.retryAbandonedInput).toBe(true);
+    const mixed = buildFeishuFlushIngressLifecycle([
+      { lifecycle: retry.transport },
+      { lifecycle: createLifecycle().transport },
+    ]);
+    expect(mixed.lifecycle?.retryAbandonedInput).toBeUndefined();
+    expect(
+      buildFeishuFlushIngressLifecycle([{ lifecycle: retry.transport }, {}]).lifecycle
+        ?.retryAbandonedInput,
+    ).toBeUndefined();
+  });
+
   it("does not reopen adopted transport claims when a logical guard commit fails", async () => {
     const onReplayCommitError = vi.fn();
     const replayClaim = createReplayClaim("failing-adoption", async () => {
