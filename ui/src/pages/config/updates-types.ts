@@ -13,6 +13,7 @@ export type AtlasSyncControl = {
   busy: boolean;
   canStart: boolean;
   awaitingPackage?: boolean;
+  readyToInstall?: boolean;
   state?:
     | "running"
     | "published"

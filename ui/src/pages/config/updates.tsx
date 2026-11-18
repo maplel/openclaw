@@ -403,8 +403,11 @@ function GatewayUpdates(props: UpdatesViewProps) {
       props.update.heldUpdateCampaignId !== currentCampaign.id,
     );
   };
+  const publishedAtlasReady = () => props.atlasSync?.readyToInstall === true;
+  const checkingInstallTarget = () => props.update.updateStatusRefreshing && !publishedAtlasReady();
   const checkRequired = () =>
     Boolean(
+      !publishedAtlasReady() &&
       props.update.updateStatusCheckBanner &&
       !isUpdateActionable(
         props.update.updateAvailable,
@@ -416,7 +419,7 @@ function GatewayUpdates(props: UpdatesViewProps) {
       props.update.updateSchedule?.install?.git?.status !== "diverged",
     );
   const updateButtonTitle = () =>
-    props.update.updateStatusRefreshing && !props.updateBusy
+    checkingInstallTarget() && !props.updateBusy
       ? t("updates.page.checking")
       : !props.canAdmin
         ? t("updates.adminRequired")
@@ -523,7 +526,7 @@ function GatewayUpdates(props: UpdatesViewProps) {
                   )}
                 >
                   <Loading
-                    on={props.statusRead}
+                    on={publishedAtlasReady() ? null : props.statusRead}
                     fallback={
                       <SettingsStatus kind="muted" label={t("updates.page.checking")} dot={false} />
                     }
@@ -645,7 +648,7 @@ function GatewayUpdates(props: UpdatesViewProps) {
               disabled={
                 confirming() ||
                 props.updateBusy ||
-                props.update.updateStatusRefreshing ||
+                checkingInstallTarget() ||
                 !props.canUpdate ||
                 props.atlasSync?.awaitingPackage ||
                 checkRequired()

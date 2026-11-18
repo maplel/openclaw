@@ -48,7 +48,11 @@ export function AtlasOfficialReleaseRow(props: {
                         {(state) => (
                           <div>
                             {sync().version ? `${sync().version} · ` : ""}
-                            {t(`updates.atlasSync.${state()}`)}
+                            {t(
+                              state() === "published" && !sync().readyToInstall
+                                ? "updates.atlasSync.publishedPackage"
+                                : `updates.atlasSync.${state()}`,
+                            )}
                           </div>
                         )}
                       </Show>

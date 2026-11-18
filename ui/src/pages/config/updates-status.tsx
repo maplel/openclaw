@@ -23,6 +23,7 @@ export function UpdatesStatus(props: UpdatesViewProps & { checking: boolean }) {
         buildId: props.gatewayBuildId,
       });
     const running = run?.status === "running";
+    const publishedVersion = props.atlasSync?.readyToInstall && props.atlasSync.version;
     const campaign = props.update.updateSchedule?.campaign;
     const campaignLabel = formatUpdateCampaignLabel(props.update.updateSchedule, props.nowMs);
     const target = formatUpdateTargetLabel(
@@ -34,9 +35,13 @@ export function UpdatesStatus(props: UpdatesViewProps & { checking: boolean }) {
     if (running) {
       kind = "accent";
       label = t("updates.page.activePhase", { phase: t(`updates.run.phase.${run.phase}`) });
-    } else if ((props.checking || props.update.updateStatusRefreshing) && !props.updateBusy) {
+    } else if (
+      (props.checking || props.update.updateStatusRefreshing) &&
+      !props.updateBusy &&
+      !publishedVersion
+    ) {
       label = t("updates.page.checking");
-    } else if (props.update.updateStatusCheckBanner && !props.updateBusy) {
+    } else if (props.update.updateStatusCheckBanner && !props.updateBusy && !publishedVersion) {
       kind = "warn";
       label = props.update.updateStatusCheckBanner.text;
     } else if (campaignLabel) {
@@ -53,6 +58,9 @@ export function UpdatesStatus(props: UpdatesViewProps & { checking: boolean }) {
             ? "warn"
             : "accent";
       label = props.update.updateStatusBanner.text;
+    } else if (publishedVersion && !props.updateBusy) {
+      kind = "accent";
+      label = t("updates.page.available", { target: publishedVersion });
     } else if (props.update.updateSchedule?.install?.kind === "git") {
       const git = props.update.updateSchedule.install.git;
       if (!git) {
