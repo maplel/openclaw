@@ -572,7 +572,7 @@ export function Updates(props: UpdatesViewProps) {
                       <div>
                         <button
                           type="button"
-                          class="btn btn--sm"
+                          class="btn primary"
                           disabled={!sync().canStart || sync().busy || props.updateBusy}
                           onClick={() => sync().start()}
                         >
