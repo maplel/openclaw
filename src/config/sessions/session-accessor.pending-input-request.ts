@@ -10,6 +10,8 @@ import type { PersistedUserTurnMessage } from "../../sessions/user-turn-transcri
 import type { OpenClawConfig } from "../types.openclaw.js";
 import type { SessionPendingInputRow } from "./session-accessor.sqlite-pending-inputs.js";
 import { sanitizeTranscriptMessageForStorage } from "./session-accessor.sqlite-transcript-store.js";
+import { SessionPendingInputCustodyError } from "./session-pending-input-custody-error.js";
+import type { PendingInputSnapshot } from "./session-pending-input-operations.types.js";
 import { readMessageIdempotencyKey } from "./transcript-message-identity.js";
 
 function resolvePendingInputRequestHash(
@@ -79,6 +81,8 @@ export type PendingInputRequest = {
   runId: string;
   /** Authenticated ingress binds raw input before randomized media preparation. */
   requestFingerprint?: string;
+  /** Original logical input of a durable channel claim released before adoption. */
+  durableChannelSourceId?: string;
   /** Trusted frozen-cohort sources, checked against a receipt or whole committed input. */
   replaySourceSessionKeys?: readonly string[];
   prepareMessageAfterIdempotencyCheck?: (
@@ -98,6 +102,39 @@ export function preparePendingInputRequest(params: PendingInputRequest) {
     idempotencyKey,
     replaySourceSessionKeys: params.replaySourceSessionKeys,
     ...preparePendingInputMessage(params.message, params.requestFingerprint),
+  };
+}
+
+/** Reclaim an abandoned delivery only while the transaction still sees its exact unowned input. */
+export function prepareAbandonedChannelInputRecovery(
+  options: PendingInputRequest & { trackCompletion?: boolean },
+  request: ReturnType<typeof preparePendingInputRequest>,
+  snapshot: PendingInputSnapshot,
+) {
+  const { existing } = snapshot;
+  const matches = (row?: SessionPendingInputRow): row is SessionPendingInputRow =>
+    row?.state === "cancelled" &&
+    row.consumed_event_id === null &&
+    row.request_hash === request.requestHash;
+  if (
+    options.durableChannelSourceId !== request.idempotencyKey ||
+    options.trackCompletion ||
+    options.requestFingerprint ||
+    snapshot.previous ||
+    snapshot.committed ||
+    !matches(existing)
+  ) {
+    return undefined;
+  }
+  return (candidate?: SessionPendingInputRow) => {
+    if (
+      !matches(candidate) ||
+      candidate.input_id !== existing.input_id ||
+      candidate.run_id !== existing.run_id ||
+      candidate.lifecycle_generation !== existing.lifecycle_generation
+    ) {
+      throw new SessionPendingInputCustodyError("Abandoned input changed before readmission");
+    }
   };
 }
 

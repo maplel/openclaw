@@ -224,7 +224,7 @@ async function handleBroadcastAction(
         if (!resolved) {
           throw new Error("Broadcast target resolution unexpectedly deferred.");
         }
-        const sendResult = await runMessageAction({
+        const sendResult = await (input.dispatchBroadcastSend ?? runMessageAction)({
           ...input,
           action: "send",
           params: {

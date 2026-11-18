@@ -194,7 +194,7 @@ export function buildFeishuFlushIngressLifecycle(
     ): source is Required<Pick<FeishuLifecycleSource, "lifecycle">> &
       Pick<FeishuLifecycleSource, "replayClaim"> => source.lifecycle !== undefined,
   );
-  const lifecycles = durableSources.map((source) => source.lifecycle);
+  const lifecycles = sources.map((source) => source.lifecycle);
   const replayClaims = durableSources
     .map((source) => source.replayClaim)
     .filter((claim) => claim !== undefined);
@@ -241,6 +241,7 @@ export function buildFeishuFlushIngressLifecycle(
   };
   return {
     lifecycle: {
+      retryAbandonedInput: transportLifecycle.retryAbandonedInput,
       abortSignal: transportLifecycle.abortSignal,
       onAdopted: async () => {
         handedOff = true;

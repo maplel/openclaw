@@ -72,7 +72,13 @@ export async function prepareReplySourceAdmission(params: {
         },
       });
     }
-    await recorder.stageApproved?.({ runId: params.runId ?? randomUUID(), assertCurrent });
+    await recorder.stageApproved?.({
+      runId: params.runId ?? randomUUID(),
+      assertCurrent,
+      durableChannelSourceId: followupRun.turnAdoptionLifecycle?.retryAbandonedInput
+        ? followupRun.sourceTurnId
+        : undefined,
+    });
     assertCurrent();
     return release;
   } catch (error) {

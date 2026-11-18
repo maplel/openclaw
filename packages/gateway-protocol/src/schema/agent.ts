@@ -107,6 +107,8 @@ export const MessageActionParamsSchema = closedObject({
   channel: NonEmptyString,
   action: NonEmptyString,
   params: Type.Record(Type.String(), Type.Unknown()),
+  /** Operator CLI sends ask the owner to persist history and return the complete command result. */
+  gatewayOwnsSend: Type.Optional(Type.Literal(true)),
   reply: Type.Optional(MessageActionReplyFactsSchema),
   accountId: Type.Optional(Type.String()),
   requesterAccountId: Type.Optional(Type.String()),

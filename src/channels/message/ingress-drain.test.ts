@@ -288,6 +288,7 @@ describe("channel ingress drain", () => {
       const capturedLifecycles: ChannelIngressDispatchLifecycle[] = [];
       const drain = createChannelIngressDrain<Payload>({
         queue: { ...queue, release },
+        retryPolicy: { baseMs: 0, maxMs: 0 },
         dispatchClaimedEvent: async (_event, lifecycle) => {
           capturedLifecycles.push(lifecycle);
           return { kind: "deferred" };
@@ -312,6 +313,11 @@ describe("channel ingress drain", () => {
       expect(abandoned).toBe(true);
       expect(await queue.listClaims()).toEqual([]);
       expect(await queue.listPending()).toHaveLength(1);
+      expect(capturedLifecycles[0]?.retryAbandonedInput).toBeUndefined();
+      await drain.drainOnce();
+      await drain.waitForIdle();
+      expect(capturedLifecycles[1]?.retryAbandonedInput).toBe(true);
+      await capturedLifecycles[1]!.onAdopted();
       drain.dispose();
     });
   });
@@ -946,6 +952,7 @@ describe("channel ingress drain cancellation", () => {
 
         await drain.drainOnce();
         await vi.waitFor(() => expect(lifecycles).toHaveLength(1));
+        expect(lifecycles[0]?.retryAbandonedInput).toBeUndefined();
         await expectDefined(
           expectDefined(lifecycles[0], "cancelled lifecycle").onCancelled,
           "cancel callback",

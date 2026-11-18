@@ -882,7 +882,7 @@ var External = [
     /(^selector$)/u,
     /(^selector$|^includeUtterances$|^limit$|^cursor$|^query$)/u,
     /(^selector$|^format$)/u,
-    /(^channel$|^action$|^params$|^reply$|^accountId$|^requesterAccountId$|^requesterSenderId$|^senderIsOwner$|^sessionKey$|^sessionId$|^inboundTurnKind$|^agentId$|^toolContext$|^conversationReadOrigin$|^idempotencyKey$)/u,
+    /(^channel$|^action$|^params$|^gatewayOwnsSend$|^reply$|^accountId$|^requesterAccountId$|^requesterSenderId$|^senderIsOwner$|^sessionKey$|^sessionId$|^inboundTurnKind$|^agentId$|^toolContext$|^conversationReadOrigin$|^idempotencyKey$)/u,
     /(^replyToId$|^source$)/u,
     /(^replyToId$|^source$|^mode$)/u,
     /(^currentChannelId$|^currentMessagingTarget$|^currentGraphChannelId$|^currentChannelProvider$|^currentThreadTs$|^currentMessageId$|^replyToMode$|^hasRepliedRef$|^sameChannelThreadRequired$|^skipCrossContextDecoration$)/u,
@@ -6459,6 +6459,9 @@ var External = [
     check_6(value.channel) &&
     check_6(value.action) &&
     check_301(value.params) &&
+    (value.gatewayOwnsSend === void 0 ||
+      !("gatewayOwnsSend" in value) ||
+      check_326(value.gatewayOwnsSend)) &&
     (value.reply === void 0 || !("reply" in value) || check_892(value.reply)) &&
     (value.accountId === void 0 || !("accountId" in value) || check_272(value.accountId)) &&
     (value.requesterAccountId === void 0 ||

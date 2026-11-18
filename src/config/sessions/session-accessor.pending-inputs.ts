@@ -18,6 +18,7 @@ import type { PersistedUserTurnMessage } from "../../sessions/user-turn-transcri
 import { rethrowIncognitoSessionError } from "../../state/incognito-session-error.js";
 import { runOpenClawAgentWriteAdmission } from "../../state/openclaw-agent-write-admission.js";
 import {
+  prepareAbandonedChannelInputRecovery,
   preparePendingInputRequest,
   resolveCommittedPendingInputRequestHash,
   resolvePendingInputReplayRequest,
@@ -376,10 +377,15 @@ async function stagePreparedPendingInput(
         );
       }
     };
+    const assertAbandonedInput = prepareAbandonedChannelInputRecovery(
+      options,
+      preparedRequest,
+      snapshot,
+    );
     if (existing) {
       if (
         !matchesSessionPendingInputRequest(existing, stableMessage, requestHash) ||
-        existing.run_id !== options.runId
+        (!assertAbandonedInput && existing.run_id !== options.runId)
       ) {
         throw new Error("Pending input idempotency key conflicts with the accepted input");
       }
@@ -396,12 +402,13 @@ async function stagePreparedPendingInput(
       }
       assertUnowned();
       if (
-        (!options.requestFingerprint && !options.trackCompletion) ||
-        (existing.state !== "queued" &&
-          !(options.retryCancelled && existing.state === "cancelled")) ||
-        (existing.lifecycle_generation === lifecycleGeneration &&
-          !options.trackCompletion &&
-          !(options.retryCancelled && existing.state === "cancelled"))
+        !assertAbandonedInput &&
+        ((!options.requestFingerprint && !options.trackCompletion) ||
+          (existing.state !== "queued" &&
+            !(options.retryCancelled && existing.state === "cancelled")) ||
+          (existing.lifecycle_generation === lifecycleGeneration &&
+            !options.trackCompletion &&
+            !(options.retryCancelled && existing.state === "cancelled")))
       ) {
         throw new Error("Pending input ownership ended; submit a new turn to continue");
       }
@@ -620,6 +627,7 @@ async function stagePreparedPendingInput(
                 options.assertFreshInputCurrent?.();
               }
               assertAgentRunLifecycleGenerationCurrent(lifecycleGeneration);
+              assertAbandonedInput?.(facts?.candidate);
               assertUnowned(facts?.candidate);
             });
           },

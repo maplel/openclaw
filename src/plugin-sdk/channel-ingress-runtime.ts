@@ -287,6 +287,7 @@ export function fanInChannelIngressLifecycles(
     );
   return {
     lifecycle: {
+      retryAbandonedInput: inputs.every((source) => source?.retryAbandonedInput) ? true : undefined,
       abortSignal:
         lifecycles.length === 1
           ? first.abortSignal

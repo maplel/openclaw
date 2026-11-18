@@ -39,6 +39,7 @@ type InboundDebounceFlush = {
 };
 
 type InboundDebounceAdmissionLifecycleInput = {
+  retryAbandonedInput?: true;
   abortSignal?: AbortSignal;
   onAdopted?: () => void | Promise<void>;
   onDeferred?: () => boolean | void;
@@ -51,6 +52,7 @@ type InboundDebounceAdmissionLifecycleInput = {
 
 /** Lifecycle shape passed to a channel dispatch so it can signal session-lane admission. */
 type InboundDebounceAdmissionLifecycle = {
+  retryAbandonedInput?: true;
   abortSignal: AbortSignal;
   onAdopted: () => Promise<void>;
   onDeferred: () => boolean | void;
@@ -77,6 +79,7 @@ function createInboundDebounceFlush(params: {
   };
   const source = params.lifecycle;
   const lifecycle: InboundDebounceAdmissionLifecycle = {
+    retryAbandonedInput: source?.retryAbandonedInput,
     abortSignal: source?.abortSignal ?? new AbortController().signal,
     onAdopted: async () => {
       await source?.onAdopted?.();

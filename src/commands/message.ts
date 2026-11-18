@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import path from "node:path";
 import { parseStrictPositiveInteger } from "@openclaw/normalization-core/number-coercion";
 import {
   normalizeLowercaseStringOrEmpty,
@@ -13,10 +15,13 @@ import { resolveCommandConfigWithSecrets } from "../cli/command-config-resolutio
 import { formatCliCommand } from "../cli/command-format.js";
 import { getScopedChannelsCommandSecretTargets } from "../cli/command-secret-targets.js";
 import { formatCliJsonFailure } from "../cli/failure-output.js";
+import { runWithLocalStateOwner, type OwnerRequest } from "../cli/local-state-owner.js";
 import { resolveMessageSecretScope } from "../cli/message-secret-scope.js";
 import { createOutboundSendDeps, type CliDeps } from "../cli/outbound-send-deps.js";
 import { withProgress } from "../cli/progress.js";
 import { captureRuntimeConfigAsyncReader } from "../config/config.js";
+import { resolveLeastPrivilegeOperatorScopesForMethod } from "../gateway/method-scopes.js";
+import { resolveMessageChannelSelection } from "../infra/outbound/channel-selection.js";
 import type { OutboundSendDeps } from "../infra/outbound/deliver.js";
 import {
   resolveMessageBroadcastAccountPlan,
@@ -25,12 +30,44 @@ import {
 import {
   resolveMessageActionMessageId,
   resolveMessageActionOutcome,
+  type MessageActionInput,
+  type MessageActionResult,
 } from "../infra/outbound/message-action-contracts.js";
 import { runMessageAction } from "../infra/outbound/message-action-runner.js";
 import { type RuntimeEnv, writeRuntimeJson } from "../runtime.js";
 import { prepareTemplateInstallSchemaVersions } from "../templates/provenance-runtime-read.js";
 import { collectTemplateToolPolicyCandidates } from "../templates/tool-policy-candidates.js";
 import { prepareCapturedTemplateToolPolicyConsent } from "../templates/tool-policy-runtime.js";
+
+async function requestOwnerSend(request: OwnerRequest, input: MessageActionInput) {
+  const channel =
+    normalizeOptionalString(input.params.channel) ??
+    (await resolveMessageChannelSelection({ cfg: input.cfg, agentId: input.agentId })).channel;
+  return request<MessageActionResult>("message.action", {
+    channel,
+    action: "send",
+    gatewayOwnsSend: true,
+    params: {
+      ...input.params,
+      ...(Array.isArray(input.params.mediaUrls)
+        ? {
+            mediaUrls: input.params.mediaUrls.map((source) =>
+              typeof source === "string" &&
+              source.trim() &&
+              !/^(?:[A-Za-z][A-Za-z0-9+.-]*:|~)/.test(source)
+                ? path.resolve(source)
+                : source,
+            ),
+          }
+        : {}),
+    },
+    accountId: normalizeOptionalString(input.params.accountId),
+    agentId: input.agentId,
+    senderIsOwner: input.senderIsOwner,
+    conversationReadOrigin: "direct-operator",
+    idempotencyKey: normalizeOptionalString(input.params.idempotencyKey) ?? randomUUID(),
+  });
+}
 
 export async function messageCommand(
   opts: Record<string, unknown>,
@@ -94,31 +131,62 @@ export async function messageCommand(
       )}. Example: ${formatCliCommand("openclaw message send --channel <channel> --target <id> --text <message>")}.`,
     );
   }
-  // The CLI pins config synchronously; media policy resolution also needs the
-  // consent facts that Gateway startup normally prepares for this config.
-  if (collectTemplateToolPolicyCandidates(cfg).length > 0) {
-    (await prepareTemplateInstallSchemaVersions({ artifactPreservingReadOnly: false })).publish();
-    prepareCapturedTemplateToolPolicyConsent(cfg, {});
-  }
   const outboundDeps: OutboundSendDeps = createOutboundSendDeps(deps);
 
   // Keep the gateway client identity explicit so channel plugins can distinguish
   // CLI-originated owner actions from background gateway work.
-  const run = async () =>
-    await runMessageAction({
-      cfg,
-      action,
-      params: opts,
-      deps: outboundDeps,
-      agentId,
-      senderIsOwner: opts.senderIsOwner !== false,
-      conversationReadOrigin: "direct-operator",
-      broadcastAccountPlan,
-      gateway: {
-        clientName: GATEWAY_CLIENT_NAMES.CLI,
-        mode: GATEWAY_CLIENT_MODES.CLI,
+  const input: MessageActionInput = {
+    cfg,
+    action,
+    params: opts,
+    deps: outboundDeps,
+    agentId,
+    senderIsOwner: opts.senderIsOwner !== false,
+    conversationReadOrigin: "direct-operator",
+    broadcastAccountPlan,
+    gateway: {
+      clientName: GATEWAY_CLIENT_NAMES.CLI,
+      mode: GATEWAY_CLIENT_MODES.CLI,
+    },
+  };
+  const runLocalAction = async (localInput: MessageActionInput) => {
+    // Offline delivery and previews prepare media-policy consent here. A running Gateway
+    // already owns this state and prepared its policy at startup.
+    if (collectTemplateToolPolicyCandidates(cfg).length > 0) {
+      (await prepareTemplateInstallSchemaVersions({ artifactPreservingReadOnly: false })).publish();
+      prepareCapturedTemplateToolPolicyConsent(cfg, {});
+    }
+    return runMessageAction(localInput);
+  };
+  const run = async () => {
+    if (opts.dryRun === true || (action !== "send" && action !== "broadcast")) {
+      return runLocalAction(input);
+    }
+    return runWithLocalStateOwner<MessageActionResult>({
+      method: "message.action",
+      target: `message ${action}`,
+      params: {},
+      databaseEngine: "configured",
+      scopes: resolveLeastPrivilegeOperatorScopesForMethod("message.action", { action: "send" }),
+      runLocal: ({ assertCurrent, signal }) =>
+        runLocalAction({
+          ...input,
+          abortSignal: signal,
+          assertDirectAdapterHandoff: assertCurrent,
+        }),
+      onForeignOwner: ({ requestOwner, assertCurrent, signal }) => {
+        const dispatchSend = (send: MessageActionInput) => requestOwnerSend(requestOwner, send);
+        return action === "send"
+          ? dispatchSend(input)
+          : runMessageAction({
+              ...input,
+              dispatchBroadcastSend: dispatchSend,
+              abortSignal: signal,
+              assertDirectAdapterHandoff: assertCurrent,
+            });
       },
     });
+  };
 
   const json = opts.json === true;
   const dryRun = opts.dryRun === true;
