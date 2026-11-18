@@ -210,6 +210,7 @@ jobs:
   publish-runtime:
     name: Publish Linux ARM64 artifact
     needs: build-runtime
+    if: ${{ !cancelled() && needs.build-runtime.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
