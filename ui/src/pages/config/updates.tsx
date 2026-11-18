@@ -41,6 +41,7 @@ import { formatUiError } from "../../lib/format-error.ts";
 import { formatDateTimeMs, formatTimeAgo } from "../../lib/format.ts";
 import { projectNativeDeviceSettings } from "../../lib/reactive/application-native.ts";
 import { getLocale, registerEnglishCatalog, t } from "../../lib/reactive/i18n.ts";
+import { AtlasOfficialReleaseRow } from "./updates-atlas-release.tsx";
 import { RecordedAttempt } from "./updates-recorded-attempt.tsx";
 import { UpdatesStatus } from "./updates-status.tsx";
 import {
@@ -352,16 +353,18 @@ function GatewayUpdates(props: UpdatesViewProps) {
     );
   };
   const runTarget = () => run()?.target.sha ?? run()?.target.version ?? run()?.target.tag;
+  const atlasSource = () => props.update.updateSchedule?.atlasSource;
   const settings = () => {
     const configObject = props.configObject;
     const schedule = props.update.updateSchedule;
     const update = asConfigRecord(configObject.update);
     const auto = asConfigRecord(update?.auto);
     // Authored policy wins; a configless package install resolves its channel at the Gateway.
-    const channel =
-      UPDATES_CHANNELS.find((candidate) => candidate === update?.channel) ??
-      UPDATES_CHANNELS.find((candidate) => candidate === schedule?.channel) ??
-      "stable";
+    const channel = atlasSource()
+      ? "dev"
+      : (UPDATES_CHANNELS.find((candidate) => candidate === update?.channel) ??
+        UPDATES_CHANNELS.find((candidate) => candidate === schedule?.channel) ??
+        "stable");
     return {
       channel,
       autoEnabled:
@@ -435,20 +438,35 @@ function GatewayUpdates(props: UpdatesViewProps) {
         onUpdateNow={updateNow}
       />
       <SettingsSection title={t("updates.page.policyTitle")}>
-        <SettingsRow
-          title={t("updates.page.channel")}
-          description={t("updates.page.channelDescription")}
-          stacked
-          control={
-            <SettingsSegmented
-              value={settings().channel}
-              options={channelOptions()}
-              ariaLabel={t("updates.page.channel")}
-              disabled={props.configBusy}
-              onChange={props.onChannelChange}
+        <Show
+          when={!atlasSource()}
+          fallback={
+            <SettingsRow
+              title={t("updates.atlasSource")}
+              description={t("updates.atlasSourceHint")}
+              control={
+                <SettingsValue
+                  value={`${atlasSource()?.repositoryUrl} · ${atlasSource()?.branch}`}
+                />
+              }
             />
           }
-        />
+        >
+          <SettingsRow
+            title={t("updates.page.channel")}
+            description={t("updates.page.channelDescription")}
+            stacked
+            control={
+              <SettingsSegmented
+                value={settings().channel}
+                options={channelOptions()}
+                ariaLabel={t("updates.page.channel")}
+                disabled={props.configBusy}
+                onChange={props.onChannelChange}
+              />
+            }
+          />
+        </Show>
         <SettingsToggleRow
           title={t("updates.page.checkForUpdates")}
           description={t("updates.page.checkForUpdatesDescription")}
@@ -475,6 +493,11 @@ function GatewayUpdates(props: UpdatesViewProps) {
         />
       </SettingsSection>
       <SettingsSection title={t("updates.page.statusTitle")}>
+        <AtlasOfficialReleaseRow
+          official={props.update.updateSchedule?.officialRelease}
+          sync={props.atlasSync}
+          updateBusy={props.updateBusy}
+        />
         <SettingsRow
           title={t("updates.page.scheduleStatus")}
           description={
@@ -608,20 +631,23 @@ function GatewayUpdates(props: UpdatesViewProps) {
         <SettingsRow
           title={t("updates.page.updateNow")}
           description={t(
-            formatUpdateTargetLabel(props.update.updateSchedule, props.update.updateAvailable)
-              ? "updates.page.updateNowDescription"
-              : "updates.page.noKnownUpdateDescription",
+            props.atlasSync
+              ? "updates.atlasSync.installHint"
+              : formatUpdateTargetLabel(props.update.updateSchedule, props.update.updateAvailable)
+                ? "updates.page.updateNowDescription"
+                : "updates.page.noKnownUpdateDescription",
           )}
           control={
             <button
               type="button"
-              class="btn"
+              class={["btn", { primary: Boolean(atlasSource()) }]}
               title={updateButtonTitle()}
               disabled={
                 confirming() ||
                 props.updateBusy ||
                 props.update.updateStatusRefreshing ||
                 !props.canUpdate ||
+                props.atlasSync?.awaitingPackage ||
                 checkRequired()
               }
               onClick={() => void updateNow()}

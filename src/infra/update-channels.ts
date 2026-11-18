@@ -1,5 +1,6 @@
 import { normalizeOptionalLowercaseString } from "@openclaw/normalization-core/string-coerce";
 import { parse as parseSemver, type SemVer } from "semver";
+import type { AtlasUpdateSource } from "./atlas-update-source.js";
 import { compareOpenClawReleaseVersions } from "./npm-registry-spec.js";
 import { compareValidSemver, normalizeLegacyDotBetaVersion } from "./semver.js";
 import type { UpdateInstallKind } from "./update-install-kind.js";
@@ -121,11 +122,15 @@ export function resolveRegistryUpdateChannel(params: {
 
 /** Resolves the effective channel and the signal that selected it. */
 export function resolveEffectiveUpdateChannel(params: {
+  atlasUpdateSource?: AtlasUpdateSource | null;
   configChannel?: UpdateChannel | null;
   currentVersion?: string | null;
   installKind: UpdateInstallKind;
   git?: { tag?: string | null; branch?: string | null };
 }): { channel: UpdateChannel; source: UpdateChannelSource } {
+  if (params.atlasUpdateSource) {
+    return { channel: "dev", source: "default" };
+  }
   // A one-off package tag does not replace the operator's saved update policy.
   if (params.configChannel) {
     return { channel: params.configChannel, source: "config" };
@@ -168,6 +173,7 @@ export function resolveEffectiveUpdateChannel(params: {
 
 /** Resolves channel metadata plus display label for status and update UIs. */
 export function resolveUpdateChannelDisplay(params: {
+  atlasUpdateSource?: AtlasUpdateSource | null;
   configChannel?: UpdateChannel | null;
   currentVersion?: string | null;
   installKind: UpdateInstallKind;
@@ -175,6 +181,7 @@ export function resolveUpdateChannelDisplay(params: {
   gitBranch?: string | null;
 }): { channel: UpdateChannel; source: UpdateChannelSource; label: string } {
   const channelInfo = resolveEffectiveUpdateChannel({
+    atlasUpdateSource: params.atlasUpdateSource,
     configChannel: params.configChannel,
     currentVersion: params.currentVersion,
     installKind: params.installKind,
@@ -193,6 +200,8 @@ export function resolveUpdateChannelDisplay(params: {
           : channelInfo.source;
   return {
     ...channelInfo,
-    label: `${channelInfo.channel} (${sourceLabel})`,
+    label: params.atlasUpdateSource
+      ? `Atlas (${params.atlasUpdateSource.repositoryUrl} ${params.atlasUpdateSource.branch})`
+      : `${channelInfo.channel} (${sourceLabel})`,
   };
 }

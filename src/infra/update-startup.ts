@@ -84,8 +84,7 @@ export async function getUpdateEffectiveChannel(): Promise<UpdateChannel> {
   const { status } = await initializeGatewayUpdateStatus();
   return resolveEffectiveUpdateChannel({
     currentVersion: VERSION,
-    installKind: status.installKind,
-    git: status.git,
+    ...status,
   }).channel;
 }
 

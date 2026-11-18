@@ -9,11 +9,31 @@ export type UpdatesCommandPresentation = {
   isCurrent: () => boolean;
 };
 
+export type AtlasSyncControl = {
+  busy: boolean;
+  canStart: boolean;
+  awaitingPackage?: boolean;
+  state?:
+    | "running"
+    | "published"
+    | "unpublished"
+    | "conflict"
+    | "testsFailed"
+    | "buildFailed"
+    | "publishFailed"
+    | "failed";
+  version?: string;
+  detail?: string;
+  runUrl?: string;
+  start: () => void;
+};
+
 export type UpdatesViewProps = {
   update: ApplicationUpdateOverlaySnapshot;
   statusRead: Promise<boolean> | null;
   commandScope?: object;
   captureCommandPresentation: () => UpdatesCommandPresentation;
+  atlasSync?: AtlasSyncControl;
   nativeDeviceSettings?: NativeDeviceSettingsCapability | null;
   configObject: Record<string, unknown>;
   gatewayVersion: string | null;

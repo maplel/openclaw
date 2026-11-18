@@ -32,6 +32,14 @@ export function createGitStepFactory(root: string, step: StepFactory) {
   return (name: string, ...args: string[]) => step(name, ["git", "-C", root, ...args], root);
 }
 
+export async function readGitHead(root: string, runCommand: CommandRunner, timeoutMs: number) {
+  const result = await runCommand(["git", "-C", root, "rev-parse", "HEAD"], {
+    cwd: root,
+    timeoutMs,
+  });
+  return result.code === 0 ? result.stdout.trim() || null : null;
+}
+
 export function resolveTagFetchRef(candidate: string): string | null {
   const ref = candidate.endsWith("^{}") ? candidate.slice(0, -"^{}".length) : candidate;
   return ref.startsWith("refs/tags/") ? ref : null;

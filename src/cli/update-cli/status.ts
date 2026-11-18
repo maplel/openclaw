@@ -261,6 +261,7 @@ async function inspectUpdateStatus(
   const git = update.git;
   const currentSha = git?.sha;
   const preferredTarget =
+    !update.atlasUpdateSource &&
     update.installKind === "git" &&
     git &&
     currentSha &&
@@ -283,6 +284,7 @@ async function inspectUpdateStatus(
       : undefined;
 
   const channelInfo = resolveUpdateChannelDisplay({
+    atlasUpdateSource: update.atlasUpdateSource,
     configChannel,
     currentVersion: VERSION,
     installKind: update.installKind,

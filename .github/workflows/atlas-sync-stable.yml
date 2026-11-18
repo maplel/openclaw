@@ -1,0 +1,341 @@
+name: Sync Atlas with OpenClaw stable
+run-name: >-
+  ${{ github.event_name == 'pull_request'
+      && format('Verify Atlas PR #{0}', github.event.pull_request.number)
+      || format('Atlas sync {0}', inputs.version) }}
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Official stable version shown in Atlas
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('atlas-verify-pr-{0}', github.event.pull_request.number) || 'atlas-sync-stable-main' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    name: Prepare pull request
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'maplel/openclaw' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      head: ${{ steps.candidate.outputs.head }}
+      base: ${{ steps.candidate.outputs.base }}
+      current: ${{ steps.candidate.outputs.current }}
+      pr: ${{ steps.pr.outputs.number }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Assemble candidate
+        id: candidate
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          tag="v$VERSION"
+          git fetch --no-tags https://github.com/openclaw/openclaw.git "refs/tags/$tag"
+          upstream="$(git rev-parse 'FETCH_HEAD^{commit}')"
+          base="$(git rev-parse HEAD)"
+          if git merge-base --is-ancestor "$upstream" "$base"; then
+            echo 'Atlas already contains this official release.' >> "$GITHUB_STEP_SUMMARY"
+            echo "current=$base" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if ! git -c core.hooksPath=/dev/null merge --no-ff --no-commit "$upstream"; then
+            if test -n "$(git diff --name-only --diff-filter=U)"; then
+              {
+                echo "Merge conflicts with $tag:"
+                echo '~~~'
+                git -c core.quotePath=true diff --name-only --diff-filter=U
+                echo '~~~'
+              } >> "$GITHUB_STEP_SUMMARY"
+              echo 'conflict=true' >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            exit 1
+          fi
+          git -c core.hooksPath=/dev/null commit -m "chore(atlas): sync OpenClaw $tag"
+          echo "head=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+      - name: Report merge conflict
+        if: steps.candidate.outputs.conflict == 'true'
+        run: |
+          echo '::error::Git reported merge conflicts. See the workflow summary for affected files.'
+          exit 1
+      - name: Open pull request
+        if: steps.candidate.outputs.head != ''
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.ATLAS_SYNC_REPOSITORY_TOKEN }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          branch="atlas-sync/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          gh auth setup-git --hostname github.com
+          git -c core.hooksPath=/dev/null push origin "HEAD:refs/heads/$branch"
+          url="$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" \
+            --title "chore(atlas): sync OpenClaw v$VERSION" \
+            --body "Official stable sync. Verification: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID")"
+          number="${url##*/}"
+          [[ "$number" =~ ^[0-9]+$ ]]
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+          echo "[Pull request #$number]($url)" >> "$GITHUB_STEP_SUMMARY"
+
+  verify:
+    name: Verify candidate
+    needs: prepare
+    if: >-
+      ${{ !cancelled() && github.repository == 'maplel/openclaw' &&
+          ((github.event_name == 'pull_request' &&
+            github.event.pull_request.head.repo.full_name == github.repository &&
+            startsWith(github.event.pull_request.head.ref, 'atlas-sync/manual-')) ||
+           (github.event_name == 'workflow_dispatch' && needs.prepare.result == 'success' &&
+            needs.prepare.outputs.head != '')) }}
+    runs-on: ubuntu-24.04-arm
+    env:
+      ATLAS_COMMIT: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || needs.prepare.outputs.head }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.ATLAS_COMMIT }}
+          persist-credentials: false
+      - name: Verify candidate checkout
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$ATLAS_COMMIT"
+          printf 'Candidate commit: `%s`\n' "$actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.22.1"
+      - name: Install locked dependencies
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+      - name: Verify Atlas patches
+        run: |
+          node -e 'const s = require("./package.json").openclaw?.atlasUpdateSource; if (s?.repositoryUrl !== "https://github.com/maplel/openclaw" || s.branch !== "main") process.exit(1)'
+          pnpm test src/agents/tool-schema-hints.test.ts src/infra/atlas-official-release.test.ts src/infra/atlas-update-discovery.test.ts src/infra/atlas-update-source.test.ts src/infra/atlas-arm64-release.test.ts src/gateway/server-methods/update-atlas-sync.test.ts ui/src/pages/config/updates-atlas.test.ts
+          pnpm test src/infra/update-runner-git.test.ts -t "updates Atlas from its own main|preserves Atlas when the exact ARM64 package is unavailable"
+      - name: Typecheck Atlas core and Control UI
+        if: github.event_name == 'pull_request'
+        run: |
+          pnpm gateway:validators:check
+          pnpm tsgo:core
+          pnpm tsgo:ui
+      - name: Build Atlas
+        run: pnpm build:ci-artifacts
+      - name: Verify relocatable Linux ARM64 artifact before merge
+        run: |
+          set -euo pipefail
+          df -h . "$RUNNER_TEMP"
+          du -sh --apparent-size --count-links dist dist-runtime node_modules
+          verification_dir="$(mktemp -d "$RUNNER_TEMP/atlas-verification-XXXXXX")"
+          archive="$verification_dir/atlas-linux-arm64.tar.gz"
+          trap 'rm -f -- "$archive"; rmdir -- "$verification_dir"; df -h . "$RUNNER_TEMP"' EXIT
+          node scripts/atlas-pack-arm64.mjs "$archive"
+          du -h "$archive"
+
+  land:
+    name: Merge pull request
+    needs: [prepare, verify]
+    if: github.event_name == 'workflow_dispatch' && needs.verify.result == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.merge.outputs.sha }}
+    steps:
+      - name: Merge verified PR into main
+        id: merge
+        env:
+          GH_TOKEN: ${{ secrets.ATLAS_SYNC_REPOSITORY_TOKEN }}
+          PR: ${{ needs.prepare.outputs.pr }}
+          BASE: ${{ needs.prepare.outputs.base }}
+          HEAD: ${{ needs.prepare.outputs.head }}
+        run: |
+          set -euo pipefail
+          current="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)"
+          if [[ "$current" != "$BASE" ]]; then
+            echo '::error::Atlas main moved during verification. Run sync again against the new main.'
+            exit 1
+          fi
+          merged="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR/merge" --method PUT \
+            -f sha="$HEAD" -f merge_method=merge | jq -er 'select(.merged == true).sha')"
+          [[ "$merged" =~ ^[0-9a-f]{40}$ ]]
+          echo "sha=$merged" >> "$GITHUB_OUTPUT"
+
+  build-runtime:
+    name: Build Linux ARM64 artifact
+    needs: [prepare, land]
+    if: >-
+      ${{ !cancelled() && github.event_name == 'workflow_dispatch' && needs.prepare.result == 'success' &&
+          (needs.land.result == 'success' || needs.prepare.outputs.current != '') }}
+    runs-on: ubuntu-24.04-arm
+    outputs:
+      sha: ${{ steps.pack.outputs.sha }}
+      digest: ${{ steps.pack.outputs.digest }}
+      artifact: ${{ steps.upload.outputs.artifact-id }}
+    env:
+      ATLAS_COMMIT: ${{ needs.land.outputs.sha || needs.prepare.outputs.current }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.ATLAS_COMMIT }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.22.1"
+      - name: Install locked dependencies
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+      - name: Verify Atlas patches on the exact source
+        run: |
+          node -e 'const s = require("./package.json").openclaw?.atlasUpdateSource; if (s?.repositoryUrl !== "https://github.com/maplel/openclaw" || s.branch !== "main") process.exit(1)'
+          pnpm test src/agents/tool-schema-hints.test.ts src/infra/atlas-official-release.test.ts src/infra/atlas-update-discovery.test.ts src/infra/atlas-update-source.test.ts src/infra/atlas-arm64-release.test.ts src/gateway/server-methods/update-atlas-sync.test.ts ui/src/pages/config/updates-atlas.test.ts
+          pnpm test src/infra/update-runner-git.test.ts -t "updates Atlas from its own main|preserves Atlas when the exact ARM64 package is unavailable"
+      - name: Build Atlas
+        run: pnpm build:ci-artifacts
+      - name: Pack and validate the runtime
+        id: pack
+        run: |
+          set -euo pipefail
+          [[ "$ATLAS_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$(git rev-parse HEAD)" == "$ATLAS_COMMIT" ]]
+          archive="$RUNNER_TEMP/atlas-linux-arm64.tar.gz"
+          df -h . "$RUNNER_TEMP"
+          du -sh --apparent-size --count-links dist dist-runtime node_modules
+          trap 'df -h . "$RUNNER_TEMP"' EXIT
+          node scripts/atlas-pack-arm64.mjs "$archive"
+          du -h "$archive"
+          digest="$(sha256sum "$archive" | cut -d ' ' -f 1)"
+          echo "sha=$ATLAS_COMMIT" >> "$GITHUB_OUTPUT"
+          echo "digest=sha256:$digest" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        id: upload
+        with:
+          name: atlas-linux-arm64-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/atlas-linux-arm64.tar.gz
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-runtime:
+    name: Publish Linux ARM64 artifact
+    needs: build-runtime
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && needs.build-runtime.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          artifact-ids: ${{ needs.build-runtime.outputs.artifact }}
+          path: ${{ runner.temp }}/atlas-release
+          merge-multiple: true
+      - name: Publish and verify the commit-specific release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ATLAS_COMMIT: ${{ needs.build-runtime.outputs.sha }}
+          EXPECTED_DIGEST: ${{ needs.build-runtime.outputs.digest }}
+        run: |
+          set -euo pipefail
+          [[ "$ATLAS_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$EXPECTED_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          asset=atlas-linux-arm64.tar.gz
+          archive="$RUNNER_TEMP/atlas-release/$asset"
+          [[ "sha256:$(sha256sum "$archive" | cut -d ' ' -f 1)" == "$EXPECTED_DIGEST" ]]
+          tag="atlas-linux-arm64-$ATLAS_COMMIT"
+          ref="refs/tags/$tag"
+          repo="repos/$GITHUB_REPOSITORY"
+          release_header="Atlas Linux ARM64 runtime for $ATLAS_COMMIT"
+          notes="$(printf '%s\n\nDigest: %s' "$release_header" "$EXPECTED_DIGEST")"
+          api() {
+            gh api -H 'X-GitHub-Api-Version: 2026-03-10' "$@"
+          }
+          read_tag() {
+            api "$repo/git/matching-refs/tags/$tag" \
+              | jq -c --arg ref "$ref" '[.[] | select(.ref == $ref)] | .[0] // null'
+          }
+          verify_tag() {
+            jq -e --arg sha "$ATLAS_COMMIT" \
+              '.object.type == "commit" and .object.sha == $sha' <<<"$1" >/dev/null
+          }
+          tag_record="$(read_tag)"
+          if [[ "$tag_record" != null ]] && ! verify_tag "$tag_record"; then
+            echo "::error::Existing Atlas release tag $tag has a different target."
+            exit 1
+          fi
+
+          # The by-tag endpoint only guarantees published releases. Include drafts
+          # so reruns can continue an interrupted upload without overwriting assets.
+          release="$(api --paginate "$repo/releases?per_page=100" | jq -cs --arg tag "$tag" '
+            [.[][] | select(.tag_name == $tag)]
+            | if length > 1 then error("duplicate Atlas release tag") else .[0] // null end
+          ')"
+          if [[ "$release" == null ]]; then
+            release="$(api --method POST "$repo/releases" -f tag_name="$tag" \
+              -f target_commitish="$ATLAS_COMMIT" -f name="$release_header" -f body="$notes" \
+              -F draft=true -f make_latest=false)"
+          fi
+          if ! jq -e --arg sha "$ATLAS_COMMIT" --arg tag "$tag" \
+            '.target_commitish == $sha and .tag_name == $tag' <<<"$release" >/dev/null; then
+            echo "::error::Existing Atlas release $tag has different source metadata."
+            exit 1
+          fi
+
+          id="$(jq -er '.id | select(type == "number")' <<<"$release")"
+          if ! recorded_digest="$(jq -er --arg header "$release_header" '
+            .body | split("\n\nDigest: ") | select(length == 2 and .[0] == $header)
+            | .[1] | select(test("^sha256:[0-9a-f]{64}$"))
+          ' <<<"$release")"; then
+            echo "::error::Existing Atlas release $tag lacks its source and digest receipt."
+            exit 1
+          fi
+          verify_asset() {
+            jq -e --arg asset "$asset" --arg digest "$recorded_digest" '
+              .assets | length == 1 and .[0].name == $asset and
+              .[0].state == "uploaded" and .[0].digest == $digest and .[0].size > 0
+            ' <<<"$1" >/dev/null
+          }
+          if jq -e '.draft == true and (.assets | length == 0)' <<<"$release" >/dev/null; then
+            if [[ "$recorded_digest" != "$EXPECTED_DIGEST" ]]; then
+              api --method PATCH "$repo/releases/$id" -f body="$notes" >/dev/null
+              recorded_digest="$EXPECTED_DIGEST"
+            fi
+            gh release upload "$tag" "$archive" --repo "$GITHUB_REPOSITORY"
+            release="$(api "$repo/releases/$id")"
+          fi
+          if ! verify_asset "$release"; then
+            echo "::error::Existing asset for $tag is missing or its digest differs from the release receipt."
+            exit 1
+          fi
+          if jq -e '.draft == true' <<<"$release" >/dev/null; then
+            # Draft creation may not publish its tag. Pin it before publication.
+            tag_record="$(read_tag)"
+            if [[ "$tag_record" == null ]]; then
+              api --method POST "$repo/git/refs" -f ref="$ref" -f sha="$ATLAS_COMMIT" >/dev/null
+            fi
+            verify_tag "$(read_tag)"
+            api --method PATCH "$repo/releases/$id" -F draft=false -f make_latest=false >/dev/null
+          fi
+          release="$(api "$repo/releases/tags/$tag")"
+          jq -e --arg sha "$ATLAS_COMMIT" --arg tag "$tag" \
+            '.draft == false and .target_commitish == $sha and .tag_name == $tag' \
+            <<<"$release" >/dev/null
+          verify_tag "$(read_tag)"
+          verify_asset "$release"
+          printf '[Verified ARM64 runtime](%s/%s/releases/tag/%s) · `%s`\n' \
+            "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$tag" "$recorded_digest" >> "$GITHUB_STEP_SUMMARY"

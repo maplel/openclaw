@@ -1,4 +1,7 @@
-import type { SessionApprovalEvent } from "../../../packages/gateway-protocol/src/index.js";
+import type {
+  SessionApprovalEvent,
+  UpdateRunParams,
+} from "../../../packages/gateway-protocol/src/index.js";
 import type { UpdateRunRecord } from "../../../src/infra/update-run-record.js";
 import type { GatewayBrowserClient } from "../api/gateway.ts";
 import type { UpdateAvailable, UpdateScheduleState } from "../api/types.ts";
@@ -53,7 +56,7 @@ export type ApplicationOverlays = {
   refreshUpdateStatus: ReturnType<typeof createUpdateStatusRefresher>;
   acknowledgeUpdateRun: () => void;
   captureUpdateTarget: () => () => boolean;
-  runUpdate: () => Promise<void>;
+  runUpdate: (target?: UpdateRunParams["target"]) => Promise<void>;
   holdUpdate: () => Promise<boolean>;
   diagnoseUpdateFailure: (attemptId: string) => void;
   reportUpdateFailure: (attemptId: string) => Promise<void>;

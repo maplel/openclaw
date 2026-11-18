@@ -1,7 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { UpdateImmutableInstall } from "../../packages/gateway-protocol/src/schema/config.js";
+import type {
+  UpdateImmutableInstall,
+  UpdateScheduleState,
+} from "../../packages/gateway-protocol/src/schema/config.js";
 import { runCommandWithTimeout } from "../process/exec.js";
+import { readAtlasUpdateSource, type AtlasUpdateSource } from "./atlas-update-source.js";
 import { detectPackageManager } from "./detect-package-manager.js";
 import { isMissingPathError } from "./errno.js";
 import { createGitCommandError, executeGitCommand } from "./git-exec.js";
@@ -110,6 +114,8 @@ type NpmTagStatus = {
 };
 
 export type UpdateCheckResult = {
+  atlasUpdateSource?: AtlasUpdateSource;
+  officialRelease?: UpdateScheduleState["officialRelease"];
   root: string | null;
   installKind: UpdateInstallKind;
   immutable?: UpdateImmutableInstall;
@@ -381,8 +387,10 @@ async function checkGitUpdateStatus(params: {
   if (error) {
     return { ...base, error };
   }
-  const trackingBranch =
-    branch === "HEAD"
+  const atlasUpdateSource = await readAtlasUpdateSource(root);
+  const trackingBranch = atlasUpdateSource
+    ? DEV_BRANCH
+    : branch === "HEAD"
       ? params.useDetachedDevUpstream || params.gitSourceHint?.upstreamRef
         ? DEV_BRANCH
         : null
@@ -438,8 +446,9 @@ async function checkGitUpdateStatus(params: {
     fetchTarget && trackingBranch
       ? await resolveGitUpdateTrackingRef(readGit, trackingBranch, fetchTarget)
       : null;
-  const upstream =
-    fetchTarget?.upstreamSource === "receipt"
+  const upstream = atlasUpdateSource
+    ? trackingRevision
+    : fetchTarget?.upstreamSource === "receipt"
       ? params.gitSourceHint?.upstreamRef?.trim() || null
       : trackingRevision
         ? await readGit("rev-parse", "--abbrev-ref", "--symbolic-full-name", trackingRevision)
@@ -649,6 +658,7 @@ export async function checkUpdateStatus(params: {
     timeoutMs: params.timeoutMs,
     onGitProbeTimeout: params.onGitProbeTimeout,
   });
+  const atlasUpdateSource = (await readAtlasUpdateSource(root)) ?? undefined;
   if (installKind === "host") {
     return { root, installKind, installOwner, packageManager: "unknown" };
   }
@@ -732,6 +742,7 @@ export async function checkUpdateStatus(params: {
   return {
     root,
     installKind,
+    ...(atlasUpdateSource ? { atlasUpdateSource } : {}),
     packageManager,
     git,
     deps,

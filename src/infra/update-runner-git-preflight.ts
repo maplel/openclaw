@@ -4,6 +4,10 @@ import { fileURLToPath } from "node:url";
 import { normalizeNullableString } from "@openclaw/normalization-core/string-coerce";
 import { normalizeStringEntries } from "@openclaw/normalization-core/string-normalization";
 import { hasCommandProcessCleanupError } from "../process/exec-result.js";
+import {
+  prepareAtlasArm64Candidate,
+  verifyAtlasArm64FastForward,
+} from "./atlas-arm64-preflight.js";
 import { resolveControlUiAssetHealth } from "./control-ui-assets.js";
 import { hasErrnoCode, ignoreMissingPath } from "./errno.js";
 import { formatErrorMessage } from "./errors.js";
@@ -28,6 +32,7 @@ import {
   createPreflightRoot,
   gitCleanCheckArgs,
   prepareCandidateCommandEnv,
+  readGitHead,
   resolveBuildEnv,
   resolveDevPreflightLintEnv,
   resolveTagFetchRef,
@@ -128,7 +133,13 @@ async function resolveExplicitTarget(params: {
 type PreflightCandidateResult =
   | { status: "ok"; candidateSha: string }
   | { status: "manager-unavailable"; reason: string }
-  | { status: "failed" | "insufficient-space" | "node-runtime-incompatible" };
+  | {
+      status:
+        | "failed"
+        | "insufficient-space"
+        | "node-runtime-incompatible"
+        | "atlas-artifact-failed";
+    };
 
 async function testPreflightCandidate(
   params: Parameters<typeof runGitCandidatePreflight>[0] & {
@@ -192,17 +203,10 @@ async function testPreflightCandidate(
       return { status: classifyPreflightFailure(rebase) };
     }
   }
-  const candidateHead = await params.runCommand(
-    ["git", "-C", params.worktreeDir, "rev-parse", "HEAD"],
-    {
-      cwd: params.worktreeDir,
-      timeoutMs: params.timeoutMs,
-    },
-  );
-  if (candidateHead.code !== 0 || !candidateHead.stdout.trim()) {
+  const candidateSha = await readGitHead(params.worktreeDir, params.runCommand, params.timeoutMs);
+  if (!candidateSha) {
     return { status: "failed" };
   }
-  const candidateSha = candidateHead.stdout.trim();
   // A local rebase can change package metadata from the fetched base revision.
   await params.beforeCandidate(candidateSha);
   await params.referenceSource?.copyBuildInputs(params.worktreeDir);
@@ -219,6 +223,65 @@ async function testPreflightCandidate(
   if (nodeRuntime.step) {
     params.steps.push(nodeRuntime.step);
     return { status: "node-runtime-incompatible" };
+  }
+  async function validateStagedRuntime(
+    env: NodeJS.ProcessEnv | undefined,
+    restoreWorkspace?: () => Promise<void>,
+  ): Promise<PreflightCandidateResult> {
+    // Global source exposure can run package lifecycle scripts. Validate and retain
+    // the resulting candidate only after that preparation finishes.
+    if (params.prepareGitExposure) {
+      await params.prepareGitExposure(params.worktreeDir, candidateSha, env);
+      // Exposure can run another install. Its final topology owns the
+      // packaged plugin dependency links rather than the earlier build graph.
+      const metadataScript = fileURLToPath(
+        resolveExternalPackageRuntimeEntrypointUrl("sourcePluginMetadata", params.worktreeDir),
+      );
+      if ((await fs.stat(metadataScript).catch(ignoreMissingPath))?.isFile()) {
+        const relink = await runCandidateCheck(
+          "bundled-plugin-dependency-links",
+          ["node", metadataScript],
+          env,
+        );
+        if (relink) {
+          return { status: classifyPreflightFailure(relink) };
+        }
+      }
+    }
+    await restoreWorkspace?.();
+    params.steps.push(...((await params.validateCandidate(params.worktreeDir)) ?? []));
+    // Activation checks out candidateSha and promotes only generated runtime paths.
+    // Check after repair so validated source edits cannot disappear at activation.
+    const { result: cleanCheck } = await runGitCleanCheckStep(
+      params.step(
+        "preflight-update-clean-check",
+        params.referenceSource
+          ? ["git", "-C", params.worktreeDir, "status", "--porcelain", "--untracked-files=no"]
+          : gitCleanCheckArgs(params.worktreeDir),
+        params.worktreeDir,
+      ),
+    );
+    if (isFailedUpdateStep(cleanCheck)) {
+      return { status: "failed" };
+    }
+    const sourceCheck = await runCandidateCheck(
+      "update-source-check",
+      ["git", "-C", params.worktreeDir, "diff", "--quiet", candidateSha, "--"],
+      undefined,
+      params.step,
+    );
+    if (sourceCheck) {
+      sourceCheck.stderrTail =
+        "Update source differs from the selected commit. Repair the source revision before retrying the update.";
+      return { status: "failed" };
+    }
+    await params.prepareCandidate?.(params.worktreeDir, params.preflightRoot);
+    return { status: "ok", candidateSha };
+  }
+  if (params.atlasArm64) {
+    return (await prepareAtlasArm64Candidate(params, candidateSha))
+      ? validateStagedRuntime(nodeRuntime.env)
+      : { status: "atlas-artifact-failed" };
   }
   if (params.referenceSource) {
     const version = parsePnpmPackageManagerVersion(
@@ -332,56 +395,7 @@ async function testPreflightCandidate(
     if (failure) {
       return { status: classifyPreflightFailure(failure) };
     }
-    // Global source exposure can run package lifecycle scripts. Validate and retain
-    // the resulting candidate only after that preparation finishes.
-    await params.prepareGitExposure?.(params.worktreeDir, candidateSha, candidateCommand.env);
-    // Exposure can run another install after postbuild. Its final topology, not
-    // the earlier build graph, must own the packaged plugin dependency links.
-    const metadataScript = fileURLToPath(
-      resolveExternalPackageRuntimeEntrypointUrl("sourcePluginMetadata", params.worktreeDir),
-    );
-    if (
-      params.prepareGitExposure &&
-      (await fs.stat(metadataScript).catch(ignoreMissingPath))?.isFile()
-    ) {
-      const relink = await runCandidateCheck(
-        "bundled-plugin-dependency-links",
-        ["node", metadataScript],
-        candidateCommand.env,
-      );
-      if (relink) {
-        return { status: classifyPreflightFailure(relink) };
-      }
-    }
-    await candidateCommand.restoreWorkspace?.();
-    params.steps.push(...((await params.validateCandidate(params.worktreeDir)) ?? []));
-    // Activation checks out candidateSha and promotes only generated runtime paths.
-    // Check after repair so validated source edits cannot disappear at activation.
-    const { result: cleanCheck } = await runGitCleanCheckStep(
-      params.step(
-        "preflight-update-clean-check",
-        params.referenceSource
-          ? ["git", "-C", params.worktreeDir, "status", "--porcelain", "--untracked-files=no"]
-          : gitCleanCheckArgs(params.worktreeDir),
-        params.worktreeDir,
-      ),
-    );
-    if (isFailedUpdateStep(cleanCheck)) {
-      return { status: "failed" };
-    }
-    const sourceCheck = await runCandidateCheck(
-      "update-source-check",
-      ["git", "-C", params.worktreeDir, "diff", "--quiet", candidateSha, "--"],
-      undefined,
-      params.step,
-    );
-    if (sourceCheck) {
-      sourceCheck.stderrTail =
-        "Update source differs from the selected commit. Repair the source revision before retrying the update.";
-      return { status: "failed" };
-    }
-    await params.prepareCandidate?.(params.worktreeDir, params.preflightRoot);
-    return { status: "ok", candidateSha };
+    return await validateStagedRuntime(candidateCommand.env, candidateCommand.restoreWorkspace);
   } finally {
     await manager.cleanup?.();
   }
@@ -401,6 +415,7 @@ export async function runGitCandidatePreflight(params: {
   };
   beforeRuntimeVerified: boolean;
   sourceRuntimePrepared?: boolean;
+  atlasArm64?: boolean;
   /** Immutable releases must build exactly the candidate's recorded dependency graph. */
   frozenLockfile?: boolean;
   beforeGitStaging?: UpdateRunnerOptions["beforeGitStaging"];
@@ -515,6 +530,14 @@ export async function runGitCandidatePreflight(params: {
     }
   }
 
+  if (params.atlasArm64) {
+    // Releases are built for the exact Atlas main tip, never an older candidate.
+    candidates = candidates.slice(0, 1);
+    if (!(await verifyAtlasArm64FastForward(step, params.beforeSha, candidates[0]!))) {
+      return { status: "error", reason: "atlas-arm64-source-not-fast-forward" };
+    }
+  }
+
   // Reference builds must consume operator inputs even when their Git HEAD is current.
   // Source identity alone cannot prove the installed build is complete.
   const canSkipActivation =
@@ -523,7 +546,10 @@ export async function runGitCandidatePreflight(params: {
     ? params.referenceSource.branch === DEV_BRANCH
       ? undefined
       : (params.beforeSha ?? undefined)
-    : !params.targetRevision && !params.devTarget && localDevBranchExists !== false
+    : !params.atlasArm64 &&
+        !params.targetRevision &&
+        !params.devTarget &&
+        localDevBranchExists !== false
       ? params.needsCheckoutMain
         ? DEV_BRANCH
         : (params.beforeSha ?? undefined)
@@ -675,6 +701,9 @@ export async function runGitCandidatePreflight(params: {
     }
   }
   if (tested?.status !== "ok") {
+    if (tested?.status === "atlas-artifact-failed") {
+      return { status: "error", reason: "atlas-arm64-artifact-failed" };
+    }
     return {
       status: "error",
       reason:

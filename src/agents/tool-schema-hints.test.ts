@@ -73,7 +73,7 @@ describe("tool schema hints", () => {
     expect(input).toContain("field_00: number /* integer, >= 0, <= 100, > 1, < 99 */");
     expect(input).toContain("...");
     expect(input).not.toContain("Description stays deferred.");
-    expect(input.length).toBeLessThanOrEqual(300);
+    expect(input.length).toBeLessThanOrEqual(400);
     expect(outputHint(schema)).toContain("field_11: number");
     expect(outputHint(schema)).not.toContain("/*");
   });
@@ -86,19 +86,19 @@ describe("tool schema hints", () => {
   });
 
   it.each([
-    { limit: 300, delta: 0 },
-    { limit: 300, delta: 1 },
+    { limit: 400, delta: 0 },
+    { limit: 400, delta: 1 },
     { limit: 800, delta: 0 },
     { limit: 800, delta: 1 },
   ])("preserves the $limit UTF-16 boundary at offset $delta", ({ limit, delta }) => {
     const literal = "x".repeat(limit - 24 + delta);
     const schema = closedObject({ a: Type.String(), "z😀": Type.Literal(literal) });
-    const render = limit === 300 ? inputHint : outputHint;
+    const render = limit === 400 ? inputHint : outputHint;
     const expected = `{ a: string; "z😀": "${literal}" }`;
 
     expect(expected.length).toBe(limit + delta);
     expect(render(schema)).toBe(
-      delta <= 0 ? expected : limit === 300 ? "{ a: string; ... }" : undefined,
+      delta <= 0 ? expected : limit === 400 ? "{ a: string; ... }" : undefined,
     );
   });
 

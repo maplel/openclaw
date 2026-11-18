@@ -42,9 +42,11 @@ import {
   prepareLatestUpdateRestartSentinel,
 } from "../server-update-sentinel.js";
 import type { GatewayRequestHandlers } from "./types.js";
+import { atlasSyncHandlers } from "./update-atlas-sync.js";
 import { assertValidParams } from "./validation.js";
 
 export const updateStatusHandlers: GatewayRequestHandlers = {
+  ...atlasSyncHandlers,
   "update.status": async ({ params, respond, context }) => {
     if (!assertValidParams(params, validateUpdateStatusParams, "update.status", respond)) {
       return;
@@ -130,9 +132,10 @@ export const updateStatusHandlers: GatewayRequestHandlers = {
       mark("identity");
       let currentConfig = context?.getRuntimeConfig?.() ?? config;
       let effectiveChannel =
+        (lifecycle.installStatus?.status.atlasUpdateSource ? ("dev" as const) : undefined) ??
         normalizeUpdateChannel(currentConfig?.update?.channel) ??
         (currentConfig ? undefined : normalizeUpdateChannel(getUpdateSchedule()?.channel));
-      if (!effectiveChannel) {
+      if (!effectiveChannel || !lifecycle.installStatus) {
         try {
           effectiveChannel = await getUpdateEffectiveChannel();
         } catch (err) {
@@ -140,7 +143,11 @@ export const updateStatusHandlers: GatewayRequestHandlers = {
         }
         currentConfig = context?.getRuntimeConfig?.() ?? currentConfig;
         effectiveChannel =
-          normalizeUpdateChannel(currentConfig?.update?.channel) ?? effectiveChannel;
+          (currentUpdateCheckLifecycle().installStatus?.status.atlasUpdateSource
+            ? ("dev" as const)
+            : undefined) ??
+          normalizeUpdateChannel(currentConfig?.update?.channel) ??
+          effectiveChannel;
       }
       const schedule = currentConfig
         ? effectiveChannel

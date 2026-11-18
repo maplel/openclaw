@@ -1,5 +1,6 @@
 import hostedGitInfo from "hosted-git-info";
 import { createSubsystemLogger } from "../logging/subsystem.js";
+import { atlasGitFetchTarget, readAtlasUpdateSource } from "./atlas-update-source.js";
 import { executeGitCommand } from "./git-exec.js";
 import { DEV_BRANCH } from "./update-channels.js";
 import { isFullGitObjectId } from "./update-dev-target.js";
@@ -29,6 +30,10 @@ export async function readGitUpdateFetchTarget(
     fetchRemote: boolean;
   },
 ): Promise<GitUpdateFetchTarget | null> {
+  const atlas = legacy ? await readAtlasUpdateSource(legacy.root) : null;
+  if (atlas) {
+    return atlasGitFetchTarget(atlas);
+  }
   const [remote, mergeRefs] = await Promise.all([
     readGit("config", "--get", `branch.${branch}.remote`),
     readGit("config", "--get-all", `branch.${branch}.merge`),
@@ -238,8 +243,11 @@ export async function resolveGitRepositoryMetadata(
   target: GitFetchTarget | null,
 ): Promise<{ repositoryUrl?: string }> {
   const remote = target?.remote;
-  const remoteUrl =
-    remote && remote !== "." ? await readGit("remote", "get-url", "--", remote) : null;
+  const remoteUrl = remote?.startsWith("https://")
+    ? remote
+    : remote && remote !== "."
+      ? await readGit("remote", "get-url", "--", remote)
+      : null;
   // Git accepts relative local remotes that hosted-git-info treats as npm shorthands.
   const repository =
     remoteUrl && /^(?:(?:https?|ssh|git):\/\/|git@github\.com:)/u.test(remoteUrl)

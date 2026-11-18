@@ -9,6 +9,7 @@ import { withUpdateCommandExecutor } from "../cli/update-cli/update-command-exec
 import { createUpdateRunProgress } from "../cli/update-cli/update-command-run.js";
 import { runCommandWithTimeout } from "../process/exec.js";
 import { closeStateDatabaseForTest } from "../test-utils/database-cleanup.js";
+import * as atlasArm64Release from "./atlas-arm64-release.js";
 import { writeFixtureTree } from "./fixture-tree.test-support.js";
 import * as tempRoot from "./tmp-openclaw-dir.js";
 import { DoctorMaintenanceRefusalError } from "./update-doctor-result.js";
@@ -89,6 +90,84 @@ describe("Git checkout execution", () => {
     await git(remote, "commit", "-m", "unrelated remote work");
     return git(remote, "rev-parse", "HEAD:unrelated.txt");
   }
+
+  async function prepareAtlasDistribution() {
+    const manifestPath = path.join(remote, "package.json");
+    const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
+    manifest.openclaw = {
+      ...manifest.openclaw,
+      atlasUpdateSource: { repositoryUrl: "https://github.com/maplel/openclaw", branch: "main" },
+    };
+    await fs.writeFile(manifestPath, JSON.stringify(manifest));
+    await git(remote, "add", ".");
+    await git(remote, "commit", "-m", "Atlas distribution");
+    await git(root, "pull", "--ff-only");
+    fixture.beforeSha = beforeSha = await git(root, "rev-parse", "HEAD");
+    await fixture.writeRuntime(root, beforeSha);
+    // Git's native URL mapping keeps this test entirely within its temporary repositories.
+    await git(
+      root,
+      "config",
+      `url.${remote.replaceAll("\\", "/")}.insteadOf`,
+      "https://github.com/maplel/openclaw.git",
+    );
+    await git(root, "remote", "set-url", "origin", path.join(directory, "unavailable-official"));
+  }
+
+  it("updates Atlas from its own main despite stable policy and conflicting tracking config", async () => {
+    await prepareAtlasDistribution();
+    const target = await advanceRemote();
+    const stage = vi
+      .spyOn(atlasArm64Release, "stageAtlasArm64Release")
+      .mockImplementation(async ({ root: candidate, sha }) => {
+        await fixture.writeRuntime(candidate, sha);
+      });
+    const result = await update({ channel: "stable" });
+    expect(result).toMatchObject({ status: "ok", after: { sha: target } });
+    await expectRuntime(root, target);
+    if (process.platform === "linux" && process.arch === "arm64") {
+      expect(stage).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ sha: target }));
+      expect(events).not.toContain("build");
+    }
+  });
+
+  it.runIf(process.platform === "linux" && process.arch === "arm64")(
+    "preserves Atlas when the exact ARM64 package is unavailable",
+    async () => {
+      await prepareAtlasDistribution();
+      const target = await advanceRemote();
+      const stage = vi
+        .spyOn(atlasArm64Release, "stageAtlasArm64Release")
+        .mockRejectedValue(new Error("Atlas ARM64 package has not been published"));
+      const result = await update();
+      expect(result).toMatchObject({ status: "error", reason: "atlas-arm64-artifact-failed" });
+      expect(result.steps).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "preflight-atlas-arm64",
+            stderrTail: expect.stringContaining("package has not been published"),
+          }),
+        ]),
+      );
+      expect(stage).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ sha: target }));
+      expect(events).toEqual([]);
+      expect(fixture.stopped).toBe(false);
+      expect(await git(root, "rev-parse", "HEAD")).toBe(beforeSha);
+    },
+  );
+
+  it("does not execute a candidate that would discard Atlas update-source ownership", async () => {
+    await prepareAtlasDistribution();
+    const manifestPath = path.join(remote, "package.json");
+    const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
+    delete manifest.openclaw.atlasUpdateSource;
+    await fs.writeFile(manifestPath, JSON.stringify(manifest));
+    await advanceRemote();
+    await expect(update()).rejects.toThrow("must preserve the maplel/openclaw main update source");
+    expect(events).toEqual([]);
+    expect(fixture.stopped).toBe(false);
+    expect(await git(root, "rev-parse", "HEAD")).toBe(beforeSha);
+  });
 
   function update(opts: Partial<Omit<UpdateRunnerOptions, "prepareGitExposure">> = {}) {
     const { runGitDoctor, ...overrides } = opts;

@@ -1,6 +1,8 @@
 import type { UpdateScheduleState } from "../../packages/gateway-protocol/src/index.js";
 import { resolveGatewayStartupTiming } from "../commands/gateway-startup-timing.js";
 import { VERSION } from "../version.js";
+import { checkAtlasOfficialRelease } from "./atlas-official-release.js";
+import { readAtlasUpdateSource } from "./atlas-update-source.js";
 import { sleepWithAbort } from "./backoff.js";
 import { formatErrorMessage } from "./errors.js";
 import { gitCommitPrefixesMatch } from "./git-commit.js";
@@ -24,6 +26,7 @@ export async function resolveStartupInstallStatus(
     }),
     readVerifiedGitUpdateReceipt(),
   ]);
+  const atlasSource = root ? await readAtlasUpdateSource(root) : null;
   const timeoutMs = resolveGatewayStartupTiming().deadlineMs;
   const git = discovered?.status.git;
   // Carry completed discovery, not an obsolete receipt, into read-only admission.
@@ -47,16 +50,20 @@ export async function resolveStartupInstallStatus(
     let timedOut = false;
     let failure: unknown;
     try {
-      status = await checkUpdateStatus({
-        ...options,
-        ...(!fetchRemoteGit
-          ? {
-              onGitProbeTimeout: () => {
-                timedOut = true;
-              },
-            }
-          : {}),
-      });
+      const [checked, officialRelease] = await Promise.all([
+        checkUpdateStatus({
+          ...options,
+          ...(!fetchRemoteGit
+            ? {
+                onGitProbeTimeout: () => {
+                  timedOut = true;
+                },
+              }
+            : {}),
+        }),
+        fetchRemoteGit && atlasSource ? checkAtlasOfficialRelease(signal) : undefined,
+      ]);
+      status = { ...checked, ...(officialRelease ? { officialRelease } : {}) };
       signal.throwIfAborted();
       if (!timedOut) {
         return { root, status, installReceipt };
@@ -101,14 +108,19 @@ export async function prepareStartupUpdateInstall(
       ...installStatus.status,
     }).channel;
   let channel = resolveChannel();
-  if (channel === "dev" && installStatus.status.installKind === "git") {
+  if (
+    channel === "dev" &&
+    (installStatus.status.installKind === "git" || installStatus.status.atlasUpdateSource)
+  ) {
     installStatus = await resolveStartupInstallStatus(true, signal);
     signal.throwIfAborted();
     channel = resolveChannel();
   }
   const { status, installReceipt, root } = installStatus;
   const readOnlySchedule =
-    status.installKind === "host" || status.installKind === "immutable"
+    status.installKind === "host" ||
+    status.installKind === "immutable" ||
+    (status.installKind === "package" && status.atlasUpdateSource)
       ? withUpdateInstallStatus(
           { channel, autoEnabled: false },
           status,
@@ -210,6 +222,8 @@ export function withUpdateInstallStatus(
   const git = includeGitStatus ? resolveGitScheduleStatus(update, installReceipt, root) : undefined;
   return {
     ...schedule,
+    ...(update.atlasUpdateSource ? { atlasSource: update.atlasUpdateSource } : {}),
+    ...(update.officialRelease ? { officialRelease: update.officialRelease } : {}),
     install: {
       kind: update.installKind,
       ...(git ? { git } : {}),
