@@ -3,7 +3,7 @@ import {
   readStringValue,
 } from "@openclaw/normalization-core/string-coerce";
 import { ErrorCodes, errorShape } from "../../../packages/gateway-protocol/src/index.js";
-import type { ChannelPlugin } from "../../channels/plugins/types.plugin.js";
+import type { AnyChannelPlugin } from "../../channels/plugins/types.plugin.js";
 import {
   getRuntimeConfigSnapshot,
   getRuntimeConfigSourceSnapshot,
@@ -137,7 +137,7 @@ export async function applyGatewaySendDefaultTarget({
   actionParams: Record<string, unknown>;
   toolContext: Parameters<typeof resolveImplicitMessageActionTarget>[0];
   channel: string;
-  plugin: ChannelPlugin;
+  plugin: AnyChannelPlugin;
   cfg: OpenClawConfig;
   accountId?: string;
 }): Promise<void> {
