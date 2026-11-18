@@ -121,7 +121,15 @@ describe("Git checkout execution", () => {
         .spyOn(atlasArm64Release, "stageAtlasArm64Release")
         .mockRejectedValue(new Error("Atlas ARM64 package has not been published"));
       const result = await update();
-      expect(result.status).toBe("error");
+      expect(result).toMatchObject({ status: "error", reason: "atlas-arm64-artifact-failed" });
+      expect(result.steps).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "preflight-atlas-arm64",
+            stderrTail: expect.stringContaining("package has not been published"),
+          }),
+        ]),
+      );
       expect(stage).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ sha: target }));
       expect(events).toEqual([]);
       expect(stopped).toBe(false);

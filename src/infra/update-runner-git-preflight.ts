@@ -190,7 +190,13 @@ async function resolveUpstreamCandidates(params: {
 type PreflightCandidateResult =
   | { status: "ok"; candidateSha: string }
   | { status: "manager-unavailable"; reason: string }
-  | { status: "failed" | "insufficient-space" | "node-runtime-incompatible" };
+  | {
+      status:
+        | "failed"
+        | "insufficient-space"
+        | "node-runtime-incompatible"
+        | "atlas-artifact-failed";
+    };
 
 async function testPreflightCandidate(
   params: Parameters<typeof runGitCandidatePreflight>[0] & {
@@ -327,17 +333,21 @@ async function testPreflightCandidate(
         params.worktreeDir,
       ),
       runCommand: async () => {
-        await stageAtlasArm64Release({
-          root: params.worktreeDir,
-          stagingRoot: params.preflightRoot,
-          sha: candidateSha,
-          timeoutMs: params.workTimeoutMs ?? DEFAULT_UPDATE_STEP_TIMEOUT_MS,
-        });
-        return { code: 0, stdout: "", stderr: "" };
+        try {
+          await stageAtlasArm64Release({
+            root: params.worktreeDir,
+            stagingRoot: params.preflightRoot,
+            sha: candidateSha,
+            timeoutMs: params.workTimeoutMs ?? DEFAULT_UPDATE_STEP_TIMEOUT_MS,
+          });
+          return { code: 0, stdout: "", stderr: "" };
+        } catch (error) {
+          return { code: 1, stdout: "", stderr: formatErrorMessage(error) };
+        }
       },
     });
     return isFailedUpdateStep(artifact)
-      ? { status: "failed" }
+      ? { status: "atlas-artifact-failed" }
       : validateStagedRuntime(nodeRuntime.env);
   }
   if (params.referenceSource) {
@@ -730,6 +740,9 @@ export async function runGitCandidatePreflight(params: {
     }
   }
   if (tested?.status !== "ok") {
+    if (tested?.status === "atlas-artifact-failed") {
+      return { status: "error", reason: "atlas-arm64-artifact-failed" };
+    }
     return {
       status: "error",
       reason:
