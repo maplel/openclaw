@@ -2,6 +2,7 @@ import path from "node:path";
 import { normalizeNullableString } from "@openclaw/normalization-core/string-coerce";
 import { normalizeStringEntries } from "@openclaw/normalization-core/string-normalization";
 import { hasCommandProcessCleanupError } from "../process/exec-result.js";
+import { stageAtlasArm64Release } from "./atlas-arm64-release.js";
 import { resolveControlUiAssetHealth } from "./control-ui-assets.js";
 import { hasErrnoCode } from "./errno.js";
 import { formatErrorMessage } from "./errors.js";
@@ -19,6 +20,7 @@ import {
 } from "./update-package-manager.js";
 import { UpdatePreMutationError } from "./update-pre-mutation-error.js";
 import { isFailedUpdateStep } from "./update-run-step.js";
+import { DEFAULT_UPDATE_STEP_TIMEOUT_MS } from "./update-run-timeouts.js";
 import { runStep } from "./update-runner-command.js";
 import { cleanupGitPreflight } from "./update-runner-git-cleanup.js";
 import {
@@ -280,6 +282,64 @@ async function testPreflightCandidate(
     params.steps.push(nodeRuntime.step);
     return { status: "node-runtime-incompatible" };
   }
+  async function validateStagedRuntime(
+    env: NodeJS.ProcessEnv | undefined,
+    restoreWorkspace?: () => Promise<void>,
+  ): Promise<PreflightCandidateResult> {
+    // Global source exposure can run package lifecycle scripts. Validate and retain
+    // the resulting candidate only after that preparation finishes.
+    await params.prepareGitExposure?.(params.worktreeDir, candidateSha, env);
+    await restoreWorkspace?.();
+    params.steps.push(...((await params.validateCandidate(params.worktreeDir)) ?? []));
+    // Activation checks out candidateSha and promotes only generated runtime paths.
+    // Check after repair so validated source edits cannot disappear at activation.
+    const { result: cleanCheck } = await runGitCleanCheckStep(
+      params.step(
+        "preflight-update-clean-check",
+        params.referenceSource
+          ? ["git", "-C", params.worktreeDir, "status", "--porcelain", "--untracked-files=no"]
+          : gitCleanCheckArgs(params.worktreeDir),
+        params.worktreeDir,
+      ),
+    );
+    if (isFailedUpdateStep(cleanCheck)) {
+      return { status: "failed" };
+    }
+    const sourceCheck = await runCandidateCheck(
+      "update-source-check",
+      ["git", "-C", params.worktreeDir, "diff", "--quiet", candidateSha, "--"],
+      undefined,
+      params.step,
+    );
+    if (sourceCheck) {
+      sourceCheck.stderrTail =
+        "Update source differs from the selected commit. Repair the source revision before retrying the update.";
+      return { status: "failed" };
+    }
+    await params.prepareCandidate?.(params.worktreeDir, params.preflightRoot);
+    return { status: "ok", candidateSha };
+  }
+  if (params.atlasArm64) {
+    const artifact = await runStep({
+      ...params.workStep(
+        "preflight-atlas-arm64",
+        ["fetch Atlas Linux ARM64 release", candidateSha],
+        params.worktreeDir,
+      ),
+      runCommand: async () => {
+        await stageAtlasArm64Release({
+          root: params.worktreeDir,
+          stagingRoot: params.preflightRoot,
+          sha: candidateSha,
+          timeoutMs: params.workTimeoutMs ?? DEFAULT_UPDATE_STEP_TIMEOUT_MS,
+        });
+        return { code: 0, stdout: "", stderr: "" };
+      },
+    });
+    return isFailedUpdateStep(artifact)
+      ? { status: "failed" }
+      : validateStagedRuntime(nodeRuntime.env);
+  }
   if (params.referenceSource) {
     const version = parsePnpmPackageManagerVersion(
       await readPackageManagerSpec(params.worktreeDir),
@@ -392,38 +452,7 @@ async function testPreflightCandidate(
     if (failure) {
       return { status: classifyPreflightFailure(failure) };
     }
-    // Global source exposure can run package lifecycle scripts. Validate and retain
-    // the resulting candidate only after that preparation finishes.
-    await params.prepareGitExposure?.(params.worktreeDir, candidateSha, candidateCommand.env);
-    await candidateCommand.restoreWorkspace?.();
-    params.steps.push(...((await params.validateCandidate(params.worktreeDir)) ?? []));
-    // Activation checks out candidateSha and promotes only generated runtime paths.
-    // Check after repair so validated source edits cannot disappear at activation.
-    const { result: cleanCheck } = await runGitCleanCheckStep(
-      params.step(
-        "preflight-update-clean-check",
-        params.referenceSource
-          ? ["git", "-C", params.worktreeDir, "status", "--porcelain", "--untracked-files=no"]
-          : gitCleanCheckArgs(params.worktreeDir),
-        params.worktreeDir,
-      ),
-    );
-    if (isFailedUpdateStep(cleanCheck)) {
-      return { status: "failed" };
-    }
-    const sourceCheck = await runCandidateCheck(
-      "update-source-check",
-      ["git", "-C", params.worktreeDir, "diff", "--quiet", candidateSha, "--"],
-      undefined,
-      params.step,
-    );
-    if (sourceCheck) {
-      sourceCheck.stderrTail =
-        "Update source differs from the selected commit. Repair the source revision before retrying the update.";
-      return { status: "failed" };
-    }
-    await params.prepareCandidate?.(params.worktreeDir, params.preflightRoot);
-    return { status: "ok", candidateSha };
+    return await validateStagedRuntime(candidateCommand.env, candidateCommand.restoreWorkspace);
   } finally {
     await manager.cleanup?.();
   }
@@ -443,6 +472,7 @@ export async function runGitCandidatePreflight(params: {
   };
   beforeRuntimeVerified: boolean;
   sourceRuntimePrepared?: boolean;
+  atlasArm64?: boolean;
   /** Immutable releases must build exactly the candidate's recorded dependency graph. */
   frozenLockfile?: boolean;
   beforeGitStaging?: UpdateRunnerOptions["beforeGitStaging"];
@@ -530,6 +560,25 @@ export async function runGitCandidatePreflight(params: {
     localDevBranchExists = upstream.localDevBranchExists;
   }
 
+  if (params.atlasArm64) {
+    // Releases are built for the exact Atlas main tip, never an older candidate.
+    candidates = candidates.slice(0, 1);
+    if (params.beforeSha && params.beforeSha !== candidates[0]) {
+      const ancestry = await runStep(
+        step(
+          "atlas-arm64-fast-forward",
+          "merge-base",
+          "--is-ancestor",
+          params.beforeSha,
+          candidates[0]!,
+        ),
+      );
+      if (isFailedUpdateStep(ancestry)) {
+        return { status: "error", reason: "atlas-arm64-source-not-fast-forward" };
+      }
+    }
+  }
+
   // Reference builds must consume operator inputs even when their Git HEAD is current.
   // Source identity alone cannot prove the installed build is complete.
   const canSkipActivation =
@@ -538,7 +587,10 @@ export async function runGitCandidatePreflight(params: {
     ? params.referenceSource.branch === DEV_BRANCH
       ? undefined
       : (params.beforeSha ?? undefined)
-    : !params.targetRevision && !params.devTarget && localDevBranchExists !== false
+    : !params.atlasArm64 &&
+        !params.targetRevision &&
+        !params.devTarget &&
+        localDevBranchExists !== false
       ? params.needsCheckoutMain
         ? DEV_BRANCH
         : (params.beforeSha ?? undefined)

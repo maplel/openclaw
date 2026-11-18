@@ -7,7 +7,16 @@ export type UpdatesChannel = (typeof UPDATES_CHANNELS)[number];
 export type AtlasSyncControl = {
   busy: boolean;
   canStart: boolean;
-  state?: "running" | "merged" | "current" | "conflict" | "testsFailed" | "failed";
+  awaitingPackage?: boolean;
+  state?:
+    | "running"
+    | "published"
+    | "unpublished"
+    | "conflict"
+    | "testsFailed"
+    | "buildFailed"
+    | "publishFailed"
+    | "failed";
   version?: string;
   detail?: string;
   runUrl?: string;

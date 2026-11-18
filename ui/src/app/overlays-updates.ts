@@ -1,5 +1,6 @@
 import { gatewayCredentialScope } from "@openclaw/gateway-client/browser";
 import { isRecord } from "@openclaw/normalization-core/record-coerce";
+import type { UpdateRunParams } from "../../../packages/gateway-protocol/src/index.js";
 import type { GatewayUpdateAvailableEventPayload } from "../../../src/gateway/events.js";
 import {
   isAcknowledgedAbandonedUpdateRun,
@@ -552,7 +553,7 @@ export function createApplicationUpdateOverlays(
         publish();
       }
     },
-    async runUpdate(this: void) {
+    async runUpdate(this: void, target?: UpdateRunParams["target"]) {
       const client = activeClient;
       if (
         !client ||
@@ -592,7 +593,7 @@ export function createApplicationUpdateOverlays(
         }
         const response = await client.request<UpdateRunResponse>(
           "update.run",
-          sessionKey ? { sessionKey } : {},
+          { ...(sessionKey ? { sessionKey } : {}), ...(target ? { target } : {}) },
           {
             onSent: () => {
               attempt.requestSent = true;

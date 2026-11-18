@@ -8,6 +8,7 @@ import { withUpdateCommandExecutor } from "../cli/update-cli/update-command-exec
 import { createUpdateRunProgress } from "../cli/update-cli/update-command-run.js";
 import { runCommandWithTimeout } from "../process/exec.js";
 import { closeStateDatabaseForTest } from "../test-utils/database-cleanup.js";
+import * as atlasArm64Release from "./atlas-arm64-release.js";
 import * as tempRoot from "./tmp-openclaw-dir.js";
 import { createUpdateRun } from "./update-run-ledger.js";
 import {
@@ -92,10 +93,41 @@ describe("Git checkout execution", () => {
   it("updates Atlas from its own main despite stable policy and conflicting tracking config", async () => {
     await prepareAtlasDistribution();
     const target = await advanceRemote();
+    const stage = vi
+      .spyOn(atlasArm64Release, "stageAtlasArm64Release")
+      .mockImplementation(async ({ root: candidate, sha }) => {
+        await writeRuntime(
+          candidate,
+          sha,
+          path.join(directory, "shared-store"),
+          "node_modules/.pnpm",
+        );
+      });
     const result = await update({ channel: "stable" });
     expect(result).toMatchObject({ status: "ok", after: { sha: target } });
     await expectRuntime(root, target);
+    if (process.platform === "linux" && process.arch === "arm64") {
+      expect(stage).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ sha: target }));
+      expect(events).not.toContain("build");
+    }
   });
+
+  it.runIf(process.platform === "linux" && process.arch === "arm64")(
+    "preserves Atlas when the exact ARM64 package is unavailable",
+    async () => {
+      await prepareAtlasDistribution();
+      const target = await advanceRemote();
+      const stage = vi
+        .spyOn(atlasArm64Release, "stageAtlasArm64Release")
+        .mockRejectedValue(new Error("Atlas ARM64 package has not been published"));
+      const result = await update();
+      expect(result.status).toBe("error");
+      expect(stage).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ sha: target }));
+      expect(events).toEqual([]);
+      expect(stopped).toBe(false);
+      expect(await git(root, "rev-parse", "HEAD")).toBe(beforeSha);
+    },
+  );
 
   it("does not execute a candidate that would discard Atlas update-source ownership", async () => {
     await prepareAtlasDistribution();

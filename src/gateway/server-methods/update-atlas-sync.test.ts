@@ -23,12 +23,20 @@ const fetchGitHub = vi.fn<typeof fetch>();
 
 async function call(method: string, params: Record<string, unknown> = {}) {
   const respond = vi.fn();
-  await atlasSyncHandlers[`update.atlasSync.${method}`]({
+  const handler = atlasSyncHandlers[`update.atlasSync.${method}`];
+  if (!handler) {
+    throw new Error(`Missing Atlas sync method ${method}`);
+  }
+  await handler({
     params,
     respond,
     context: { getRuntimeConfig: () => ({}) },
   } as unknown as GatewayRequestHandlerOptions);
-  return respond.mock.calls[0];
+  const result = respond.mock.calls[0];
+  if (!result) {
+    throw new Error(`Atlas sync method ${method} did not respond`);
+  }
+  return result;
 }
 
 describe("Atlas sync Gateway actions", () => {
@@ -82,41 +90,73 @@ describe("Atlas sync Gateway actions", () => {
   });
 
   it.each([
-    ["conflict", "failure", "failure", "skipped", "skipped"],
-    ["testsFailed", "failure", "success", "failure", "skipped"],
-    ["merged", "success", "success", "success", "success"],
-    ["current", "success", "success", "skipped", "skipped"],
-  ])("reports %s from GitHub job receipts", async (state, conclusion, prepare, verify, land) => {
-    fetchGitHub
-      .mockResolvedValueOnce(
-        Response.json({
-          id: 42,
-          path: ".github/workflows/atlas-sync-stable.yml",
-          status: "completed",
-          conclusion,
-        }),
-      )
-      .mockResolvedValueOnce(
-        Response.json({
-          jobs: [
-            {
-              name: "Prepare pull request",
-              conclusion: prepare,
-              steps: [
-                {
-                  name: "Report merge conflict",
-                  conclusion: state === "conflict" ? "failure" : "skipped",
-                },
-              ],
-            },
-            { name: "Verify candidate", conclusion: verify },
-            { name: "Merge pull request", conclusion: land },
-          ],
-        }),
-      );
-    expect((await call("status", { runId: 42 }))[1]).toMatchObject({
-      configured: true,
-      run: { state },
-    });
-  });
+    ["conflict", "failure", "failure", "skipped", "skipped", "skipped", "skipped"],
+    ["testsFailed", "failure", "success", "failure", "skipped", "skipped", "skipped"],
+    ["buildFailed", "failure", "success", "success", "success", "failure", "skipped"],
+    ["publishFailed", "failure", "success", "success", "success", "success", "failure"],
+    ["published", "success", "success", "success", "success", "success", "success"],
+    ["published", "success", "success", "skipped", "skipped", "success", "success"],
+    ["unpublished", "success", "success", "success", "success", "success", "success"],
+    ["unpublished", "success", "success", "skipped", "skipped", undefined, undefined],
+  ])(
+    "reports %s from GitHub job receipts",
+    async (state, conclusion, prepare, verify, land, build, publish) => {
+      fetchGitHub
+        .mockResolvedValueOnce(
+          Response.json({
+            id: 42,
+            path: ".github/workflows/atlas-sync-stable.yml",
+            status: "completed",
+            conclusion,
+          }),
+        )
+        .mockResolvedValueOnce(
+          Response.json({
+            jobs: [
+              {
+                name: "Prepare pull request",
+                conclusion: prepare,
+                steps: [
+                  {
+                    name: "Report merge conflict",
+                    conclusion: state === "conflict" ? "failure" : "skipped",
+                  },
+                ],
+              },
+              { name: "Verify candidate", conclusion: verify },
+              { name: "Merge pull request", conclusion: land },
+              ...(build ? [{ name: "Build Linux ARM64 artifact", conclusion: build }] : []),
+              ...(publish ? [{ name: "Publish Linux ARM64 artifact", conclusion: publish }] : []),
+            ],
+          }),
+        );
+      if (publish === "success") {
+        const sha = "ab".repeat(20);
+        const tag = `atlas-linux-arm64-${sha}`;
+        fetchGitHub.mockResolvedValueOnce(Response.json({ object: { sha } }));
+        fetchGitHub.mockResolvedValueOnce(
+          state === "published"
+            ? Response.json({
+                tag_name: tag,
+                target_commitish: sha,
+                draft: false,
+                assets: [
+                  {
+                    name: "atlas-linux-arm64.tar.gz",
+                    state: "uploaded",
+                    browser_download_url: `https://github.com/maplel/openclaw/releases/download/${tag}/atlas-linux-arm64.tar.gz`,
+                    size: 1024,
+                    digest: `sha256:${"12".repeat(32)}`,
+                  },
+                ],
+              })
+            : new Response(null, { status: 404 }),
+        );
+      }
+      expect((await call("status", { runId: 42 }))[1]).toMatchObject({
+        configured: true,
+        run: { state },
+      });
+    },
+  );
 });

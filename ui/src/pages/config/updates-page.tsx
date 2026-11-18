@@ -18,7 +18,12 @@ import { t } from "../../lib/reactive/i18n.ts";
 import type { AtlasSyncControl } from "./updates-types.ts";
 import { Updates } from "./updates.tsx";
 
-type AtlasSyncRun = { id: number; version?: string; state: NonNullable<AtlasSyncControl["state"]> };
+type AtlasSyncRun = {
+  id: number;
+  version?: string;
+  sha?: string;
+  state: NonNullable<AtlasSyncControl["state"]>;
+};
 type AtlasSyncStatus = { configured: boolean; run?: AtlasSyncRun | null };
 
 export type UpdatesPageProps = {
@@ -42,9 +47,12 @@ export function UpdatesPage(props: UpdatesPageProps) {
       : null,
   );
   const release = () => schedule()?.officialRelease;
-  const pendingVersion = () => {
+  const syncVersion = () => {
     const official = release();
-    return official?.status === "pending-sync" ? official.latestVersion : undefined;
+    return official?.status === "pending-sync" ||
+      (official?.status === "current" && schedule()?.install?.git?.status === "behind")
+      ? official.latestVersion
+      : undefined;
   };
   const [configured, setConfigured] = createSignal<boolean | undefined>(undefined, {
     ownedWrite: true,
@@ -77,7 +85,7 @@ export function UpdatesPage(props: UpdatesPageProps) {
       setStatusError(undefined);
       if (result.run?.state === "running") {
         timer = setTimeout(() => void refreshAtlasSync(client, owner, result.run?.id), 5000);
-      } else if (result.run?.state === "merged" && refreshedRunId !== result.run.id) {
+      } else if (result.run?.state === "published" && refreshedRunId !== result.run.id) {
         refreshedRunId = result.run.id;
         void props.context.overlays.refreshUpdateStatus();
       }
@@ -107,26 +115,29 @@ export function UpdatesPage(props: UpdatesPageProps) {
     clearTimeout(timer);
   });
 
+  const publishedTarget = () => {
+    const published = run();
+    const git = schedule()?.install?.git;
+    return published?.state === "published" &&
+      published.version === syncVersion() &&
+      published.sha &&
+      published.sha === git?.upstreamSha &&
+      git.status === "behind"
+      ? { kind: "git" as const, upstreamRef: "refs/remotes/atlas/main", upstreamSha: published.sha }
+      : undefined;
+  };
+  const awaitingPackage = () => syncVersion() !== undefined && !publishedTarget();
   const canStartSync = () =>
     configured() === true &&
     schedule()?.autoEnabled === false &&
-    pendingVersion() !== undefined &&
-    !(
-      (run()?.state === "merged" || run()?.state === "current") &&
-      run()?.version === pendingVersion()
-    ) &&
+    syncVersion() !== undefined &&
+    !publishedTarget() &&
     canCallGatewayMethod(snapshot(), "update.atlasSync.start", "operator.admin");
 
   async function startAtlasSync() {
     const client = clientForSync();
-    const official = release();
-    if (
-      !client ||
-      official?.status !== "pending-sync" ||
-      !canStartSync() ||
-      starting() ||
-      run()?.state === "running"
-    ) {
+    const version = syncVersion();
+    if (!client || !version || !canStartSync() || starting() || run()?.state === "running") {
       return;
     }
     const owner = ++generation;
@@ -135,7 +146,7 @@ export function UpdatesPage(props: UpdatesPageProps) {
     setError(undefined);
     try {
       const accepted = await client.request<AtlasSyncRun>("update.atlasSync.start", {
-        version: official.latestVersion,
+        version,
       });
       if (owner === generation && clientForSync() === client) {
         setRun(accepted);
@@ -161,6 +172,7 @@ export function UpdatesPage(props: UpdatesPageProps) {
           ? {
               busy: starting() || run()?.state === "running",
               canStart: canStartSync(),
+              awaitingPackage: awaitingPackage(),
               state: run()?.state,
               version: run()?.version,
               detail:
@@ -202,21 +214,22 @@ export function UpdatesPage(props: UpdatesPageProps) {
         props.context.runtimeConfig.patchForm(["update", "auto", "enabled"], enabled)
       }
       onUpdateNow={() => {
+        if (clientForSync() && awaitingPackage()) {
+          return;
+        }
         const context = props.context;
         const update = overlays().read();
+        const target = publishedTarget();
         void confirmAndStartUpdate({
           isCurrentTarget: context.overlays.captureUpdateTarget(),
-          startGatewayUpdate: () => void context.overlays.runUpdate(),
+          startGatewayUpdate: () => void context.overlays.runUpdate(target),
           // The dialog outlives this page, so read live snapshots after each change.
           watchUpdateProgress: createUpdateProgressWatcher(context),
           onCheckStatus: () => context.overlays.refreshUpdateStatus(),
           onAcknowledge: () => context.overlays.acknowledgeUpdateRun(),
           updateAvailable: update.updateAvailable,
           updateSchedule: update.updateSchedule,
-          startOnOpen:
-            (run()?.state === "merged" || run()?.state === "current") &&
-            run()?.version === pendingVersion() &&
-            update.updateSchedule?.install?.git?.status === "behind",
+          startOnOpen: Boolean(target),
           // Keep Gateway routing: this row has no native-decline listener.
           viaNativeApp: false,
         });

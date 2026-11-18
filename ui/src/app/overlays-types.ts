@@ -1,3 +1,4 @@
+import type { UpdateRunParams } from "../../../packages/gateway-protocol/src/index.js";
 import type { UpdateRunRecord } from "../../../src/infra/update-run-record.js";
 import type { UpdateAvailable, UpdateScheduleState } from "../api/types.ts";
 import type { DevicePairSetupAccess, DevicePairSetupLifecycle } from "../lib/device-pair-setup.ts";
@@ -50,7 +51,7 @@ export type ApplicationOverlays = {
   refreshUpdateStatus: ReturnType<typeof createUpdateStatusRefresher>;
   acknowledgeUpdateRun: () => void;
   captureUpdateTarget: () => () => boolean;
-  runUpdate: () => Promise<void>;
+  runUpdate: (target?: UpdateRunParams["target"]) => Promise<void>;
   holdUpdate: () => Promise<boolean>;
   diagnoseUpdateFailure: (attemptId: string) => void;
   reportUpdateFailure: (attemptId: string) => Promise<void>;

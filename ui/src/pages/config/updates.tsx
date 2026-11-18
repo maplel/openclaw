@@ -708,7 +708,11 @@ export function Updates(props: UpdatesViewProps) {
           </Show>
           <SettingsRow
             title={t("updates.page.updateNow")}
-            description={t("updates.page.updateNowDescription")}
+            description={t(
+              props.atlasSync
+                ? "updates.atlasSync.installHint"
+                : "updates.page.updateNowDescription",
+            )}
             control={
               <button
                 type="button"
@@ -718,6 +722,7 @@ export function Updates(props: UpdatesViewProps) {
                   props.updateBusy ||
                   props.update.updateStatusRefreshing ||
                   !props.canUpdate ||
+                  props.atlasSync?.awaitingPackage ||
                   checkRequired()
                 }
                 onClick={props.onUpdateNow}

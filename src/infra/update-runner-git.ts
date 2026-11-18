@@ -420,6 +420,8 @@ export async function updateGitCheckout(params: {
         beforeSha,
         beforeRuntimeVerified: recovery.serviceRestartSafe,
         sourceRuntimePrepared: opts.sourceRuntimePrepared,
+        atlasArm64:
+          Boolean(atlasUpdateSource) && process.platform === "linux" && process.arch === "arm64",
         beforeGitStaging: opts.beforeGitStaging,
         needsCheckoutMain,
         timeoutMs,

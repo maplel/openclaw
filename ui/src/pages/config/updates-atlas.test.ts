@@ -8,7 +8,7 @@ beforeEach(async () => {
   await i18n.setLocale("en");
 });
 
-it("keeps upstream sync separate from board installation and links failed runs", () => {
+it("links failed sync runs and enables board installation once an ARM64 package is published", () => {
   const updateSchedule = readUpdateScheduleValue({
     channel: "dev",
     autoEnabled: false,
@@ -28,7 +28,14 @@ it("keeps upstream sync separate from board installation and links failed runs",
   mountUpdates(
     createUpdatesViewProps({
       update: { updateSchedule },
-      atlasSync: { busy: false, canStart: true, state: "conflict", runUrl, start },
+      atlasSync: {
+        busy: false,
+        canStart: true,
+        state: "conflict",
+        awaitingPackage: true,
+        runUrl,
+        start,
+      },
       onUpdateNow: install,
     }),
   );
@@ -38,6 +45,15 @@ it("keeps upstream sync separate from board installation and links failed runs",
   official.querySelector("button")!.click();
   expect(start).toHaveBeenCalledOnce();
   expect(install).not.toHaveBeenCalled();
+  expect(row("Update now").querySelector("button")!.disabled).toBe(true);
+  mountUpdates(
+    createUpdatesViewProps({
+      update: { updateSchedule },
+      atlasSync: { busy: false, canStart: false, state: "published", runUrl, start },
+      onUpdateNow: install,
+    }),
+  );
+  expect(row("Official stable release").textContent).toContain("Ready to install");
   row("Update now").querySelector("button")!.click();
   expect(install).toHaveBeenCalledOnce();
   expect(start).toHaveBeenCalledOnce();

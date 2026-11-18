@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { asNullableRecord } from "@openclaw/normalization-core/record-coerce";
 import { ErrorCodes, errorShape } from "../../../packages/gateway-protocol/src/index.js";
+import { readAtlasArm64Release } from "../../infra/atlas-arm64-release.js";
 import { getUpdateSchedule } from "../../infra/update-status-state.js";
 import { readGatewayRequestMutationAuthority } from "./session-mutation-guards.js";
 import type { GatewayRequestHandlers } from "./types.js";
@@ -77,7 +78,8 @@ async function readRunResult(token: string, run: Record<string, unknown>) {
   const jobs = data.jobs.map(asNullableRecord);
   const prepare = jobs.find((job) => job?.name === "Prepare pull request");
   const verify = jobs.find((job) => job?.name === "Verify candidate");
-  const land = jobs.find((job) => job?.name === "Merge pull request");
+  const build = jobs.find((job) => job?.name === "Build Linux ARM64 artifact");
+  const publish = jobs.find((job) => job?.name === "Publish Linux ARM64 artifact");
   const conflict =
     Array.isArray(prepare?.steps) &&
     prepare.steps.some((step: unknown) => {
@@ -87,17 +89,24 @@ async function readRunResult(token: string, run: Record<string, unknown>) {
   let state = "failed";
   if (conflict) {
     state = "conflict";
-  } else if (verify?.conclusion === "failure") {
+  } else if (verify?.conclusion === "failure" || verify?.conclusion === "timed_out") {
     state = "testsFailed";
-  } else if (run.conclusion === "success" && land?.conclusion === "success") {
-    state = "merged";
-  } else if (
-    run.conclusion === "success" &&
-    prepare?.conclusion === "success" &&
-    verify?.conclusion === "skipped" &&
-    land?.conclusion === "skipped"
-  ) {
-    state = "current";
+  } else if (build?.conclusion === "failure" || build?.conclusion === "timed_out") {
+    state = "buildFailed";
+  } else if (publish?.conclusion === "failure" || publish?.conclusion === "timed_out") {
+    state = "publishFailed";
+  } else if (run.conclusion === "success" && publish?.conclusion === "success") {
+    const ref = await github(token, "/git/ref/heads/main");
+    const sha = asNullableRecord(ref?.object)?.sha;
+    if (typeof sha !== "string") {
+      throw new Error("GitHub returned an invalid Atlas main commit.");
+    }
+    const release = await readAtlasArm64Release(sha, AbortSignal.timeout(15_000));
+    return release
+      ? { id: run.id, state: "published", runUrl: url, version, sha }
+      : { id: run.id, state: "unpublished", runUrl: url, version };
+  } else if (run.conclusion === "success" && !publish) {
+    state = "unpublished";
   }
   return { id: run.id, state, runUrl: url, version };
 }
@@ -131,6 +140,9 @@ export const atlasSyncHandlers: GatewayRequestHandlers = {
     const schedule = getUpdateSchedule();
     const release = schedule?.officialRelease;
     const version = params.version;
+    const canPublish =
+      release?.status === "pending-sync" ||
+      (release?.status === "current" && schedule?.install?.git?.status === "behind");
     if (request.context.getRuntimeConfig().update?.auto?.enabled) {
       respond(
         false,
@@ -144,8 +156,8 @@ export const atlasSyncHandlers: GatewayRequestHandlers = {
     }
     if (
       !schedule?.atlasSource ||
-      release?.status !== "pending-sync" ||
-      version !== release.latestVersion ||
+      !canPublish ||
+      version !== release?.latestVersion ||
       typeof version !== "string" ||
       !/^\d+\.\d+\.\d+$/.test(version)
     ) {

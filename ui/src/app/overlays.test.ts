@@ -710,7 +710,12 @@ describe("application update overlays", () => {
       },
     });
 
-    await overlays.runUpdate();
+    const target = {
+      kind: "git" as const,
+      upstreamRef: "refs/remotes/atlas/main",
+      upstreamSha: "ab".repeat(20),
+    };
+    await overlays.runUpdate(target);
 
     expect(order.filter((entry) => entry === "drain" || entry === "update.run")).toEqual([
       "drain",
@@ -720,7 +725,7 @@ describe("application update overlays", () => {
     expect(updateRunningWhenDrained).toBe(true);
     expect(
       request.mock.calls.filter(([method]) => method === "update.run").map(([, params]) => params),
-    ).toEqual([{ sessionKey: "agent:main:originating-chat" }]);
+    ).toEqual([{ sessionKey: "agent:main:originating-chat", target }]);
     overlays.dispose();
   });
 });

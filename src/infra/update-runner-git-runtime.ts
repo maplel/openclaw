@@ -9,6 +9,10 @@ import type { PackageUpdateTransaction } from "./package-update-swap-contract.js
 import { isPathInside } from "./path-guards.js";
 import type { CommandRunner } from "./update-runner-types.js";
 import {
+  parseRuntimeDirectoryInventory,
+  runtimeDirectoryGitArgs,
+} from "./update-runtime-directories.js";
+import {
   readRuntimeModulesManifest,
   relocateRuntimeTree,
   type RuntimeRelocation,
@@ -41,48 +45,14 @@ async function collectRuntimeDirectories(
   runCommand: CommandRunner,
   timeoutMs: number,
 ) {
-  const result = await runCommand(
-    [
-      "git",
-      "-C",
-      root,
-      "ls-files",
-      "--others",
-      "--ignored",
-      "--exclude-standard",
-      "--directory",
-      "-z",
-      "--",
-      "dist",
-      "dist-runtime",
-      "node_modules",
-      "**/dist",
-      "**/dist-runtime",
-      "**/node_modules",
-      ":(exclude).artifacts/**",
-      ":(exclude).worktrees/**",
-      ":(exclude).claude/**",
-    ],
-    { cwd: root, timeoutMs },
-  );
+  const result = await runCommand(["git", "-C", root, ...runtimeDirectoryGitArgs], {
+    cwd: root,
+    timeoutMs,
+  });
   if (result.code !== 0) {
     throw new Error("Cannot enumerate update runtime outputs");
   }
-  // Tracked siblings make Git descend instead of collapsing an ignored output directory.
-  const directories = result.stdout
-    .split("\0")
-    .filter(Boolean)
-    .flatMap((entry) => {
-      const parts = entry.split("/");
-      const runtimeIndex = parts.findIndex((part) =>
-        ["dist", "dist-runtime", "node_modules"].includes(part),
-      );
-      const runtimeRoot = parts.slice(0, runtimeIndex + 1);
-      return runtimeRoot.length && !runtimeRoot.some((part) => part.startsWith("."))
-        ? [runtimeRoot.join("/")]
-        : [];
-    });
-  return [...new Set(directories)];
+  return parseRuntimeDirectoryInventory(result.stdout);
 }
 
 async function collectDisposableRuntimeCaches(
