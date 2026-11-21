@@ -12,7 +12,7 @@ export function createSequentialQueue(options: SequentialQueueOptions = {}) {
   const queues = new Map<string, Promise<void>>();
   const onTaskTimeout = options.onTaskTimeout;
 
-  return async (key: string, task: () => Promise<void>): Promise<void> => {
+  return async (key: string, task: () => Promise<void>, onEvicted?: () => void): Promise<void> => {
     let completion: Promise<void> | undefined;
     await enqueueKeyedTask({
       tails: queues,
@@ -20,6 +20,7 @@ export function createSequentialQueue(options: SequentialQueueOptions = {}) {
       task: () => {
         completion = task();
         return raceWithTimeout(completion, DEFAULT_TASK_TIMEOUT_MS, () => {
+          onEvicted?.();
           onTaskTimeout?.(key, DEFAULT_TASK_TIMEOUT_MS);
         });
       },

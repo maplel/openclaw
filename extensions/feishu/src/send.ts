@@ -244,6 +244,7 @@ export async function getMessageFeishu(params: {
   cfg: ClawdbotConfig;
   messageId: string;
   accountId?: string;
+  throwOnError?: boolean;
 }): Promise<FeishuMessageInfo | null> {
   const { cfg, messageId, accountId } = params;
   const client = createConfiguredFeishuClient({ cfg, accountId });
@@ -255,6 +256,8 @@ export async function getMessageFeishu(params: {
     })) as FeishuGetMessageResponse;
 
     if (response.code !== 0) {
+      if (params.throwOnError)
+        assertFeishuApiSuccess(response, "Feishu approval message lookup failed");
       return null;
     }
 
@@ -291,7 +294,8 @@ export async function getMessageFeishu(params: {
       };
     }
     return parsedItem;
-  } catch {
+  } catch (error) {
+    if (params.throwOnError) throw error;
     return null;
   }
 }

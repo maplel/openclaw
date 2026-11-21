@@ -29,6 +29,7 @@ export function resolveFeishuReceiptKind(msgType?: string): MessageReceiptPartKi
 function createFeishuSendReceipt(params: {
   messageId?: string;
   chatId: string;
+  providerChatId?: string;
   kind?: MessageReceiptPartKind;
   replyToId?: string;
 }): MessageReceipt {
@@ -42,6 +43,7 @@ function createFeishuSendReceipt(params: {
             messageId,
             chatId,
             conversationId: chatId,
+            ...(params.providerChatId ? { meta: { feishuChatId: params.providerChatId } } : {}),
           },
         ]
       : [],
@@ -56,6 +58,7 @@ export function toFeishuSendResult(
     msg?: string;
     data?: {
       message_id?: string;
+      chat_id?: string;
     };
   },
   chatId: string,
@@ -74,7 +77,13 @@ export function toFeishuSendResult(
   return {
     messageId,
     chatId,
-    receipt: createFeishuSendReceipt({ messageId, chatId, kind, replyToId }),
+    receipt: createFeishuSendReceipt({
+      messageId,
+      chatId,
+      providerChatId: response.data?.chat_id?.trim(),
+      kind,
+      replyToId,
+    }),
   };
 }
 

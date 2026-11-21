@@ -12,6 +12,7 @@ import { isRecord } from "openclaw/plugin-sdk/channel-secret-basic-runtime";
 import { collectErrorGraphCandidates, formatErrorMessage } from "openclaw/plugin-sdk/error-runtime";
 import type { ChannelReplayClaimHandle } from "openclaw/plugin-sdk/persistent-dedupe";
 import { normalizeNullableString } from "openclaw/plugin-sdk/string-coerce-runtime";
+import { feishuExecApprovalReplyLane } from "./exec-approval-replies.js";
 import { getFeishuRuntime } from "./runtime.js";
 
 const FEISHU_INGRESS_PAYLOAD_VERSION = 1;
@@ -116,7 +117,9 @@ function decryptEnvelope(
 function inspectFeishuIngressEnvelope(
   rawEnvelope: string,
   encryptKey: string | undefined,
+  accountId: string,
   allowInvalidLane = false,
+  claimedLaneKey?: string,
 ): FeishuIngressFacts | null {
   const envelope = decryptEnvelope(parseRawEnvelope(rawEnvelope), encryptKey);
   const nestedHeader = isRecord(envelope.header) ? envelope.header : null;
@@ -150,7 +153,18 @@ function inspectFeishuIngressEnvelope(
     if (!chatId) {
       return missingLane("Feishu message ingress envelope is missing event.message.chat_id.");
     }
-    return { eventId, laneKey: `chat:${chatId}` };
+    const sender = isRecord(event.sender) ? event.sender : undefined;
+    const identity = isRecord(sender?.sender_id) ? sender.sender_id : undefined;
+    const approvalLane = feishuExecApprovalReplyLane(
+      accountId,
+      message?.parent_id,
+      identity?.open_id,
+      message?.chat_type,
+      message?.message_type,
+      message?.content,
+      claimedLaneKey,
+    );
+    return { eventId, laneKey: approvalLane ?? `chat:${chatId}` };
   }
   const noticeMeta = isRecord(event.notice_meta) ? event.notice_meta : null;
   const fileType = normalizeNullableString(noticeMeta?.file_type);
@@ -299,7 +313,13 @@ export function createFeishuDurableIngress(options: FeishuIngressOptions) {
           accountId: options.accountId,
         })),
     inspect: (rawEnvelope, context) =>
-      inspectFeishuIngressEnvelope(rawEnvelope, options.encryptKey, context.phase === "admission"),
+      inspectFeishuIngressEnvelope(
+        rawEnvelope,
+        options.encryptKey,
+        options.accountId,
+        context.phase === "admission",
+        context.phase === "claim" ? context.claimedLaneKey : undefined,
+      ),
     payload: {
       version: FEISHU_INGRESS_PAYLOAD_VERSION,
       serialize: (rawEnvelope, { receivedAt }) => ({ receivedAt, rawEnvelope }),
@@ -387,7 +407,12 @@ export function createFeishuDurableIngress(options: FeishuIngressOptions) {
     // Lark WS client invokes from its authenticated socket with needCheck=false.
     // Keep malformed recognized deliveries durable when their stable event id
     // exists. Claim-side validation then dead-letters them without retry.
-    const facts = inspectFeishuIngressEnvelope(rawEnvelope, options.encryptKey, true);
+    const facts = inspectFeishuIngressEnvelope(
+      rawEnvelope,
+      options.encryptKey,
+      options.accountId,
+      true,
+    );
     if (!facts) {
       return {
         kind: "non-durable",
