@@ -1,3 +1,5 @@
+import { captureSessionTarget } from "../../../sessions/session-controller.lifecycle.js";
+import type { SubagentAnnounceDeliveryTestDeps } from "./subagent-announce-overrides.test-support.js";
 export * from "./subagent-announce-delivery.js";
 
 import { expect, it, vi } from "vitest";
@@ -87,4 +89,21 @@ export function registerDescendantWakeCurrencyTests({
       }
     },
   );
+}
+
+export function requesterActivity(
+  sessionId: string | undefined,
+  isActive: boolean,
+): SubagentAnnounceDeliveryTestDeps["getRequesterSessionActivity"] {
+  return (sessionKey, requester) => ({
+    sessionId,
+    isActive,
+    target: captureSessionTarget({
+      storeScope: requester.storePath ?? "/synthetic/announce-delivery/sessions.json",
+      sessionKey: requester.canonicalKey,
+      aliases: [sessionKey],
+      agentId: requester.agentId,
+      incarnation: sessionId,
+    }),
+  });
 }

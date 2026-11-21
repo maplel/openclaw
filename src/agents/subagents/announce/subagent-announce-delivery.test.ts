@@ -48,9 +48,10 @@ import {
   deliverSubagentAnnouncement,
   loadRequesterSessionEntry,
   registerDescendantWakeCurrencyTests,
+  requesterActivity,
 } from "./subagent-announce-delivery.test-support.js";
 import { runDescendantWake } from "./subagent-announce-descendant-wake.js";
-import type { SubagentAnnounceDeliveryTestDeps } from "./subagent-announce-overrides.test-support.js";
+import { registerGeneratedImageInspectionTest } from "./subagent-announce-generated-image.test-support.js";
 import { privateCompletionCases } from "./subagent-announce-private-completion.test-fixtures.js";
 import { createRequesterSettleCases } from "./subagent-announce-requester-settle.test-fixtures.js";
 
@@ -118,23 +119,6 @@ afterEach(() => {
   sessionDeliveryQueueMocks.releaseSessionDeliveryClaim.mockClear();
   sessionDeliveryQueueMocks.scheduleSessionDelivery.mockClear();
 });
-
-function requesterActivity(
-  sessionId: string | undefined,
-  isActive: boolean,
-): SubagentAnnounceDeliveryTestDeps["getRequesterSessionActivity"] {
-  return (sessionKey, requester) => ({
-    sessionId,
-    isActive,
-    target: captureSessionTarget({
-      storeScope: requester.storePath ?? "/synthetic/announce-delivery/sessions.json",
-      sessionKey: requester.canonicalKey,
-      aliases: [sessionKey],
-      agentId: requester.agentId,
-      incarnation: sessionId,
-    }),
-  });
-}
 
 function deliverAnnouncement(
   params: Pick<AnnouncementInput, "requesterSessionKey" | "directIdempotencyKey"> &
@@ -1118,6 +1102,17 @@ describe("deliverSubagentAnnouncement completion delivery", () => {
       resolveGatewayContext,
       signal: expect.any(AbortSignal),
     });
+  });
+
+  registerGeneratedImageInspectionTest(async (params) => {
+    sessionDeliveryQueueMocks.enqueueClaimedSessionDelivery.mockReturnValueOnce({
+      id: "session-delivery-media",
+      claimed: false,
+      status: "completed",
+    });
+    const { callGateway, sendMessage } = await runDelivery("discord", params);
+    expect(sendMessage).not.toHaveBeenCalled();
+    return mockCallArg(callGateway).params;
   });
 
   registerDescendantWakeCurrencyTests({
