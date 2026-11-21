@@ -25,7 +25,7 @@ import {
   formatExecApprovalContinuationSourceOutput,
 } from "./bash-tools.exec-approval-output.js";
 import {
-  buildExecApprovalTurnSourceContext,
+  buildExecApprovalRequestContext,
   isExecApprovalRunAbortedError,
   registerExecApprovalRequestForHostOrThrow,
 } from "./bash-tools.exec-approval-request.js";
@@ -156,7 +156,7 @@ export async function executeNodeHostCommand(
         ? [params.approvalReviewerDeviceId]
         : undefined,
       ...options,
-      ...buildExecApprovalTurnSourceContext(params),
+      ...buildExecApprovalRequestContext(params),
     });
 
   const resolveCurrentTimeoutFallback = async (): Promise<{

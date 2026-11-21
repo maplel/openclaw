@@ -44,6 +44,7 @@ export const WorkerExecApprovalParamsSchema = Type.Union([
     ...Common,
     operation: Type.Literal("request"),
     id: WorkerIdentifierSchema,
+    reason: Type.Optional(Text),
     warningText: Type.Optional(Text),
   }),
   closedObject({ ...Common, operation: Type.Literal("wait"), id: WorkerIdentifierSchema }),

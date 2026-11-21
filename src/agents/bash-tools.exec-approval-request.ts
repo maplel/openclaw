@@ -46,6 +46,7 @@ type RequestExecApprovalDecisionParams = {
   host: "gateway" | "node";
   security: ExecSecurity;
   ask: ExecAsk;
+  reason?: string;
   warningText?: string;
   commandSpans?: ExecApprovalCommandSpan[];
   unavailableDecisions?: readonly ExecApprovalUnavailableDecision[];
@@ -189,18 +190,20 @@ type HostExecApprovalParams = Omit<
   trigger?: string;
 };
 
-type ExecApprovalTurnSourceContext = {
+type ExecApprovalRequestContext = {
+  reason?: string;
   turnSourceChannel?: string;
   turnSourceTo?: string;
   turnSourceAccountId?: string;
   turnSourceThreadId?: string | number;
 };
 
-/** Builds originating channel context for approval delivery/routing. */
-export function buildExecApprovalTurnSourceContext(
-  params: ExecApprovalTurnSourceContext,
-): ExecApprovalTurnSourceContext {
+/** Builds originating purpose and channel context for approval display and routing. */
+export function buildExecApprovalRequestContext(
+  params: ExecApprovalRequestContext,
+): ExecApprovalRequestContext {
   return {
+    ...(params.reason ? { reason: params.reason } : {}),
     turnSourceChannel: params.turnSourceChannel,
     turnSourceTo: params.turnSourceTo,
     turnSourceAccountId: params.turnSourceAccountId,
@@ -278,7 +281,7 @@ async function buildHostApprovalDecisionParams(
     deliverToApprovalClientsOnly:
       params.trigger === "cron" && params.host === "gateway" ? true : undefined,
     approvalReviewerDeviceIds: params.approvalReviewerDeviceIds,
-    ...buildExecApprovalTurnSourceContext(params),
+    ...buildExecApprovalRequestContext(params),
     timeoutMs: DEFAULT_APPROVAL_TIMEOUT_MS,
     twoPhase: true,
   };

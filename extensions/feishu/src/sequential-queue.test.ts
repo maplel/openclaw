@@ -70,6 +70,8 @@ describe("createSequentialQueue", () => {
     const order: string[] = [];
 
     const stuck = gatedTask(enqueue, "stuck", "stuck", order);
+    const consumerClosed = vi.fn();
+    const consumer = stuck.done.finally(consumerClosed);
 
     const followUp = enqueue("stuck", async () => {
       order.push("follow-up:ran");
@@ -83,8 +85,24 @@ describe("createSequentialQueue", () => {
 
     expect(order).toEqual(["stuck:start", "follow-up:ran"]);
     expect(onTaskTimeout).toHaveBeenCalledExactlyOnceWith("stuck", 300_000);
+    expect(consumerClosed).not.toHaveBeenCalled();
 
     stuck.release();
-    await stuck.done;
+    await consumer;
+    expect(consumerClosed).toHaveBeenCalledOnce();
+  });
+
+  it("reports a late dispatch failure to the original caller after releasing the lane", async () => {
+    vi.useFakeTimers();
+    const enqueue = createSequentialQueue();
+    const dispatch = createDeferred<void>();
+    const original = enqueue("chat", () => dispatch.promise);
+    const followUp = enqueue("chat", async () => {});
+    await vi.advanceTimersByTimeAsync(300_000);
+    await followUp;
+    const failure = new Error("delivery failed after approval");
+    const observed = expect(original).rejects.toBe(failure);
+    dispatch.reject(failure);
+    await observed;
   });
 });

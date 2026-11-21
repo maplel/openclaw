@@ -691,7 +691,7 @@ var External = [
     /^\S(?:.*\S)?$/u,
     /(^argv$|^resolvedPath$|^envKeys$|^reason$|^analysis$)/u,
     /(^parsed$|^allowlistMatched$|^safeBinMatched$|^durableApprovalMatched$|^inlineEval$|^heredoc$|^shellWrapper$)/u,
-    /(^binding$|^toolCallId$|^operation$|^id$|^warningText$)/u,
+    /(^binding$|^toolCallId$|^operation$|^id$|^reason$|^warningText$)/u,
     /(^binding$|^toolCallId$|^operation$|^id$)/u,
     /(^generation$|^toolId$|^toolCallId$|^arguments$)/u,
     /^.*$/u,
@@ -1205,7 +1205,7 @@ var External = [
     /(^operation$)/u,
     /(^operation$|^file$|^baseHash$)/u,
     /(^operation$|^agentId$|^command$|^uses$|^grants$|^authorization$)/u,
-    /(^id$|^command$|^commandArgv$|^systemRunPlan$|^env$|^cwd$|^nodeId$|^host$|^security$|^ask$|^warningText$|^scope$|^unavailableDecisions$|^commandSpans$|^agentId$|^resolvedPath$|^sessionKey$|^sessionId$|^runId$|^toolCallId$|^turnSourceChannel$|^turnSourceTo$|^turnSourceAccountId$|^turnSourceThreadId$|^approvalReviewerDeviceIds$|^requireDeliveryRoute$|^suppressDelivery$|^deliverToApprovalClientsOnly$|^timeoutMs$|^twoPhase$)/u,
+    /(^id$|^command$|^commandArgv$|^systemRunPlan$|^env$|^cwd$|^nodeId$|^host$|^security$|^ask$|^reason$|^warningText$|^scope$|^unavailableDecisions$|^commandSpans$|^agentId$|^resolvedPath$|^sessionKey$|^sessionId$|^runId$|^toolCallId$|^turnSourceChannel$|^turnSourceTo$|^turnSourceAccountId$|^turnSourceThreadId$|^approvalReviewerDeviceIds$|^requireDeliveryRoute$|^suppressDelivery$|^deliverToApprovalClientsOnly$|^timeoutMs$|^twoPhase$)/u,
     /(^argv$|^cwd$|^commandText$|^commandPreview$|^agentId$|^sessionKey$|^policySnapshot$|^mutableFileOperand$)/u,
     /(^argvIndex$|^path$|^sha256$)/u,
     /(^startIndex$|^endIndex$)/u,
@@ -3288,6 +3288,7 @@ var External = [
     check_287(value.toolCallId) &&
     check_295(value.operation) &&
     check_287(value.id) &&
+    (value.reason === void 0 || !("reason" in value) || check_296(value.reason)) &&
     (value.warningText === void 0 || !("warningText" in value) || check_296(value.warningText)),
   check_295 = (value) => typeof value == "string" && value === "request",
   check_296 = (value) =>
@@ -11908,6 +11909,7 @@ var External = [
     (value.host === void 0 || !("host" in value) || check_11(value.host)) &&
     (value.security === void 0 || !("security" in value) || check_11(value.security)) &&
     (value.ask === void 0 || !("ask" in value) || check_11(value.ask)) &&
+    (value.reason === void 0 || !("reason" in value) || check_272(value.reason)) &&
     (value.warningText === void 0 || !("warningText" in value) || check_11(value.warningText)) &&
     (value.scope === void 0 || !("scope" in value) || check_19(value.scope)) &&
     (value.unavailableDecisions === void 0 ||

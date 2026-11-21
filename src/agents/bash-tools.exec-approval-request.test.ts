@@ -41,6 +41,16 @@ beforeEach(() => {
 });
 afterEach(vi.restoreAllMocks);
 
+it("keeps the requested purpose separate from the exact command and policy warning", async () => {
+  const fields = {
+    command: "python3 -c 'print(1)'",
+    reason: "检查底图尺寸",
+    warningText: "strict inline-eval",
+  };
+  await register(fields);
+  expect(payload()).toMatchObject(fields);
+});
+
 it("distinguishes run cancellation from timeout fallback", async () => {
   vi.mocked(callGatewayTool)
     .mockResolvedValueOnce({ decision: null, terminalReason: "timeout" })

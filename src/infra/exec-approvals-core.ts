@@ -180,6 +180,8 @@ export type ExecApprovalRequestPayload = {
   host?: string | null;
   security?: string | null;
   ask?: string | null;
+  /** Agent-supplied display title. Never used for authorization. */
+  reason?: string;
   warningText?: string | null;
   /** Display metadata attached by the native stream mutation owner. */
   streamProposal?: StreamApprovalProposal;

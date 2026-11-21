@@ -12,13 +12,19 @@ export function createSequentialQueue(options: SequentialQueueOptions = {}) {
   const queues = new Map<string, Promise<void>>();
   const onTaskTimeout = options.onTaskTimeout;
 
-  return (key: string, task: () => Promise<void>): Promise<void> =>
-    enqueueKeyedTask({
+  return async (key: string, task: () => Promise<void>): Promise<void> => {
+    let completion: Promise<void> | undefined;
+    await enqueueKeyedTask({
       tails: queues,
       key,
-      task: () =>
-        raceWithTimeout(task, DEFAULT_TASK_TIMEOUT_MS, () => {
+      task: () => {
+        completion = task();
+        return raceWithTimeout(completion, DEFAULT_TASK_TIMEOUT_MS, () => {
           onTaskTimeout?.(key, DEFAULT_TASK_TIMEOUT_MS);
-        }),
+        });
+      },
     });
+    // Eviction releases the chat lane; the caller owns its plugin consumer until delivery ends.
+    await completion;
+  };
 }

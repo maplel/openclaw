@@ -20,7 +20,11 @@ export type ExecApprovalTransport = {
   bindExecution(input: ExecApprovalExecution): void;
   assertExecution(input: ExecApprovalExecution): void;
   review(input: ExecAutoReviewInput): Promise<ExecAutoReviewDecision>;
-  request(input: { id: string; warningText?: string }): Promise<ExecApprovalRegistration>;
+  request(input: {
+    id: string;
+    reason?: string;
+    warningText?: string;
+  }): Promise<ExecApprovalRegistration>;
   waitDecision(input: {
     id: string;
   }): Promise<{ decision: string | null; terminalReason?: string }>;

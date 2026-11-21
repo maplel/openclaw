@@ -63,7 +63,7 @@ import {
   buildExecAutoReviewDeniedToolResult,
 } from "./bash-tools.exec-approval-output.js";
 import {
-  buildExecApprovalTurnSourceContext,
+  buildExecApprovalRequestContext,
   registerExecApprovalRequestForHostOrThrow,
 } from "./bash-tools.exec-approval-request.js";
 import { prepareCronStandingGrantConsumption } from "./bash-tools.exec-cron-grant.js";
@@ -838,7 +838,7 @@ export async function processGatewayAllowlist(
           allowlistEval.segments[0]?.resolution ?? null,
           params.workdir,
         ),
-        ...buildExecApprovalTurnSourceContext(params),
+        ...buildExecApprovalRequestContext(params),
       });
     const approvalRoute = await createExecApprovalRequestRoute({
       warnings: params.warnings,
