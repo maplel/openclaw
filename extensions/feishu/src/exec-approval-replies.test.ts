@@ -1,4 +1,5 @@
 import { resolveApprovalOverGateway } from "openclaw/plugin-sdk/approval-gateway-runtime";
+import { createMessageReceiptFromOutboundResults } from "openclaw/plugin-sdk/channel-outbound";
 import { describe, expect, it, vi } from "vitest";
 import type { FeishuMessageEvent } from "./event-types.js";
 import {
@@ -6,7 +7,9 @@ import {
   handleFeishuExecApprovalReply,
   renderFeishuExecApproval,
 } from "./exec-approval-replies.js";
+import { withFeishuOutboundSendContext } from "./outbound-context.js";
 import { buildFeishuPayloadCard } from "./presentation-card.js";
+import { toFeishuSendResult } from "./send-result.js";
 import { getMessageFeishu } from "./send.js";
 
 vi.mock("openclaw/plugin-sdk/approval-gateway-runtime", () => ({
@@ -105,15 +108,22 @@ describe("owner replies to a forwarded native exec request", () => {
   });
   it("uses the provider chat receipt for each part and retains the canonical result", async () => {
     const p = render("parts");
-    for (const id of ["om_part_A", "om_part_B"]) {
-      bindFeishuExecApprovalReceipt(
-        p.channelData.feishuExecApprovalTicket,
-        "user:ou_owner",
-        "default",
-        id,
-        "oc_private",
-      );
-    }
+    const results = ["om_part_A", "om_part_B"].map((id) =>
+      toFeishuSendResult(
+        { code: 0, data: { message_id: id, chat_id: "oc_private" } },
+        "ou_owner",
+        "text",
+      ),
+    );
+    const adapter = withFeishuOutboundSendContext({
+      deliveryMode: "direct",
+      sendPayload: async () => ({
+        channel: "feishu",
+        messageId: "om_part_B",
+        receipt: createMessageReceiptFromOutboundResults({ results }),
+      }),
+    });
+    await adapter.sendPayload!({ cfg, to: "user:ou_owner", payload: p, text: p.text });
     vi.mocked(getMessageFeishu).mockClear();
     const wrong = reply("om_part_A");
     wrong.message.chat_id = "oc_wrong";
