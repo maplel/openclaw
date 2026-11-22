@@ -103,6 +103,7 @@ export type ExecToolDefaults = ExecToolRoutingDefaults & {
 
 /** Request and approval context shared by Gateway and node execution hosts. */
 export type ExecHostCommandParams = {
+  reason?: string;
   approvalTransport?: ExecApprovalTransport;
   command: string;
   env: Record<string, string>;

@@ -190,6 +190,7 @@ export function createExecApprovalHandlers(
         }
         const envBinding = buildSystemRunApprovalEnvBinding(p.env);
         const warningText = normalizeOptionalString(p.warningText);
+        const reason = normalizeOptionalString(p.reason);
         const runtimeConfig = context.getRuntimeConfig();
         const commandHighlighting = resolveExecCommandHighlighting({
           config: runtimeConfig,
@@ -297,6 +298,7 @@ export function createExecApprovalHandlers(
           // reviewer surfaces; decision resolution already treats them as null.
           security: normalizeExecSecurity(p.security) ?? null,
           ask: normalizeExecAsk(p.ask) ?? null,
+          ...(reason ? { reason: sanitizeExecApprovalWarningText(reason) } : {}),
           warningText: warningText ? sanitizeExecApprovalWarningText(warningText) : null,
           // Server-derived automation scope wins: the gateway owns the cron
           // fact, so a client-declared scope never masks what allow-always mints.

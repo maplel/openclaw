@@ -1,3 +1,4 @@
+import { createDeferred } from "openclaw/plugin-sdk/extension-shared";
 import { createRuntimeConfigReader } from "openclaw/plugin-sdk/runtime-config-snapshot";
 import { isRecord, readStringValue as readString } from "openclaw/plugin-sdk/string-coerce-runtime";
 import type { ClawdbotConfig, HistoryEntry, PluginRuntime, RuntimeEnv } from "../runtime-api.js";
@@ -10,6 +11,10 @@ import {
 } from "./dedup.js";
 import { resolveFeishuMessageDedupeKey } from "./dedupe-key.js";
 import type { FeishuMessageEvent } from "./event-types.js";
+import {
+  handleFeishuExecApprovalReply,
+  type FeishuExecApprovalGatewayRuntime,
+} from "./exec-approval-replies.js";
 import {
   buildFeishuFlushIngressLifecycle,
   FeishuIngressPermanentError,
@@ -161,7 +166,8 @@ export function createFeishuMessageReceiveHandler({
 
   const dispatchFeishuMessage = async (
     { event, messageDedupeKey, processingClaim }: FeishuMessageDebounceEntry,
-    turnAdoptionLifecycle?: FeishuIngressLifecycle,
+    turnAdoptionLifecycle: FeishuIngressLifecycle,
+    onEvicted: () => void,
     preparedContent?: string,
   ) => {
     const sequentialKey = resolveSequentialKey({
@@ -173,7 +179,7 @@ export function createFeishuMessageReceiveHandler({
         channelRuntime.commands.isControlCommandMessage(text, readConfig()),
     });
     const task = async () => {
-      if (turnAdoptionLifecycle?.abortSignal.aborted) {
+      if (turnAdoptionLifecycle.abortSignal.aborted) {
         await turnAdoptionLifecycle.onAbandoned();
         return;
       }
@@ -194,7 +200,7 @@ export function createFeishuMessageReceiveHandler({
       trackTask?.(handling);
       await handling;
     };
-    await enqueue(sequentialKey, task);
+    await enqueue(sequentialKey, task, onEvicted);
   };
 
   const resolveDebounceText = (event: FeishuMessageEvent): string => {
@@ -269,7 +275,8 @@ export function createFeishuMessageReceiveHandler({
               error(`feishu[${accountId}]: failed to commit logical replay guard: ${String(err)}`),
           },
         );
-        return createFlush({
+        const evicted = createDeferred<void>();
+        const flush = createFlush({
           lifecycle,
           dispatch: async (admissionLifecycle) => {
             if (!last) {
@@ -281,7 +288,7 @@ export function createFeishuMessageReceiveHandler({
             }
             try {
               if (activeEntries.length === 1) {
-                await dispatchFeishuMessage(last, admissionLifecycle);
+                await dispatchFeishuMessage(last, admissionLifecycle, evicted.resolve);
                 await settle();
                 return;
               }
@@ -311,6 +318,7 @@ export function createFeishuMessageReceiveHandler({
                   },
                 },
                 admissionLifecycle,
+                evicted.resolve,
                 combinedText,
               );
               await settle();
@@ -320,6 +328,12 @@ export function createFeishuMessageReceiveHandler({
             }
           },
         });
+        // An unadopted task may also hold the outer debounce lane. Eviction releases only
+        // scheduling; the original source claim and consumer still belong to dispatch.
+        return {
+          admission: Promise.race([flush.admission, evicted.promise]),
+          completion: flush.completion,
+        };
       },
       onError: (err, entries) => {
         for (const entry of entries) {
@@ -411,6 +425,36 @@ export function createFeishuMessageReceiveHandler({
     if (claim.kind === "duplicate" || claim.kind === "inflight") {
       await completeSuppressedIngress();
       return undefined;
+    }
+    try {
+      const acknowledgement =
+        event.message.parent_id &&
+        (await handleFeishuExecApprovalReply(
+          readConfig(),
+          accountId,
+          event,
+          channelRuntime.runtimeContexts?.get<FeishuExecApprovalGatewayRuntime>({
+            channelId: "feishu",
+            accountId,
+            capability: "approval.gateway",
+          }) ?? undefined,
+        ));
+      if (acknowledgement) {
+        const { sendMessageFeishu } = await import("./send.js");
+        await sendMessageFeishu({
+          cfg: readConfig(),
+          accountId,
+          to: event.message.chat_id,
+          replyToMessageId: messageId,
+          text: acknowledgement,
+        });
+        if (claim.kind === "claimed") await claim.handle.commit();
+        await completeSuppressedIngress();
+        return undefined;
+      }
+    } catch (err) {
+      if (claim.kind === "claimed") claim.handle.release({ error: err });
+      throw err;
     }
     const debounceEntry: FeishuMessageDebounceEntry = {
       event,

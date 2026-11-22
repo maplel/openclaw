@@ -13,6 +13,10 @@ import { claimUnprocessedFeishuMessage, finalizeFeishuMessageProcessing } from "
 import { resolveFeishuMessageDedupeKey } from "./dedupe-key.js";
 import type { FeishuMessageEvent } from "./event-types.js";
 import {
+  bindFeishuExecApprovalReceipt,
+  renderFeishuExecApproval,
+} from "./exec-approval-replies.js";
+import {
   buildFeishuFlushIngressLifecycle,
   createFeishuDurableIngress,
   type FeishuIngressLifecycle,
@@ -153,6 +157,68 @@ afterEach(async () => {
 });
 
 describe("Feishu durable ingress", () => {
+  it("admits a verified exec control while the ordinary owner DM lane is occupied", async () => {
+    const owner = "ou_owner";
+    const prompt = renderFeishuExecApproval({
+      cfg: { commands: { ownerAllowFrom: [owner] } },
+      target: { to: "user:" + owner, accountId: "default" },
+      request: {
+        id: "native-control",
+        request: { command: "pwd" },
+        createdAtMs: 0,
+        expiresAtMs: 60000,
+      },
+      nowMs: 0,
+    })!;
+    bindFeishuExecApprovalReceipt(
+      prompt.channelData.feishuExecApprovalTicket,
+      "user:" + owner,
+      "default",
+      "om_control",
+    );
+    await withQueue(async (queue, startIngress) => {
+      const seen: string[] = [];
+      let first: FeishuIngressLifecycle | undefined;
+      const ingress = startIngress({
+        queue,
+        dispatch: async (data) => {
+          const id = data.header.event_id;
+          const life = ingress.resolveLifecycle({ ...data.header, ...data.event });
+          seen.push(id);
+          if (id === "A") {
+            first = life;
+            return { kind: "deferred" };
+          }
+          await life?.onAdopted();
+        },
+      });
+      ingress.start();
+      await ingress.invoke(messageEnvelope("A"), { needCheck: false });
+      await vi.waitFor(() => expect(first).toBeDefined());
+      await ingress.invoke(messageEnvelope("B"), { needCheck: false });
+      const third = messageEnvelope("C");
+      await ingress.invoke(
+        {
+          ...third,
+          event: {
+            sender: { sender_id: { open_id: owner } },
+            message: {
+              ...third.event.message,
+              parent_id: "om_control",
+              chat_type: "p2p",
+              message_type: "text",
+              content: '{"text":"允许"}',
+            },
+          },
+        },
+        { needCheck: false },
+      );
+      await vi.waitFor(() => expect(seen).toEqual(["A", "C"]), { timeout: 4000 });
+      await first!.onAdopted();
+      await ingress.waitForIdle();
+      expect(seen).toEqual(["A", "C", "B"]);
+    });
+  });
   it("waits for durable append before acknowledging the webhook", async () => {
     await withQueue(async (queue, startIngress) => {
       const appendGate = createDeferred<void>();

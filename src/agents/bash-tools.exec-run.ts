@@ -74,6 +74,7 @@ import {
 import { resolveStoredSubagentCapabilities } from "./subagents/spawn/subagent-capabilities.js";
 import { withPreparedSessionCapabilityRead } from "./subagents/spawn/subagent-session-store.js";
 import { EXEC_TOOL_DISPLAY_SUMMARY } from "./tool-description-presets.js";
+import { resolveExecTitle } from "./tool-display-exec.js";
 import type { AgentToolWithMeta } from "./tools/common.js";
 import { withoutGatewayToolCallerIdentity } from "./tools/gateway-caller-context.js";
 
@@ -443,6 +444,7 @@ export function createExecTool(defaults?: ExecToolDefaults) {
         });
 
         const hostApprovalParams = () => ({
+          reason: resolveExecTitle(args),
           approvalTransport,
           command: params.command,
           toolCallId,

@@ -105,6 +105,7 @@ export function createWorkerExecApprovalOwner(params: {
             security: params.exec.security,
             ask: params.exec.ask,
             unavailableDecisions: ["allow-always"],
+            reason: request.reason,
             warningText: [
               `Execution target: remote worker ${authority.environmentId}.`,
               `Requested command: ${request.binding.command}`,

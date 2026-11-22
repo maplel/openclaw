@@ -34,6 +34,16 @@ describe("toFeishuSendResult", () => {
     expect(result.receipt.threadId).toBeUndefined();
   });
 
+  it("preserves the provider chat identity separately from the requested recipient", () => {
+    const result = toFeishuSendResult(
+      { code: 0, data: { message_id: "om_1", chat_id: "oc_actual" } },
+      "ou_owner",
+      "card",
+    );
+    expect(result.chatId).toBe("ou_owner");
+    expect(result.receipt.parts[0]?.raw?.meta?.feishuChatId).toBe("oc_actual");
+  });
+
   it("records the authoritative reply anchor instead of treating the chat as a thread", () => {
     const result = toFeishuSendResult(
       { code: 0, data: { message_id: "om_reply" } },

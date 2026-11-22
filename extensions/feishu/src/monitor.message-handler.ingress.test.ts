@@ -137,18 +137,20 @@ function createHarness(params: {
       return eventId ? params.lifecycles.get(eventId) : undefined;
     },
   });
+  const beginFlush = () => {
+    if (!onFlush) {
+      throw new Error("debouncer flush callback missing");
+    }
+    return onFlush(entries.splice(0), createTestInboundDebounceFlush);
+  };
   return {
     claim,
     entries,
     handler,
     handleMessage,
     hasProcessedMessage,
-    flush: async () => {
-      if (!onFlush) {
-        throw new Error("debouncer flush callback missing");
-      }
-      await onFlush(entries.splice(0), createTestInboundDebounceFlush).completion;
-    },
+    beginFlush,
+    flush: () => beginFlush().completion,
     failFlush: (err: unknown) => {
       if (!onError) {
         throw new Error("debouncer error callback missing");
@@ -329,6 +331,34 @@ it("admits controls during an active turn while ordinary messages retain FIFO or
 });
 
 describe("Feishu durable ingress debounce lifecycle", () => {
+  it("releases a stuck debounce lane without settling the original dispatch or adopting its claim", async () => {
+    vi.useFakeTimers();
+    const { event, harness, transport } = createTurn("stuck-before-admission");
+    const finish = createDeferred<void>();
+    harness.handleMessage.mockImplementationOnce(() => finish.promise);
+    try {
+      await harness.handler(event);
+      const flush = harness.beginFlush();
+      const admitted = vi.fn();
+      const completed = vi.fn();
+      const lane = flush.admission.then(admitted);
+      const original = flush.completion.then(completed);
+      await vi.advanceTimersByTimeAsync(299_999);
+      expect(admitted).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(admitted).toHaveBeenCalledOnce();
+      expect(completed).not.toHaveBeenCalled();
+      expect(transport.calls.adopted).not.toHaveBeenCalled();
+      expect(transport.calls.deferred).not.toHaveBeenCalled();
+      finish.resolve();
+      await Promise.all([lane, original]);
+      expect(completed).toHaveBeenCalledOnce();
+    } finally {
+      finish.resolve();
+      vi.useRealTimers();
+    }
+  });
+
   it("releases a claim acquired after ingress abandonment instead of enqueueing it", async () => {
     const { transport, logicalClaim, event, harness } = createTurn("delayed", { noClaim: true });
     const pending =
@@ -586,9 +616,10 @@ describe("Feishu durable ingress debounce lifecycle", () => {
       vi.setSystemTime(beyondAttempt.lastAttemptAt + 1_000);
       await expectBackoff(4);
     } finally {
+      vi.useRealTimers();
+      await closeOpenClawStateDatabaseAsync();
       closeOpenClawStateDatabaseForTest();
       await fs.rm(stateDir, { recursive: true, force: true });
-      vi.useRealTimers();
     }
   });
 });

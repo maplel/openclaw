@@ -308,6 +308,7 @@ export const ExecApprovalRequestParamsSchema = closedObject({
   host: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   security: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   ask: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  reason: Type.Optional(Type.String()),
   warningText: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   scope: Type.Optional(ApprovalScopeSchema),
   unavailableDecisions: Type.Optional(

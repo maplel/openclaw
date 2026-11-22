@@ -26,3 +26,4 @@ export {
   buildPluginApprovalPendingReplyPayload,
   buildTypedPluginApprovalPendingReplyPayload,
 } from "./approval-renderers.js";
+export { formatFencedCodeBlock } from "../shared/markdown-code.js";

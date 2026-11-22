@@ -59,7 +59,6 @@ import {
   resolveFeishuAccount,
 } from "./accounts.js";
 import { buildFeishuMessageToolHints } from "./agent-prompt.js";
-import { feishuApprovalAuth } from "./approval-auth.js";
 import { FEISHU_CARD_INTERACTION_VERSION } from "./card-interaction.js";
 import { normalizeFeishuChatType, resolveFeishuChatType } from "./chat-type.js";
 import { FeishuChannelConfigSchema } from "./config-schema.js";
@@ -77,6 +76,7 @@ import {
   listFeishuDirectoryPeers,
 } from "./directory.static.js";
 import { feishuDoctor } from "./doctor.js";
+import { feishuExecApprovalCapability } from "./exec-approval-replies.js";
 import { normalizeFeishuExternalKey } from "./external-keys.js";
 import { feishuGatewayAdapter } from "./gateway.js";
 import { chunkFeishuMarkdown } from "./markdown.js";
@@ -906,7 +906,7 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount, FeishuProbeResul
             },
           }),
       },
-      approvalCapability: feishuApprovalAuth,
+      approvalCapability: feishuExecApprovalCapability,
       secrets: {
         secretTargetRegistryEntries,
         collectRuntimeConfigAssignments,

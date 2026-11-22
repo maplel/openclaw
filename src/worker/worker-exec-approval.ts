@@ -115,6 +115,7 @@ export function createWorkerExecApprovalTransport(
     async request(input) {
       const result = await request({
         id: input.id,
+        reason: input.reason,
         warningText: input.warningText,
         operation: "request",
         toolCallId,
