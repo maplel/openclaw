@@ -19,7 +19,7 @@ import {
   getUpdateSchedule,
   setUpdateScheduleCache,
   setUpdateAvailableCache,
-  withoutUpdateTarget,
+  retireUpdateTarget,
   withoutUpdateCampaign,
 } from "./update-status-state.js";
 
@@ -131,18 +131,9 @@ export function refreshGatewayUpdateStatus(getConfig: () => OpenClawConfig): Pro
           next: published,
           onUpdateScheduleChange: lifecycle.onUpdateScheduleChange,
         });
-      const retireGitTarget = () => {
-        setUpdateAvailableCache({
-          next: null,
-          onUpdateAvailableChange: lifecycle.onUpdateAvailableChange,
-        });
-        // Retire the schedule first so the campaign callback cannot republish its old target.
-        publishSchedule(withoutUpdateTarget(next));
-        lifecycle.campaign?.clear();
-      };
       if (unavailable) {
         if (refreshedChannel !== channel) {
-          retireGitTarget();
+          retireUpdateTarget(next, lifecycle.campaign, lifecycle);
         } else {
           // A failed observation alone cannot revoke the last announced campaign.
           publishSchedule(next);
@@ -162,7 +153,7 @@ export function refreshGatewayUpdateStatus(getConfig: () => OpenClawConfig): Pro
           publishSchedule(next);
           return;
         }
-        retireGitTarget();
+        retireUpdateTarget(next, lifecycle.campaign, lifecycle);
         return;
       }
       const update = await resolveDevGitUpdate(status, signal);
@@ -170,12 +161,7 @@ export function refreshGatewayUpdateStatus(getConfig: () => OpenClawConfig): Pro
       lifecycle.installStatus = { root, status, installReceipt };
       const campaign = lifecycle.campaign;
       if (!update) {
-        campaign?.clear();
-        setUpdateAvailableCache({
-          next: null,
-          onUpdateAvailableChange: lifecycle.onUpdateAvailableChange,
-        });
-        publishSchedule(withoutUpdateTarget(next));
+        retireUpdateTarget(next, campaign, lifecycle);
         return;
       }
       setUpdateAvailableCache({

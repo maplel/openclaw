@@ -1,12 +1,13 @@
 {
   "name": "openclaw",
-  "version": "2026.11.5",
+  "version": "2026.11.6",
   "openclaw": {
     "atlasUpdateSource": {
       "repositoryUrl": "https://github.com/maplel/openclaw",
       "branch": "main"
     },
     "updateAdmissionProtocol": 1,
+    "updatePreflightProtocol": 1,
     "databaseEngines": [
       "sqlite",
       "postgres"

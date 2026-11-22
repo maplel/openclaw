@@ -561,6 +561,7 @@ export async function updateGitInstall(params: {
       ? await ensureGitCheckout({
           ...(atlasUpdateSource ? { repositoryUrl: `${atlasUpdateSource.repositoryUrl}.git` } : {}),
           dir: updateRoot,
+          assertCurrent: params.assertCurrent,
           env: installEnv,
           timeoutMs: effectiveTimeout,
           progress: params.progress,

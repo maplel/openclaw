@@ -16,7 +16,11 @@ import { UpdateRequesterRevokedError } from "./update-requester-authority.js";
 import { isFailedUpdateStep } from "./update-run-step.js";
 import { reportUpdateStepCompletion, runStep } from "./update-runner-command.js";
 import { settleGitUpdateCleanup } from "./update-runner-git-cleanup.js";
-import { gitCleanCheckArgs, readGitHead } from "./update-runner-git-commands.js";
+import {
+  gitCleanCheckArgs,
+  readGitHead,
+  resolveGitUpdateCommandEnv,
+} from "./update-runner-git-commands.js";
 import { createGitMutationInspector } from "./update-runner-git-inspection.js";
 import {
   readCurrentGitUpdateRecovery,
@@ -420,7 +424,7 @@ export async function updateGitCheckout(params: {
         beforeGitStaging: opts.beforeGitStaging,
         needsCheckoutMain,
         timeoutMs,
-        defaultCommandEnv,
+        defaultCommandEnv: resolveGitUpdateCommandEnv(defaultCommandEnv),
         steps,
         beforeCandidate: inspectTarget,
         validateCandidate: opts.validateCandidate,

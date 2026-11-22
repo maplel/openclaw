@@ -40,6 +40,21 @@ export async function readGitHead(root: string, runCommand: CommandRunner, timeo
   return result.code === 0 ? result.stdout.trim() || null : null;
 }
 
+/** Older Git may lazily fetch promised objects; that must not block an update. */
+export async function resolveGitNoLazyFetchArgs(
+  runCommand: CommandRunner,
+  options: Parameters<CommandRunner>[1],
+): Promise<string[]> {
+  const probe = await runCommand(["git", "--no-lazy-fetch", "version"], options);
+  return probe.code === 0 &&
+    probe.stdout.startsWith("git version ") &&
+    !probe.killed &&
+    !probe.signal &&
+    (!probe.termination || probe.termination === "exit")
+    ? ["--no-lazy-fetch"]
+    : [];
+}
+
 export function resolveTagFetchRef(candidate: string): string | null {
   const ref = candidate.endsWith("^{}") ? candidate.slice(0, -"^{}".length) : candidate;
   return ref.startsWith("refs/tags/") ? ref : null;
@@ -119,6 +134,13 @@ function resolveBuildNodeOptions(baseOptions: string | undefined): string {
     return current;
   }
   return current.replace(/(?:^|\s)--max-old-space-size=\d+(?=\s|$)/, ` ${desired}`).trim();
+}
+
+export function resolveGitUpdateCommandEnv(
+  env: NodeJS.ProcessEnv = process.env,
+): NodeJS.ProcessEnv {
+  // Ordinary updates need runnable artifacts; immutable releases own their build policy.
+  return { ...env, OPENCLAW_RUN_NODE_SKIP_DTS_BUILD: env.OPENCLAW_RUN_NODE_SKIP_DTS_BUILD ?? "1" };
 }
 
 export function resolveBuildEnv(env: NodeJS.ProcessEnv, buildCacheRoot: string): NodeJS.ProcessEnv {

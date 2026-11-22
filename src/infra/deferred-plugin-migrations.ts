@@ -26,6 +26,7 @@ import { captureOpenClawStateWorkerContext } from "../state/openclaw-state-worke
 import type { WorkerOperationHandlers } from "../state/worker-operation-registry.js";
 import {
   deferredPluginMigrationSchema,
+  sameDeferredPluginMigrationInputs,
   type DeferredPluginMigration,
 } from "./deferred-plugin-migrations.contract.js";
 import { isTruthyEnvValue } from "./env.js";
@@ -266,7 +267,10 @@ function samePendingGeneration(
   // Doctor appends newly discovered owners; SQLite reads rows in key order.
   const byPluginId = (left: DeferredPluginMigration, right: DeferredPluginMigration) =>
     left.pluginId < right.pluginId ? -1 : left.pluginId > right.pluginId ? 1 : 0;
-  return isDeepStrictEqual(current.toSorted(byPluginId), expected.toSorted(byPluginId));
+  return sameDeferredPluginMigrationInputs(
+    current.toSorted(byPluginId),
+    expected.toSorted(byPluginId),
+  );
 }
 
 function assertPendingGeneration(
