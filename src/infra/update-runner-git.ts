@@ -16,11 +16,7 @@ import { UpdateRequesterRevokedError } from "./update-requester-authority.js";
 import { isFailedUpdateStep } from "./update-run-step.js";
 import { reportUpdateStepCompletion, runStep } from "./update-runner-command.js";
 import { settleGitUpdateCleanup } from "./update-runner-git-cleanup.js";
-import {
-  gitCleanCheckArgs,
-  readGitHead,
-  resolveGitUpdateCommandEnv,
-} from "./update-runner-git-commands.js";
+import * as gitCommands from "./update-runner-git-commands.js";
 import { createGitMutationInspector } from "./update-runner-git-inspection.js";
 import {
   readCurrentGitUpdateRecovery,
@@ -301,7 +297,7 @@ export async function updateGitCheckout(params: {
     return buildError("git-root-unresolved");
   }
   const { result: statusCheck, dirty } = await runGitCleanCheckStep(
-    step("clean-check", gitCleanCheckArgs(gitRoot), gitRoot),
+    step("clean-check", gitCommands.gitCleanCheckArgs(gitRoot), gitRoot),
   );
   if (isFailedUpdateStep(statusCheck)) {
     return buildError(dirty ? "dirty" : "clean-check-failed");
@@ -330,7 +326,7 @@ export async function updateGitCheckout(params: {
     });
     assertCurrent();
     const currentStatus = await runCommand(
-      gitCleanCheckArgs(gitRoot, runtimePromotion?.sourceTreeStagingPaths),
+      gitCommands.gitCleanCheckArgs(gitRoot, runtimePromotion?.sourceTreeStagingPaths),
       { cwd: gitRoot, timeoutMs },
     );
     assertCurrent();
@@ -424,7 +420,7 @@ export async function updateGitCheckout(params: {
         beforeGitStaging: opts.beforeGitStaging,
         needsCheckoutMain,
         timeoutMs,
-        defaultCommandEnv: resolveGitUpdateCommandEnv(defaultCommandEnv),
+        defaultCommandEnv: gitCommands.resolveGitUpdateCommandEnv(defaultCommandEnv),
         steps,
         beforeCandidate: inspectTarget,
         validateCandidate: opts.validateCandidate,
@@ -435,7 +431,7 @@ export async function updateGitCheckout(params: {
           return true;
         },
         prepareCandidate: async (root, cleanupRoot) => {
-          const candidateSha = await readGitHead(root, runInspectionCommand, timeoutMs);
+          const candidateSha = await gitCommands.readGitHead(root, runInspectionCommand, timeoutMs);
           if (!candidateSha) {
             throw new Error("Cannot inspect the validated Git update");
           }
