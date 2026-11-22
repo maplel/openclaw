@@ -2,11 +2,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GatewayRequestHandlerOptions } from "./types.js";
 import { atlasSyncHandlers } from "./update-atlas-sync.js";
 
-const { readFile, assertCurrent } = vi.hoisted(() => ({
+const { readFile, assertCurrent, warn } = vi.hoisted(() => ({
   readFile: vi.fn(),
   assertCurrent: vi.fn(),
+  warn: vi.fn(),
 }));
 vi.mock("node:fs/promises", () => ({ readFile }));
+vi.mock("../../logging/subsystem.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../logging/subsystem.js")>();
+  return {
+    ...actual,
+    createSubsystemLogger: (name: string) =>
+      name === "gateway/atlas-sync" ? { warn } : actual.createSubsystemLogger(name),
+  };
+});
 vi.mock("../../infra/update-status-state.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../infra/update-status-state.js")>()),
   getUpdateSchedule: () => ({
@@ -87,6 +96,54 @@ describe("Atlas sync Gateway actions", () => {
       state: "running",
     });
     expect(fetchGitHub).toHaveBeenCalledOnce();
+  });
+
+  it("logs the GitHub dispatch error and request ID with credentials redacted", async () => {
+    const details = {
+      message: "Validation Failed",
+      errors: [{ field: "version", message: "Invalid input", value: "test-token" }],
+    };
+    fetchGitHub.mockResolvedValueOnce(Response.json({ workflow_runs: [] })).mockResolvedValueOnce(
+      Response.json(details, {
+        status: 422,
+        headers: { "X-GitHub-Request-Id": "12AB:34CD:56EF" },
+      }),
+    );
+
+    expect(await call("start", { version: "2026.11.5" })).toEqual([
+      false,
+      undefined,
+      expect.objectContaining({ message: "GitHub rejected the Atlas sync request (HTTP 422)." }),
+    ]);
+    expect(warn).toHaveBeenCalledExactlyOnceWith("GitHub rejected the Atlas sync request", {
+      method: "POST",
+      endpoint: "/actions/workflows/atlas-sync-stable.yml/dispatches",
+      status: 422,
+      githubRequestId: "12AB:34CD:56EF",
+      details: JSON.stringify(details).replace("test-token", "[REDACTED]"),
+    });
+    expect(fetchGitHub).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps the HTTP status and request ID when the error response body cannot be read", async () => {
+    const body = new ReadableStream({ start: (controller) => controller.error(new Error("EOF")) });
+    fetchGitHub.mockResolvedValueOnce(
+      new Response(body, { status: 502, headers: { "X-GitHub-Request-Id": "12AB:34CD" } }),
+    );
+
+    expect(await call("status")).toEqual([
+      false,
+      undefined,
+      expect.objectContaining({ message: "GitHub rejected the Atlas sync request (HTTP 502)." }),
+    ]);
+    expect(warn).toHaveBeenCalledExactlyOnceWith("GitHub rejected the Atlas sync request", {
+      method: "GET",
+      endpoint:
+        "/actions/workflows/atlas-sync-stable.yml/runs?branch=main&event=workflow_dispatch&per_page=1",
+      status: 502,
+      githubRequestId: "12AB:34CD",
+      details: "",
+    });
   });
 
   it.each([

@@ -2,7 +2,10 @@ import { readFile } from "node:fs/promises";
 import { asNullableRecord } from "@openclaw/normalization-core/record-coerce";
 import { ErrorCodes, errorShape } from "../../../packages/gateway-protocol/src/index.js";
 import { readAtlasArm64Release } from "../../infra/atlas-arm64-release.js";
+import { readResponseBodySnippet } from "../../infra/http-error-body.js";
 import { getUpdateSchedule } from "../../infra/update-status-state.js";
+import { redactSensitiveText } from "../../logging/redact.js";
+import { createSubsystemLogger } from "../../logging/subsystem.js";
 import { readGatewayRequestMutationAuthority } from "./session-mutation-guards.js";
 import type { GatewayRequestHandlers } from "./types.js";
 
@@ -10,6 +13,7 @@ const repository = "maplel/openclaw";
 const workflow = "/actions/workflows/atlas-sync-stable.yml";
 const latestRun = `${workflow}/runs?branch=main&event=workflow_dispatch&per_page=1`;
 const tokenFile = "OPENCLAW_ATLAS_SYNC_TOKEN_FILE";
+const log = createSubsystemLogger("gateway/atlas-sync");
 let dispatching = false;
 
 async function getToken() {
@@ -25,8 +29,9 @@ async function getToken() {
 }
 
 async function github(token: string, endpoint: string, body?: object) {
+  const method = body ? "POST" : "GET";
   const response = await fetch(`https://api.github.com/repos/${repository}${endpoint}`, {
-    method: body ? "POST" : "GET",
+    method,
     headers: {
       Accept: "application/vnd.github+json",
       Authorization: `Bearer ${token}`,
@@ -38,6 +43,21 @@ async function github(token: string, endpoint: string, body?: object) {
     signal: AbortSignal.timeout(15_000),
   });
   if (!response.ok) {
+    const redact = (value: string) =>
+      redactSensitiveText(value.replaceAll(token, "[REDACTED]"), { mode: "tools" });
+    const requestId = response.headers.get("x-github-request-id");
+    const details = await readResponseBodySnippet(response, {
+      maxBytes: 8 * 1024,
+      maxChars: 2048,
+      redact,
+    });
+    log.warn("GitHub rejected the Atlas sync request", {
+      method,
+      endpoint,
+      status: response.status,
+      githubRequestId: requestId && redact(requestId),
+      details,
+    });
     throw new Error(`GitHub rejected the Atlas sync request (HTTP ${response.status}).`);
   }
   return asNullableRecord(await response.json());
