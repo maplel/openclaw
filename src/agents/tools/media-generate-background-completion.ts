@@ -1,4 +1,3 @@
-import { getRuntimeConfig } from "../../config/config.js";
 import { withSessionEntryReadOnlyInWorker } from "../../config/sessions/session-entry-read-runtime.js";
 import { sessionMatchesExpectedTranscriptTurn } from "../../config/sessions/session-transcript-turn-state.js";
 import {
@@ -7,13 +6,9 @@ import {
   type SessionTranscriptTargetBinding,
 } from "../../config/sessions/transcript-target-binding.js";
 import { appendAssistantMessageToSessionTranscript } from "../../config/sessions/transcript.js";
-import { resolveChatAttachmentPolicy } from "../../gateway/chat-attachment-policy.js";
-import type { AgentRunRequest } from "../../gateway/server-methods/agent-request-types.js";
 import type { GatewayContextResolver } from "../../gateway/server-methods/types.js";
-import { readLocalFileSafely } from "../../infra/fs-safe.js";
 import type { SessionDeliveryRequesterBinding } from "../../infra/session-delivery-queue.records.js";
 import { createSubsystemLogger } from "../../logging/subsystem.js";
-import { resolveGeneratedMediaMaxBytes } from "../../media/configured-max-bytes.js";
 import type { DeliveryContext } from "../../utils/delivery-context.types.js";
 import type { RequiredCompletionTerminalResult } from "../completion-result.js";
 import {
@@ -164,53 +159,6 @@ export async function wakeMediaGenerationTaskCompletion(params: {
     lifecycleRevision: target.lifecycleRevision,
   };
   const announceId = `${params.toolName}:${handle.taskId}:${params.status}`;
-  const inputAttachments: NonNullable<AgentRunRequest["attachments"]> = [];
-  let imageInspectionUnavailable = false;
-  // Admit only this producer's successful outputs, bound to the requester above.
-  // They are ordinary input attachments, not a new prompt-path read permission.
-  if (params.status === "ok" && params.toolName === "image_generate") {
-    for (const attachment of params.attachments ?? []) {
-      if (attachment.type !== "image" || !attachment.path) {
-        continue;
-      }
-      try {
-        const cfg = getRuntimeConfig();
-        const { maxImageBytes } = resolveChatAttachmentPolicy(cfg);
-        const { buffer } = await readLocalFileSafely({
-          filePath: attachment.path,
-          maxBytes: resolveGeneratedMediaMaxBytes(cfg, "image"),
-        });
-        let pixels = buffer;
-        let mimeType = attachment.mimeType;
-        let fileName = attachment.name;
-        if (buffer.length > maxImageBytes) {
-          const { encodeImageWithinBytes } = await import("../../media/media-services.js");
-          const encoded = await encodeImageWithinBytes(buffer, maxImageBytes);
-          if (encoded.bytes > maxImageBytes) {
-            throw new Error("Generated image could not fit the gateway inspection limit");
-          }
-          pixels = encoded.data;
-          mimeType = encoded.mimeType;
-          fileName = undefined;
-        }
-        inputAttachments.push({
-          type: "image",
-          mimeType,
-          fileName,
-          content: pixels.toString("base64"),
-        });
-      } catch (error) {
-        imageInspectionUnavailable = true;
-        log.warn("Generated image could not be attached for inspection", {
-          runId: handle.runId,
-          error,
-        });
-      }
-    }
-    if (!isSourceCurrent()) {
-      return { status: "permanent_failure" };
-    }
-  }
   const mediaUrls = Array.from(
     new Set([
       ...(params.mediaUrls ?? []),
@@ -231,11 +179,6 @@ export async function wakeMediaGenerationTaskCompletion(params: {
       ...(params.attachments?.length ? { attachments: params.attachments } : {}),
       ...(mediaUrls.length ? { mediaUrls } : {}),
       replyInstruction: [
-        ...(imageInspectionUnavailable
-          ? [
-              "Some generated images could not be attached for inspection. Do not claim to have inspected unavailable image content; use an available image tool or report the limitation.",
-            ]
-          : []),
         ...(params.status === "ok"
           ? [
               `The ${params.completionLabel} is ready. The host sends its files to the original chat before this turn, so do not send them again.`,
@@ -264,7 +207,6 @@ export async function wakeMediaGenerationTaskCompletion(params: {
     completionRequesterLifecycleRevision: target.lifecycleRevision ?? undefined,
     triggerMessage,
     internalEvents,
-    ...(inputAttachments.length ? { inputAttachments } : {}),
     requesterSessionOrigin: handle.requesterOrigin,
     completionDirectOrigin: handle.requesterOrigin,
     directOrigin: handle.requesterOrigin,

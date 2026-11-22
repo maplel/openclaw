@@ -61,11 +61,7 @@ The 16MB audio/video and 100MB document figures above are the shared per-kind me
 - Multiple media entries are sent sequentially if provided.
 
 Generated attachments stay separate from later tool-error warnings. Image references
-in errors or reasoning do not select or discard generated attachments. Successful
-image-generation completions attach the generated images to the follow-up agent
-turn for inspection. Images above the gateway input limit use a re-encoded
-inspection copy; the chat receives the original through its usual delivery. This does
-not expand workspace-only native image discovery to unrelated media-store files.
+in errors or reasoning do not select or discard generated attachments.
 
 When a channel converts Markdown image links into attachments, image syntax inside
 code blocks or inline code, and escaped image syntax, stays in the text. Inline
