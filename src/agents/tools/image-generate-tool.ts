@@ -132,7 +132,8 @@ const ImageGenerateToolSchema = Type.Object({
     }),
   ),
   quality: optionalStringEnum(SUPPORTED_QUALITIES, {
-    description: "Quality: low, medium, high, xhigh, max, auto; model-specific.",
+    description:
+      "Render quality. GPT Image 2.6 accepts low, medium, high, xhigh, max, or auto. Omit to use the API default.",
   }),
   complexity: optionalStringEnum(IMAGE_GENERATION_COMPLEXITIES, {
     description:

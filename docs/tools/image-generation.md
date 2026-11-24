@@ -198,8 +198,9 @@ the peer who requested the image.
 </ParamField>
 <ParamField path="resolution" type='"1K" | "2K" | "4K"'>Resolution hint.</ParamField>
 <ParamField path="quality" type='"low" | "medium" | "high" | "xhigh" | "max" | "auto"'>
-  Quality hint when the model supports it. GPT Image 2.5 supports `xhigh`
-  and `max` through OpenAI and fal.
+  Quality hint when the model supports it. GPT Image 2.5 and 2.6 support
+  `xhigh` and `max` through the OpenAI Images API. fal supports these
+  settings for GPT Image 2.5.
 </ParamField>
 
 <ParamField path="complexity" type='"low" | "medium" | "high"'>

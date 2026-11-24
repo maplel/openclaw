@@ -28,6 +28,13 @@ import {
   OPENAI_CODEX_DEFAULT_MODEL,
   OPENAI_DEFAULT_IMAGE_MODEL as DEFAULT_OPENAI_IMAGE_MODEL,
 } from "./default-models.js";
+import {
+  buildImageQualitiesByModel,
+  OPENAI_IMAGE_25_MODELS,
+  OPENAI_IMAGE_MODELS,
+  OPENAI_QUALITIES,
+  OPENAI_TRANSPARENT_BACKGROUND_IMAGE_MODEL,
+} from "./image-generation-models.js";
 import { resolveModelAuthPolicy } from "./provider-policy-api.js";
 import { resolveConfiguredOpenAIBaseUrl } from "./shared.js";
 
@@ -37,7 +44,6 @@ const DEFAULT_OPENAI_CODEX_IMAGE_RESPONSES_MODEL = OPENAI_CODEX_DEFAULT_MODEL.sl
   OPENAI_MODEL_REF_PREFIX.length,
 );
 const OPENAI_CODEX_IMAGE_INSTRUCTIONS = "You are an image generation assistant.";
-const OPENAI_TRANSPARENT_BACKGROUND_IMAGE_MODEL = "gpt-image-1.5";
 const DEFAULT_OPENAI_IMAGE_TIMEOUT_MS = 180_000;
 const DEFAULT_AZURE_OPENAI_IMAGE_TIMEOUT_MS = 600_000;
 const DEFAULT_OUTPUT_MIME = "image/png";
@@ -65,16 +71,6 @@ const LOG_VALUE_MAX_CHARS = 256;
 const MOCK_OPENAI_PROVIDER_ID = "mock-openai";
 const OPENAI_OUTPUT_FORMATS = ["png", "jpeg", "webp"] as const;
 const OPENAI_BACKGROUNDS = ["transparent", "opaque", "auto"] as const;
-const OPENAI_QUALITIES = ["low", "medium", "high", "auto"] as const;
-const OPENAI_IMAGE_25_MODELS = ["gpt-image-2.5-flare", "gpt-image-2.5-sunburst"] as const;
-const OPENAI_IMAGE_25_QUALITIES = ["low", "medium", "high", "xhigh", "max", "auto"] as const;
-const OPENAI_IMAGE_MODELS = [
-  DEFAULT_OPENAI_IMAGE_MODEL,
-  ...OPENAI_IMAGE_25_MODELS,
-  OPENAI_TRANSPARENT_BACKGROUND_IMAGE_MODEL,
-  "gpt-image-1",
-  "gpt-image-1-mini",
-] as const;
 const OPENAI_FLEXIBLE_IMAGE_MODELS = [
   DEFAULT_OPENAI_IMAGE_MODEL,
   ...OPENAI_IMAGE_25_MODELS,
@@ -688,9 +684,7 @@ export function buildOpenAIImageGenerationProvider(
       output: {
         formats: [...OPENAI_OUTPUT_FORMATS],
         qualities: [...OPENAI_QUALITIES],
-        qualitiesByModel: Object.fromEntries(
-          OPENAI_IMAGE_25_MODELS.map((model) => [model, [...OPENAI_IMAGE_25_QUALITIES]]),
-        ),
+        qualitiesByModel: buildImageQualitiesByModel(),
         backgrounds: [...OPENAI_BACKGROUNDS],
       },
     },
