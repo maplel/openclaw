@@ -23,6 +23,10 @@ import {
   seedSessionActorTranscriptContext,
 } from "./session-actor-transcript-replica.js";
 import { readRestoredSessionTranscriptInWorker } from "./session-cold-storage-read.js";
+import type {
+  SessionPreparedCompactionInput,
+  SessionPreparedCompactionValue,
+} from "./session-compaction-prepared.types.js";
 import type { SessionEntryCohortRequest } from "./session-entry-read.types.js";
 import type { SessionTranscriptContextSelection } from "./session-history-read.types.js";
 import type { SessionTranscriptMaintenanceRead } from "./session-transcript-hydration.types.js";
@@ -55,6 +59,10 @@ import {
 } from "./transcript-write-context.js";
 
 type SessionTranscriptHydrationReader = {
+  /** Native read workers only; memory transcripts keep their existing array path. */
+  readCompaction?: (
+    operation: SessionPreparedCompactionInput["operation"],
+  ) => Promise<SessionPreparedCompactionValue>;
   target: CapturedSessionTranscriptTargetBinding;
   assertCurrent: () => void;
   read: (options?: { compaction?: true }) => Promise<PreparedSessionTranscriptHydration>;
@@ -253,16 +261,20 @@ export function prepareSessionTranscriptHydration(
     if (!prepared) {
       return undefined;
     }
+    // The target may name a session-store locator (sessions.json); the resident state names
+    // the physical database the admission was committed to.
+    const databasePath =
+      hot.target.database.kind === "file" ? hot.target.database.nativeLocation : target.storePath;
     runWithSessionTranscriptReadFence(admission, () =>
       resolveSqliteSessionTranscriptReadFence({
-        database: { path: target.storePath },
+        database: { path: databasePath },
         ...target,
       }),
     );
     if (selection) {
       const transcript = readSessionActorTranscriptAnchors(
         hot,
-        { agentId: target.agentId, path: target.storePath, sessionId: target.sessionId },
+        { agentId: target.agentId, path: databasePath, sessionId: target.sessionId },
         selection,
         retained?.tail,
         retained?.anchors,
@@ -391,6 +403,10 @@ export function prepareSessionTranscriptHydration(
   return {
     target,
     read,
+    readCompaction: (operation) =>
+      readInOwner((owner, resolvedScope) =>
+        owner.readCompaction({ target, resolvedScope, admission, operation }, signal),
+      ),
     readCohort,
     readCurrentTurnEntry,
     readMaintenance,

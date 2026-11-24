@@ -8,7 +8,7 @@ import type { PluginCapabilityCatalogHostContext } from "./capability-catalog-co
 import { resolveEffectivePluginActivationState } from "./config-state.js";
 import { isPluginEnabledByDefaultForPlatform } from "./default-enablement.js";
 import { discoverOpenClawPlugins, type PluginDiscoveryResult } from "./discovery.js";
-import { isPluginRegistryCacheEnabled } from "./loader-cache.js";
+import { isCachedPluginRegistryLoad } from "./loader-cache.js";
 import {
   resolvePluginLoadCacheContext,
   resolveRuntimeSubagentMode,
@@ -173,6 +173,7 @@ function bindRuntimeLoadContext(
       env: context.env,
       logger,
       manifestRegistry,
+      normalizePluginId: options.normalizePluginId,
       selectedContextEngine,
       metadataSnapshot:
         context.metadataSnapshot?.manifestRegistry === manifestRegistry
@@ -241,11 +242,7 @@ export function* loadOpenClawPluginsSteps(
   const logger = options.logger ?? createSubsystemLogger("plugins");
   const validateOnly = options.mode === "validate";
   const onlyPluginIdSet = createPluginIdScopeSet(context.onlyPluginIds);
-  const cacheEnabled =
-    !options.previousRegistry &&
-    !options.borrowRegistry &&
-    !options.moduleRecoveries &&
-    isPluginRegistryCacheEnabled(options);
+  const cacheEnabled = isCachedPluginRegistryLoad(options);
   if (cacheEnabled) {
     const cached = context.cacheState.get(context.cacheKey);
     if (cached) {

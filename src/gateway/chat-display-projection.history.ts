@@ -24,6 +24,7 @@ import { extractChatHistoryBlockText } from "./chat-display-projection.canvas.js
 import {
   asRoleContentMessage,
   extractProjectedText,
+  extractAssistantTextForSilentCheck,
   hasAssistantNonTextContent,
   hasAssistantDisplayableNonTextContent,
   hasTranscriptMediaFacts,
@@ -100,7 +101,9 @@ export function createSubagentCoordinationHistoryProjection(
         }
         return message;
       }
-      if (record.display === false) {
+      // A delivery mirror records a reply the run sent to the human, such as a
+      // message(action=send) from a private coordination turn; it is the outcome.
+      if (record.display === false || isOpenClawDeliveryMirrorAssistantMessage(record)) {
         return message;
       }
       if (
@@ -420,7 +423,13 @@ function shouldHideProjectedHistoryMessage(
   ) {
     return true;
   }
-  if (roleContent.role === "assistant" && isEmptyTextOnlyContent(message.content ?? message.text)) {
+  if (
+    roleContent.role === "assistant" &&
+    (isEmptyTextOnlyContent(message.content ?? message.text) ||
+      (hasAssistantNonTextContent(message) && !extractAssistantTextForSilentCheck(message)?.trim()))
+  ) {
+    // Empty heartbeat text must not hide reasoning in an ordinary conversation.
+    // The heartbeat turn-pair filter still owns reasoning-only heartbeat replies.
     return false;
   }
   return heartbeatUser || isHeartbeatOkResponse(roleContent);

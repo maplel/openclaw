@@ -257,45 +257,68 @@ describe("FeishuStreamingSession", () => {
     return { session: newSession(), newSession, authTokens, requests, create, reply, remove };
   }
 
-  it.each([
-    {
-      mode: "create",
-      options: undefined,
-      method: "create",
-      data: expect.not.objectContaining({ root_id: expect.anything() }),
-    },
-    {
-      mode: "root_create",
-      options: { rootId: "root_1" },
-      method: "create",
-      data: expect.objectContaining({ root_id: "root_1" }),
-    },
-    {
-      mode: "reply",
-      options: { replyToMessageId: "inbound_1", replyInThread: true, rootId: "root_1" },
-      method: "reply",
-      data: expect.objectContaining({ reply_in_thread: true }),
-    },
-  ] as const)(
-    "updates and closes an accepted $mode card when its optional message receipt is absent",
-    async ({ mode, options, method, data }) => {
+  it.each(
+    [
+      {
+        mode: "create",
+        options: undefined,
+        method: "create",
+        data: expect.not.objectContaining({ root_id: expect.anything() }),
+      },
+      {
+        mode: "root_create",
+        options: { rootId: "root_1" },
+        method: "create",
+        data: expect.objectContaining({ root_id: "root_1" }),
+      },
+      {
+        mode: "reply",
+        options: { replyToMessageId: "inbound_1", replyInThread: true, rootId: "root_1" },
+        method: "reply",
+        data: expect.objectContaining({ reply_in_thread: true }),
+      },
+    ].flatMap((scenario) => [
+      { ...scenario, retry: false },
+      { ...scenario, retry: true },
+    ]),
+  )(
+    "updates and closes an accepted $mode card without its optional message receipt (retry=$retry)",
+    async ({ mode, options, method, data, retry }) => {
+      if (retry) {
+        vi.useFakeTimers();
+      }
       const { session, requests, create, reply } = mockAcceptedStreamingCard({
-        accountId: `accepted-without-receipt-${mode}`,
+        accountId: `accepted-without-receipt-${mode}-${retry}`,
       });
 
-      await session.start("chat_1", "chat_id", options);
+      const send = method === "reply" ? reply : create;
+      if (retry) {
+        send.mockRejectedValueOnce(
+          Object.assign(new Error("socket hang up"), { code: "ECONNRESET" }),
+        );
+      }
+      const started = session.start("chat_1", "chat_id", options);
+      const accepted = expect(started).resolves.toBeUndefined();
+      if (retry) {
+        await vi.runAllTimersAsync();
+      }
+      await accepted;
       await session.update("The accepted answer");
 
       await expect(session.closeWithResult("The accepted answer")).resolves.toEqual({
         visibleReplySent: true,
         content: "The accepted answer",
       });
-      expect(method === "reply" ? reply : create).toHaveBeenCalledExactlyOnceWith(
+      expect(send).toHaveBeenCalledTimes(retry ? 2 : 1);
+      expect(send).toHaveBeenCalledWith(
         expect.objectContaining({
           data,
           ...(method === "reply" ? { path: { message_id: "inbound_1" } } : {}),
         }),
       );
+      if (retry) {
+        expect(send.mock.calls[1]).toEqual(send.mock.calls[0]);
+      }
       expect(method === "reply" ? create : reply).not.toHaveBeenCalled();
       expect(requests.map(({ path }) => path)).toEqual([
         "/open-apis/cardkit/v1/cards/card_accepted/elements/content/content",
@@ -537,6 +560,35 @@ describe("FeishuStreamingSession", () => {
     expect(updateBodies.map((body) => JSON.parse(body).content)).toEqual([
       "hello small",
       "hello small",
+    ]);
+  });
+
+  it("reopens a timed-out streaming window on the same card and retries the write", async () => {
+    const requests: string[] = [];
+    let streaming = false;
+    const deps = createMemoryFetch((url, body) => {
+      if (url.pathname.includes("/auth/")) {
+        return jsonResponse(createStreamingTokenPayload());
+      }
+      const { sequence, settings, content } = JSON.parse(body);
+      const mode = settings && JSON.parse(settings).config.streaming_mode;
+      requests.push(`${sequence} ${settings ? `streaming_mode=${mode}` : content}`);
+      if (settings) {
+        streaming = mode;
+      } else if (!streaming) {
+        return jsonResponse({ code: 200_850, msg: "card streaming timeout" }, 400);
+      }
+      return jsonResponse({ code: 0, msg: "ok" });
+    });
+    const session = createActiveSession(deps, { cardId: "card_window", text: "part one" });
+
+    await session.update("part one\npart two\n");
+
+    expect(requests).toEqual([
+      "2 part one\npart two\n",
+      "3 streaming_mode=false",
+      "4 streaming_mode=true",
+      "5 part one\npart two\n",
     ]);
   });
 

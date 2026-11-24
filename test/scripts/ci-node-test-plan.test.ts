@@ -1070,6 +1070,48 @@ describe("scripts/lib/ci-node-test-plan.mts", () => {
     expectEvery(native, (job) => job.predictedSeconds === 220);
   });
 
+  it("avoids fragmented hosted slots while preserving measured job prices", () => {
+    const template = measuredToolingFixture()[0]!;
+    const rows: Array<[number, number, number[]]> = [
+      [4, 300, [6, 11]],
+      [5, 300, [12, 14]],
+      [6, 300, [2, 3]],
+      [7, 300, [8, 1]],
+      [8, 300, [7, 9]],
+      [12, 234, [10, 5]],
+      [13, 292, [11, 14, 9]],
+      [18, 170, [8, 4]],
+    ];
+    const before = rows.map(([id, seconds, families]) =>
+      Object.assign({}, template, {
+        checkName: `fragment-${String(id).padStart(2, "0")}`,
+        shardName: `fragment-${id}`,
+        predictedSeconds: seconds,
+        groups: families.map((family) =>
+          Object.assign({}, template.groups[0]!, {
+            shard_name: `core-tooling-${family}-hosted-${id}`,
+            includePatterns: [`test/scripts/fragment-${family}-${id}.test.ts`],
+          }),
+        ),
+      }),
+    );
+    const after = rebalanceMeasuredSerialJobs(before, {
+      ...measuredPackingOptions,
+      profile: "hosted-hourly",
+      estimateGroup: () => ({ seconds: 0, complete: true }),
+    });
+    expect(after).toHaveLength(4);
+    expect(sortedGroups(after)).toEqual(sortedGroups(before));
+    expect(sumSeconds(after)).toBe(2196);
+    expectEvery(
+      after,
+      (job) =>
+        job.predictedSeconds! <= 660 &&
+        job.timeoutMinutes === template.timeoutMinutes &&
+        measuredPackingOptions.canShare(job.groups),
+    );
+  });
+
   it.each([
     { tailSeconds: 460, tailRunner: DEFAULT_NODE_TEST_RUNNER, expectedJobs: 1 },
     { tailSeconds: 461, tailRunner: DEFAULT_NODE_TEST_RUNNER, expectedJobs: 2 },
@@ -1850,7 +1892,7 @@ describe("scripts/lib/ci-node-test-plan.mts", () => {
         .flatMap(jobGroups)
         .filter((group) => group.shard_name.replace(/-hosted-\d+$/u, "") === owner);
     const inherited = select();
-    expect(inherited).toHaveLength(2);
+    expect(inherited).toHaveLength(4);
     expectEvery(inherited, (group) => workers(group) === "2");
     const parallelParent = required(
       parseCompactSplitTimingKey(inherited[0]!.timing_key!)?.parentShardName,
@@ -1864,16 +1906,19 @@ describe("scripts/lib/ci-node-test-plan.mts", () => {
       serialEnv,
     );
     timings[serialGeneration.timingKeys[0]!] = 500;
-    expect(select()).toHaveLength(2);
-    timings[serialGeneration.timingKeys[1]!] = 500;
+    expect(select()).toEqual(inherited);
+    for (const key of serialGeneration.timingKeys) {
+      timings[key] = 250;
+    }
     expect(select()).toHaveLength(4);
     timings[`${owner}-parallel-native-serial`] = 440;
     timings[parallelParent] = 440;
     const measured = select();
-    expect(measured).toHaveLength(3);
+    // Full inventory retains the file bound even when timing permits three groups.
+    expect(measured).toHaveLength(6);
     expectSameEntries(measured.flatMap(requiredPatterns), inherited.flatMap(requiredPatterns));
     const reduced = select(false);
-    expect(reduced).toHaveLength(measured.length);
+    expect(reduced).toHaveLength(3);
     expectSameEntries(
       reduced.flatMap(requiredPatterns),
       measured.flatMap(requiredPatterns).filter((file) => !isReleaseOnlyRuntimeTestFile(file)),
@@ -2185,7 +2230,7 @@ describe("scripts/lib/ci-node-test-plan.mts", () => {
       includePrExemptRuntimeTests: true,
       includeProofTests: true,
     });
-    expect(jobs.length).toBeLessThanOrEqual(96);
+    expect(jobs.length).toBeLessThanOrEqual(128);
     const gateway = jobs
       .flatMap(jobGroups)
       .filter((group) => /^agentic-gateway-methods(?:-hosted-\d+)?$/u.test(group.shard_name));
@@ -2435,7 +2480,10 @@ describe("scripts/lib/ci-node-test-plan.mts", () => {
         .flatMap(jobGroups)
         .find((group) => group.shard_name === shardName);
       expect(initialGroup?.timing_key).toMatch(
-        /^agentic-agents-support#selector-.+#generation-.+#part-2-of-2#include-.+$/u,
+        new RegExp(
+          `^agentic-agents-support#selector-.+#generation-.+#part-2-of-${profile === "github" ? 8 : 2}#include-.+$`,
+          "u",
+        ),
       );
       const timingKey = initialGroup!.timing_key!;
       directTimings = { [timingKey]: 1 };
@@ -2944,14 +2992,14 @@ describe("scripts/lib/ci-node-test-plan.mts", () => {
     const selected = tooling
       .flatMap(optionalPatterns)
       .filter((file) => !isCiProofTestFile(file))
-      .slice(0, 102);
-    expect(selected).toHaveLength(102);
+      .slice(0, 134);
+    expect(selected).toHaveLength(134);
     vi.spyOn(testTimings, "readToolingFileTimings").mockReturnValue({});
     vi.spyOn(shardMetadata, "estimateVitestToolingFileSeconds").mockReturnValue(20_000);
     // Every selected file is now indivisible above the admission cap. Overflow
-    // must retain these 102 files without adding unrelated dist owners or the full suite.
+    // must retain these 134 files without adding unrelated dist owners or the full suite.
     expect(() => selectTests(selected, { runnerBackend: "github" })).toThrow(
-      "exceeds 96 jobs (102 planned)",
+      "exceeds 128 jobs (134 planned)",
     );
   });
 

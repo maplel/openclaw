@@ -1796,6 +1796,8 @@ const enSettings = {
       status: "Status",
       unsubscribe: "Unsubscribe",
       sendTest: "Send test",
+      testAllBrowsers: "Test all browsers",
+      testAllBrowsersHint: "Tests include browsers registered by other people on this Gateway.",
       sendingTest: "Sending test…",
       testOutcome: "Test notification",
       testQueued: "Test notification queued",

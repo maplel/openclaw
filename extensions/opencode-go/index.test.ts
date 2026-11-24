@@ -161,6 +161,18 @@ describe("opencode-go provider plugin", () => {
     });
   }
 
+  it("keeps endpoint outages separate from authentication refusals", () => {
+    const outage = "Upstream request failed: Endpoint is unavailable.";
+    for (const [status, errorMessage, expected] of [
+      [403, outage, "server_error"],
+      [403, "Invalid API key", undefined],
+      [403, "You do not have permission to use this model", undefined],
+      [401, outage, undefined],
+    ] as const) {
+      expect(provider.classifyFailoverReason?.({ status, errorMessage })).toBe(expected);
+    }
+  });
+
   it.each(["deepseek-v4-pro", "deepseek-v4.1-flash", "kimi-k3"] as const)(
     "keeps %s thinking per invocation on one standalone completion wrapper",
     async (modelId) => {
@@ -373,6 +385,38 @@ describe("opencode-go provider plugin", () => {
         expect(fetchMock).not.toHaveBeenCalled();
       }),
   );
+
+  it("lists the signed-in account's models for a browser sign-in", async () => {
+    await liveCatalog({ "kimi-k3": upstreamModel("kimi-k3") }, ["kimi-k3"], "console-access");
+    const resolveProviderAuth = vi.fn(() => ({
+      apiKey: "oauth:opencode-go",
+      discoveryApiKey: "console-access",
+      mode: "oauth" as const,
+      source: "profile" as const,
+      profileId: "opencode-go:default",
+    }));
+    let result: Awaited<ReturnType<NonNullable<typeof provider.catalog>["run"]>>;
+    await withFetchSpy(async (fetchMock) => {
+      fetchMock.mockRejectedValue(new Error("blocked fetch"));
+      result = await provider.catalog?.run({
+        config: {},
+        env: {},
+        providerIds: ["opencode-go"],
+        resolveProviderApiKey: () => ({ apiKey: undefined }),
+        resolveProviderAuth,
+      });
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+    expect(result).toMatchObject({
+      provider: { apiKey: expect.not.stringContaining("console-access") },
+    });
+    expect(result && "provider" in result && result.provider.models.map((m) => m.id)).toEqual([
+      "kimi-k3",
+    ]);
+    expect(resolveProviderAuth).toHaveBeenCalledWith("opencode-go", {
+      oauthMarker: expect.stringContaining("opencode-go"),
+    });
+  });
 
   it("does not select an unavailable preferred onboarding model", async () => {
     await expect(

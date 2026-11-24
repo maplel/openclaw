@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { Worker } from "node:worker_threads";
+import { describe, expect, it, vi } from "vitest";
 import { createReadabilityWebContentExtractor } from "./web-content-extractor.js";
 
 const SAMPLE_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8" /><title>Example Article</title></head><body><nav><ul><li><a href="/home">Home</a></li><li><a href="/about">About</a></li></ul></nav><main><article>
@@ -8,7 +9,7 @@ const MINIFIED_BLOCKS_HTML =
   "<!doctype html><html><head><title>Results</title></head><body><article>" +
   "<h1>Heading</h1>" +
   "<p>Para 0. Quarterly results were published today with figures for each region and the year over year change, and the summary below explains what moved and why it matters for the next planning cycle.</p>" +
-  "<p>Para 1. Quarterly results were published today with figures for each region and the year over year change, and the summary below explains what moved and why it matters for the next planning cycle.</p>" +
+  "<p>Para 1. Use <code>[report](draft)</code> and <code>![alt](image.png)</code> literally. Quarterly results were published today with figures for each region and the year over year change, and the summary below explains what moved and why it matters for the next planning cycle.</p>" +
   "<ul><li>alpha</li><li>beta</li></ul>" +
   "<p>Para 2. Quarterly results were published today with figures for each region and the year over year change, and the summary below explains what moved and why it matters for the next planning cycle.</p>" +
   "</article></body></html>";
@@ -26,6 +27,32 @@ async function extractArticle(html: string, extractMode: "text" | "markdown" = "
 }
 
 describe("web readability extractor", () => {
+  it("extracts through a worker rather than parsing on the calling thread", async () => {
+    const postMessage = vi.spyOn(Worker.prototype, "postMessage");
+    try {
+      const extracted = await extractArticle(SAMPLE_HTML);
+      expect(extracted.text).toContain("Main content starts here");
+      expect(postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ input: expect.objectContaining({ html: SAMPLE_HTML }) }),
+        expect.any(Array),
+      );
+    } finally {
+      postMessage.mockRestore();
+    }
+  });
+
+  it.each([
+    ['<base target="_blank" />', "/next"],
+    ['<base href="/docs/guide/" />', "/docs/next"],
+    ['<base href="https://example.com/manual.html" />', "/next"],
+  ])("resolves article links against the first href base %s", async (base, next) => {
+    const result = await extractArticle(
+      SAMPLE_HTML.replace("</head>", `${base}</head>`),
+      "markdown",
+    );
+    expect(result.text).toContain(`[Continue reading](https://example.com${next})`);
+  });
+
   it("extracts readable markdown", async () => {
     const extracted = await extractArticle(SAMPLE_HTML, "markdown");
     expect(extracted.text).toContain("Main content starts here");
@@ -36,7 +63,9 @@ describe("web readability extractor", () => {
   it("keeps block boundaries in text mode for minified HTML", async () => {
     const extracted = await extractArticle(MINIFIED_BLOCKS_HTML, "text");
     expect(extracted.text).toContain("Heading\nPara 0.");
-    expect(extracted.text).toContain("\nPara 1.");
+    expect(extracted.text).toContain(
+      "\nPara 1. Use [report](draft) and ![alt](image.png) literally.",
+    );
     expect(extracted.text).toContain("\nalpha\nbeta\n");
     expect(extracted.title).toBe("Results");
   });

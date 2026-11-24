@@ -3,7 +3,7 @@ import {
   isRuntimeContextMessage,
   runtimeContextContentToText,
   type Api,
-  type AssistantMessage,
+  type AssistantHistoryMessage,
   type Context,
   type Model,
 } from "@openclaw/llm-core";
@@ -153,7 +153,7 @@ function normalizeResponsesReplayItemId(id: string | undefined): string | undefi
 
 export { encodeTextSignatureV1 } from "../utils/text-signature.js";
 
-function responsesAssistantTurnKey(message: AssistantMessage) {
+function responsesAssistantTurnKey(message: AssistantHistoryMessage) {
   // Early fragments keep this identity when the provider ID arrives at completion.
   const id = message.turnId || message.responseId;
   return id ? `${message.provider}:${message.api}:${message.model}:${id}` : undefined;
@@ -368,16 +368,19 @@ function convertResponsesMessagesWithStyle(
     ? [replayPlan.compaction, ...transformedMessages]
     : transformedMessages;
   // Responses continuation requires the complete prior input before tool output.
-  // Each carrier stays with its preceding user/checkpoint; moving it past an
-  // appended steering user would rewrite the already admitted request prefix.
+  // A turn's carrier stays with its user/checkpoint; a steering carrier stays where first sent.
   const isCarrier = (message: (typeof replayMessages)[number]) =>
     "role" in message && hasRuntimeContextMarker(message);
   if (replayMessages.some(isCarrier)) {
     const anchored: typeof replayMessages = [];
     // A canonical window is already emitted above; its checkpoint anchors an otherwise userless tail.
     let insertionIndex = replayPlan.compactedWindow ? 0 : undefined;
-    for (const message of replayMessages) {
-      if (isCarrier(message) && insertionIndex !== undefined) {
+    for (const [index, message] of replayMessages.entries()) {
+      const next = replayMessages[index + 1];
+      const previous = anchored[(insertionIndex ?? 0) - 1];
+      const nextIsUser = next && "role" in next && next.role === "user";
+      const steering = previous && isCarrier(previous) && nextIsUser && !isCarrier(next);
+      if (isCarrier(message) && insertionIndex !== undefined && !steering) {
         anchored.splice(insertionIndex++, 0, message);
         continue;
       }

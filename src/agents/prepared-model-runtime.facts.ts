@@ -24,6 +24,7 @@ import { resolveRuntimeSyntheticAuthProviderRefs } from "../plugins/synthetic-au
 import { prepareAmbientAgentCredentialsForDiscovery } from "./agent-auth-discovery.js";
 import { discoverModelsFromCapturedSources } from "./agent-model-discovery.js";
 import { withAgentRosterFactsBatch } from "./agent-scope-config.js";
+import { isFailedOAuthRefreshFence } from "./auth-profiles/oauth-refresh-marker.js";
 import { getPreparedRuntimeAuthProfileStoreSnapshotCore } from "./auth-profiles/runtime-snapshots.js";
 import {
   createBundledStaticCatalogModelResolver,
@@ -422,7 +423,17 @@ export async function prepareWorkspaceBuildGroup(
         ...new Set(
           (facts.input.config.models?.mode === "replace"
             ? []
-            : [...facts.providerIds, ...Object.keys(facts.credentials).map(normalizeProviderId)]
+            : [
+                ...facts.providerIds,
+                ...Object.keys(facts.credentials).map(normalizeProviderId),
+                // An ended sign-in keeps its account's saved rows, so its models stay known
+                // and their turns report the sign-in instead of an unknown model.
+                ...Object.values(facts.authStore.profiles).flatMap((profile) =>
+                  profile.type === "oauth" && isFailedOAuthRefreshFence(profile)
+                    ? [normalizeProviderId(profile.provider)]
+                    : [],
+                ),
+              ]
           ).flatMap((provider) => {
             const pluginId = resolvePluginModelCatalogOwnerPluginId({
               providerId: provider,
@@ -518,6 +529,7 @@ export async function prepareConfiguredRuntimeFactsBatch(params: {
   pluginGeneration: PreparedModelRuntimePluginGeneration;
   assertCurrent?: (input: PreparedModelRuntimeInput) => void;
   registries?: PreparedConfiguredModelRegistries;
+  ownedCatalogProviders?: ReadonlyMap<PreparedModelRuntimeInput, readonly string[]>;
 }) {
   const catalogs = new Map<PreparedModelRuntimeInput, PreparedModelRuntimeCatalogFacts>();
   let registryCount = 0;
@@ -534,9 +546,11 @@ export async function prepareConfiguredRuntimeFactsBatch(params: {
   for (const facts of params.agentFacts) {
     await nextTurn();
     params.assertCurrent?.(facts.input);
+    // A live inventory owns retention across account changes; saved rows only seed cold owners.
+    const excludeGeneratedProviderIds = params.ownedCatalogProviders?.get(facts.input) ?? [];
     const modelsJsonContents = captureModelsJsonContents(facts.input.agentDir);
-    // Signed-in providers browse known manifest rows until their account listing publishes. Scope
-    // by current credentials: config reloads (API-key sign-in rewrites auth.profiles) leave
+    // Signed-in providers whose manifest is their list browse it at once. Scope by current
+    // credentials: config reloads (API-key sign-in rewrites auth.profiles) leave
     // credential-only providers out of facts.providerIds.
     const staticProviderConfigs = {
       ...loadManifestModelProviderConfigs({
@@ -560,6 +574,7 @@ export async function prepareConfiguredRuntimeFactsBatch(params: {
       credentials: facts.credentials,
       modelsJsonContents,
       pluginCatalogs,
+      excludeGeneratedProviderIds,
       staticProviderConfigs,
     });
     const candidates = registriesBySource.get(key) ?? [];
@@ -589,6 +604,7 @@ export async function prepareConfiguredRuntimeFactsBatch(params: {
           includePluginCatalogs: true,
           modelsJsonContents,
           pluginCatalogs,
+          excludeGeneratedProviderIds,
           staticProviderConfigs,
           pluginMetadataSnapshot,
           ...(facts.input.workspaceDir ? { workspaceDir: facts.input.workspaceDir } : {}),
@@ -599,11 +615,13 @@ export async function prepareConfiguredRuntimeFactsBatch(params: {
       registryCount += 1;
     }
     const templateModelRegistry = prepared.modelRegistry;
-    const configuredRuntimeModels = completeConfiguredRuntimeModels(
+    const configuredRuntimeModels = await completeConfiguredRuntimeModels(
       facts,
       params.pluginGeneration,
       templateModelRegistry,
+      () => params.assertCurrent?.(facts.input),
     );
+    params.assertCurrent?.(facts.input);
     catalogs.set(
       facts.input,
       prepareCapturedRuntimeFacts({

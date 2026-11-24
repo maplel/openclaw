@@ -211,12 +211,14 @@ export async function executeJobCore(
         !sessionPreparation?.notices.events.length &&
         isCronScratchEffectivelyEmpty(snapshot?.state.scratch?.content)
       ) {
+        // An empty checklist is a quiet check, not a failure: complete with nothing to deliver.
         return {
-          status: "skipped",
+          status: "ok",
           summary: "Automation scratch is explicitly empty",
           executionStarted: false,
           delivered: false,
           deliveryAttempted: false,
+          deliverySuppressionReason: "empty",
         };
       }
     }
@@ -281,10 +283,15 @@ export async function executeJobCore(
         return resolveAbortError();
       }
       if (evaluation.kind === "busy") {
-        state.deps.log.debug({ jobId: job.id }, "cron: trigger evaluation skipped while busy");
+        state.deps.log.debug({ jobId: job.id }, "cron: trigger evaluation deferred while busy");
         return {
-          status: "ok",
-          triggerEval: { fired: false, stateChanged: false, busy: true },
+          status: "skipped",
+          summary: "Automation deferred while condition evaluations are busy",
+          admissionDeferred: true,
+          admissionDeferredReason: "busy",
+          executionStarted: false,
+          delivered: false,
+          deliveryAttempted: false,
         };
       }
       if (evaluation.kind === "error") {

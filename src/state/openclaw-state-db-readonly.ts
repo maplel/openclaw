@@ -674,7 +674,8 @@ export function withExistingOpenClawStateDatabaseCurrentReadOnly<T>(
     const directRead =
       (isStatePostgres() || options.allowNativeRead) &&
       !isArtifactPreservingStateRead() &&
-      !openStateSchemaReadAdmission;
+      // Explicit host guards still use a fresh reader without copying the database.
+      (!openStateSchemaReadAdmission || options.allowNativeRead === true);
     if (!directRead) {
       assertStateFileSnapshotAllowed();
     }
@@ -695,7 +696,7 @@ export function withExistingOpenClawStateDatabaseArtifactPreservingReadOnlyAsync
   return withArtifactPreservingStateReads(async () => {
     const pathname = resolveOpenClawStateReadPath(options);
     const snapshot = stateSnapshotReads.getStore();
-    if (snapshot?.path === pathname && snapshot.prepareSource) {
+    if (snapshot?.path === pathname && snapshot.prepareSource && !isStatePostgres()) {
       return snapshot.work.track(async () => {
         await snapshot.prepareSource!();
         resolveStateReadCallerSignal()?.throwIfAborted();

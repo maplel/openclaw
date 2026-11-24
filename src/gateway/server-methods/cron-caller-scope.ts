@@ -4,6 +4,7 @@ import {
   tryResolveCronJobEffectiveAgentId,
 } from "../../cron/agent-id.js";
 import { resolveCronJobConfigRevision } from "../../cron/config-revision.js";
+import { resolveCronRunAdmissionSource } from "../../cron/run-authority.js";
 import type { CronRuntimeAuthority } from "../../cron/runtime-authority.js";
 import {
   createAccountCronScheduledToolPolicy,
@@ -18,6 +19,7 @@ import type {
   CronJob,
   CronJobCreate,
   CronJobPatch,
+  CronStoredJob,
   CronToolsAllowExecTarget,
   CronToolsAllowProvenance,
 } from "../../cron/types.js";
@@ -302,9 +304,15 @@ export function readCronCallerScope(
 
 /** Management access can reauthorize origin, but cannot lend another account native identity. */
 export function resolveCronRequesterProvenanceForJob(
-  job: Pick<CronJob, "owner">,
+  job: Pick<CronStoredJob, "owner" | "scheduledToolPolicy" | "payload" | "toolsAllowProvenance">,
   callerScope: CronCallerScope | undefined,
 ): CronToolsAllowProvenance | undefined {
+  // Management preserves an existing operator job; it does not adopt the
+  // admin chat as its requester. Use admission, not the trusted-policy label:
+  // legacy operator jobs may lack that label, and requester jobs may carry it.
+  if (callerScope?.manageAll && resolveCronRunAdmissionSource(job) === "operator-schedule") {
+    return undefined;
+  }
   const provenance = callerScope?.toolsAllowProvenance;
   if (!provenance?.channelRequester) {
     return provenance;
@@ -386,6 +394,18 @@ export function cronTrustedJobOwnedByCaller(
   );
 }
 
+/** Whether the caller holds a live scheduled-run claim for this job. */
+export function cronCallerRunsJob(
+  job: CronJob,
+  callerScope: Pick<CronCallerScope, "agentId" | "currentJobId"> | undefined,
+  defaultAgentId?: string,
+): boolean {
+  return (
+    callerScope?.currentJobId === job.id &&
+    tryResolveCronJobEffectiveAgentId(job, defaultAgentId) === callerScope.agentId
+  );
+}
+
 export function cronJobMatchesCallerScope(params: {
   job: CronJob;
   callerScope: CronCallerScope | undefined;
@@ -408,13 +428,11 @@ export function cronJobMatchesCallerScope(params: {
   const effectiveAgentId = tryResolveCronJobEffectiveAgentId(params.job, params.defaultAgentId);
   const policy = params.job.scheduledToolPolicy;
   // A signed scheduled-run claim restores only the cron tool's historical
-  // current-job surface. Callers must opt in per read/self-remove operation.
+  // current-job surface. Callers must opt in per read/self-remove/self-scratch operation;
+  // its delivery account need not match the account that created the job.
   if (
     params.allowCurrentJob === true &&
-    params.callerScope.currentJobId === params.job.id &&
-    effectiveAgentId === params.callerScope.agentId &&
-    (policy?.mode !== "account" ||
-      normalizeAccountId(policy.ownerAccountId) === params.callerScope.accountId)
+    cronCallerRunsJob(params.job, params.callerScope, params.defaultAgentId)
   ) {
     return true;
   }

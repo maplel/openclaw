@@ -2690,7 +2690,7 @@ type WorkflowJob = {
   "runs-on"?: string;
   strategy?: {
     "fail-fast"?: boolean;
-    "max-parallel"?: number;
+    "max-parallel"?: number | string;
     matrix?: {
       include?: WorkflowMatrixEntry[];
       lane?: string;
@@ -2716,7 +2716,7 @@ type Workflow = {
   on?: {
     schedule?: Array<{ cron?: string }>;
     workflow_call?: {
-      inputs?: Record<string, unknown>;
+      inputs?: Record<string, { default?: boolean | number | string }>;
     };
     workflow_dispatch?: {
       inputs?: Record<string, unknown>;
@@ -4350,6 +4350,16 @@ type ProtectedPreflightConsumerParams = {
 function writePreflightConsumerTooling(toolingDir: string) {
   mkdirSync(resolve(toolingDir, "lib"), { recursive: true });
   for (const source of [
+    "release-qualification-admission.mjs",
+    "release-qualification-coverage.mjs",
+    "lib/canonical-json.mjs",
+    "lib/ci-node-test-evidence.mjs",
+    "lib/full-release-child-request.mjs",
+    "lib/plain-gh.mjs",
+    "lib/qualification-admission-baselines.mjs",
+    "lib/release-upgrade-baseline.mjs",
+    "lib/release-validation-waivers.json",
+    "lib/release-validation-waivers.mjs",
     "npm-preflight-tooling-identity.mjs",
     "npm-prepared-bundle.mjs",
     "openclaw-npm-extended-stable-release.mjs",
@@ -7145,8 +7155,12 @@ wait_for_run "$WORKFLOW" 404 "$EXPECTED_SHA" "$STARTED_JOB" "$APPROVE_ENVIRONMEN
     ).toMatchObject({
       ref: "${{ github.workflow_sha }}",
       "persist-credentials": false,
-      "sparse-checkout": "scripts",
     });
+    expect(
+      workflowStep(resolveJob, "Checkout trusted release validation tooling").with?.[
+        "sparse-checkout"
+      ],
+    ).toBeUndefined();
     for (const stepName of [
       "Write Android release approval",
       "Attest Android release approval",
@@ -8210,7 +8224,6 @@ test "$package_manager" = "pnpm@12.1.0"
       "package_artifact_name: ${{ needs.resolve_package.outputs.package_artifact_name }}",
       "package_integrity:",
       "name: Package integrity",
-      'node scripts/check-openclaw-package-tarball.mjs "$package"',
       '[[ "$actual_sha256" == "$EXPECTED_PACKAGE_SHA256" ]]',
       "needs: [resolve_package, package_integrity]",
       "package_integrity=${PACKAGE_INTEGRITY_RESULT}",
@@ -8963,6 +8976,7 @@ test "$package_manager" = "pnpm@12.1.0"
       'node "${GITHUB_WORKSPACE}/.release-validation-tooling/scripts/lib/release-publish-gates.mts"',
       '--consumer publisher --manifest "$manifest"',
     ]);
+    expect(npmValidationStep.env?.GH_TOKEN).toBe("${{ github.token }}");
     expectTextToIncludeAll(npmValidationStep.run, [
       "node trusted-workflow/scripts/lib/release-publish-gates.mts",
       '--consumer core-npm --manifest "$MANIFEST_FILE"',
@@ -9474,11 +9488,7 @@ describe("package artifact reuse", () => {
     ]);
 
     const packageIntegrity = workflowJob(PACKAGE_ACCEPTANCE_WORKFLOW, "package_integrity");
-    expect(
-      workflowStep(packageIntegrity, "Setup package validation dependencies").with,
-    ).toMatchObject({
-      "install-deps": "true",
-    });
+    expect(jobNeeds(packageIntegrity)).toEqual(["resolve_package"]);
     expect(
       workflowStep(packageIntegrity, "Download package-under-test artifact").with,
     ).toMatchObject({
@@ -9486,6 +9496,50 @@ describe("package artifact reuse", () => {
       "github-token": "${{ github.token }}",
       "run-id": "${{ needs.resolve_package.outputs.package_artifact_run_id }}",
     });
+  });
+
+  it("gates every acceptance transport on the resolver and verified canonical bytes", () => {
+    const job = workflowJob(PACKAGE_ACCEPTANCE_WORKFLOW, "package_integrity");
+    expect(job.if).toBeUndefined();
+    expect(job["continue-on-error"]).toBeUndefined();
+    for (const name of [
+      "npm_12_install_sh",
+      "docker_acceptance",
+      "docker_acceptance_registry",
+      "package_telegram",
+    ]) {
+      expect(jobNeeds(workflowJob(PACKAGE_ACCEPTANCE_WORKFLOW, name))).toEqual([
+        "resolve_package",
+        "package_integrity",
+      ]);
+    }
+    const verify = job.steps?.find((step) => step.env?.EXPECTED_PACKAGE_SHA256);
+    expect(verify?.env?.EXPECTED_PACKAGE_SHA256).toBe(
+      "${{ needs.resolve_package.outputs.package_sha256 }}",
+    );
+    expect(verify?.if).toBeUndefined();
+    expect(verify?.["continue-on-error"]).toBeUndefined();
+    for (const state of ["valid", "corrupt", "missing"]) {
+      const cwd = tempDirs.make("canonical-package-transfer-");
+      const directory = join(cwd, ".artifacts/docker-e2e-package");
+      mkdirSync(directory, { recursive: true });
+      const bytes = Buffer.from("canonical package bytes");
+      if (state !== "missing") {
+        writeFileSync(
+          join(directory, "openclaw-current.tgz"),
+          state === "valid" ? bytes : Buffer.from("different package bytes"),
+        );
+      }
+      const result = runBash(`${verify?.run}\nprintf "acceptance-reached\\n"`, {
+        cwd,
+        env: {
+          PATH: process.env.PATH,
+          EXPECTED_PACKAGE_SHA256: createHash("sha256").update(bytes).digest("hex"),
+        },
+      });
+      expect(result.status === 0, result.stderr).toBe(state === "valid");
+      expect(result.stdout.includes("acceptance-reached")).toBe(state === "valid");
+    }
   });
 
   it("lets reusable Docker E2E consume an already resolved package artifact", () => {
@@ -9539,6 +9593,12 @@ describe("package artifact reuse", () => {
     expect(parsedWorkflow.on?.workflow_call?.inputs).toHaveProperty(
       "enable_prepublish_plugin_registry",
     );
+    expect(
+      workflowStep(
+        workflowJob(LIVE_E2E_WORKFLOW, "prepare_docker_e2e_image"),
+        "Upload prerelease plugin registry artifact",
+      ).with,
+    ).toMatchObject({ "compression-level": 0, "if-no-files-found": "error" });
     expect(workflow).toContain("Pack prerelease plugin registry artifact");
     expect(workflow).toContain("Validate prerelease plugin registry artifact");
     expect(workflow).toContain("Download targeted prerelease plugin registry artifact");
@@ -9702,9 +9762,41 @@ describe("package artifact reuse", () => {
       OPENCLAW_UPGRADE_SURVIVOR_BASELINE_SCOPE:
         "${{ needs.validate_selected_ref.outputs.upgrade_baseline_scope }}",
     });
-    expect(workflowJob(LIVE_E2E_WORKFLOW, "validate_docker_lanes").strategy?.["max-parallel"]).toBe(
-      32,
-    );
+    const maxParallel = workflowJob(LIVE_E2E_WORKFLOW, "validate_docker_lanes").strategy?.[
+      "max-parallel"
+    ];
+    const hostedDefault = reusable.on?.workflow_call?.inputs?.use_github_hosted_runners?.default;
+    for (const [overrides, packagePresent, expected] of [
+      [{}, "true", 64],
+      [{ use_github_hosted_runners: false }, "true", 32],
+      [{ runner_group: "release-runners" }, "true", 32],
+      [{}, "false", 32],
+      [{ docker_lanes: "live-models" }, "true", 32],
+      [{ docker_lanes: "update-migration" }, "true", 32],
+      [{ docker_lanes: "published-upgrade-survivor update-migration" }, "true", 32],
+      [{ published_upgrade_survivor_scenarios: "" }, "true", 32],
+    ] as const) {
+      expect(
+        typeof maxParallel === "number"
+          ? maxParallel
+          : evaluateWorkflowExpression(maxParallel, {
+              eventName: "workflow_dispatch",
+              repository: "openclaw/openclaw",
+              runAttempt: 1,
+              inputs: {
+                use_github_hosted_runners: hostedDefault,
+                runner_group: "",
+                docker_lanes: "update-restart-auth,published-upgrade-survivor,plugin-update",
+                published_upgrade_survivor_scenarios: "reported-issues",
+                ...overrides,
+              },
+              additionalNeeds: {
+                validate_selected_ref: { outputs: { package_artifact_present: packagePresent } },
+              },
+            }),
+        JSON.stringify({ overrides, packagePresent }),
+      ).toBe(expected);
+    }
     expect(workflowJob(PACKAGE_ACCEPTANCE_WORKFLOW, "docker_acceptance").with).toMatchObject({
       published_upgrade_survivor_baseline_scope:
         "${{ needs.resolve_package.outputs.published_upgrade_survivor_baseline_scope }}",
@@ -9913,10 +10005,12 @@ describe("package artifact reuse", () => {
     for (const checkout of [
       workflowStep(discovery, "Checkout trusted candidate discovery"),
       workflowStep(candidateBinding, "Checkout candidate binding authority"),
-      workflowStep(summary, "Checkout release state verifier"),
     ]) {
       expect(checkout.with?.["sparse-checkout"]).toBe("scripts");
     }
+    expect(
+      workflowStep(summary, "Checkout release state verifier").with?.["sparse-checkout"],
+    ).toBeUndefined();
     expect(discovery.outputs?.state).toBe("${{ steps.discover.outputs.state }}");
     expect(workflowStep(discovery, "Discover trusted release candidate").run).toContain(
       "full-release-candidate-reuse.mjs discover",
@@ -10729,12 +10823,10 @@ describe("package artifact reuse", () => {
         "OPENCLAW_LIVE_GATEWAY_PROVIDERS=deepseek OPENCLAW_LIVE_GATEWAY_MODELS=deepseek/deepseek-v4-flash,deepseek/deepseek-v4-pro node .release-harness/scripts/test-live-shard.mjs native-live-src-gateway-profiles",
       profiles: "full",
     });
-    expect(openCodeGo.command).toContain(
-      "OPENCLAW_LIVE_GATEWAY_MODELS=opencode-go/glm-5.2,opencode-go/glm-5.3 ",
-    );
+    expect(openCodeGo.command).toContain("OPENCLAW_LIVE_GATEWAY_MODELS=opencode-go/glm-5.3 ");
     expect(openCodeGo.command).not.toContain("opencode-go/deepseek-v4-flash");
     expect(openCodeGoSmoke.command).toContain(
-      "OPENCLAW_LIVE_GATEWAY_MODELS=opencode-go/glm-5.2 OPENCLAW_LIVE_GATEWAY_SMOKE=1",
+      "OPENCLAW_LIVE_GATEWAY_MODELS=opencode-go/glm-5.3 OPENCLAW_LIVE_GATEWAY_SMOKE=1",
     );
     expect(openCodeGo.command).not.toContain("opencode-go/deepseek-v4-pro");
   });
@@ -10759,7 +10851,7 @@ describe("package artifact reuse", () => {
     );
 
     expect(openCodeModels).toMatchObject({
-      models: "opencode-go/glm-5.2,opencode-go/glm-5.3",
+      models: "opencode-go/glm-5.3",
       max_models: "2",
     });
     expect(kimi.command).toContain("OPENCLAW_LIVE_GATEWAY_MODELS=opencode-go/kimi-k2.7-code");
@@ -12328,7 +12420,7 @@ printf '%s\\n' "$DEEPSEEK_API_KEY" "$DEEPINFRA_API_KEY"`,
     const stable = workflowJob(RELEASE_CHECKS_WORKFLOW, "windows_node_stable_e2e");
     const main = workflowJob(RELEASE_CHECKS_WORKFLOW, "windows_node_main_e2e");
     const reusableWorkflow =
-      "openclaw/openclaw-windows-node/.github/workflows/release-candidate-e2e.yml@76a48a68607d8cb7cc0ae607dbc46c920f07495a";
+      "openclaw/openclaw-windows-node/.github/workflows/release-candidate-e2e.yml@15b4276c7d2ce696918d5fa7a4cf5010db25c6a4";
 
     expect(resolver.outputs).toMatchObject({
       stable_asset_name: "${{ steps.resolve.outputs.stable_asset_name }}",
@@ -12353,7 +12445,7 @@ printf '%s\\n' "$DEEPSEEK_API_KEY" "$DEEPINFRA_API_KEY"`,
         candidate_artifact_run_id: "${{ github.run_id }}",
         candidate_sha256:
           "${{ needs.prepare_release_package.outputs.windows_node_package_sha256 }}",
-        windows_node_workflow_sha: "76a48a68607d8cb7cc0ae607dbc46c920f07495a",
+        windows_node_workflow_sha: "15b4276c7d2ce696918d5fa7a4cf5010db25c6a4",
       });
     }
     expect(prerelease.with).toMatchObject({
@@ -14613,8 +14705,8 @@ printf '%s\\n' "$DEEPSEEK_API_KEY" "$DEEPINFRA_API_KEY"`,
       ref: "${{ github.workflow_sha }}",
       path: ".release-validation-tooling",
       "persist-credentials": false,
-      "sparse-checkout": "scripts",
     });
+    expect(trustedTooling.with?.["sparse-checkout"]).toBeUndefined();
     expect(validateManifest.env).toMatchObject({
       PUBLICATION_CONSUMER:
         "${{ inputs.publish_docker_only && !inputs.publish_openclaw_npm && 'docker-only' || 'publisher' }}",
@@ -14715,8 +14807,20 @@ printf '%s\\n' "$DEEPSEEK_API_KEY" "$DEEPINFRA_API_KEY"`,
   it("loads the strict release validator from the isolated trusted tooling bundle", () => {
     const root = tempDirs.make("release-validation-tooling-");
     for (const source of [
+      "scripts/docker-channel-promote.mjs",
+      "scripts/docker-release-artifacts.mjs",
+      "scripts/full-release-artifacts.mjs",
+      "scripts/lib/docker-manifest-error.mjs",
+      "scripts/lib/docker-release-policy.mjs",
+      "scripts/lib/npm-core-release-packages.mjs",
+      "scripts/lib/npm-shrinkwrap-dependencies.mjs",
+      "scripts/lib/regexp.mjs",
+      "scripts/npm-prepared-bundle.mjs",
+      "scripts/verify-docker-attestations.mjs",
       "scripts/release-ci-summary.mjs",
       "scripts/lib/release-validation-waivers.mjs",
+      "scripts/lib/release-validation-waivers.json",
+      "scripts/lib/ci-node-test-evidence.mjs",
       "scripts/lib/release-evidence-identity.mjs",
       "scripts/release-qualification-admission.mjs",
       "scripts/lib/qualification-admission-baselines.mjs",

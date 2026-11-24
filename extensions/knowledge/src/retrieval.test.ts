@@ -1,16 +1,24 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile, readFile, rm, rename, link, symlink } from "node:fs/promises";
 import path from "node:path";
+import { constants } from "node:sqlite";
 import { Check } from "typebox/value";
 import { expect, it } from "vitest";
 import { stringify } from "yaml";
 import { contract } from "./contract.js";
 import { SqliteIdentityStore } from "./identity-store.js";
 import { isFullHit } from "./retrieval-hit.js";
-import { keywordExpression } from "./retrieval.js";
+import { keywordSearch, keywordExpression } from "./retrieval.js";
 import { AGENT_HIT_LIMIT, COMPACT_SNIPPET_CHARS } from "./search-detail.js";
 import { createKnowledgeService } from "./service.js";
-import { apiFor, useTestTempDirs, defaultOrder, type TestStoreConfig } from "./test-support.js";
+import { KnowledgeStorage } from "./storage.js";
+import {
+  plainAccess,
+  apiFor,
+  useTestTempDirs,
+  defaultOrder,
+  type TestStoreConfig,
+} from "./test-support.js";
 
 const tempDirs = useTestTempDirs();
 
@@ -510,17 +518,122 @@ it("editing a legacy page removes approval metadata through journaled publicatio
   }
 });
 
-it("an index built before row tracking is repopulated, never left empty and ready", async () => {
+it.each(["keyword_rows_v1_%", "keyword_fts_v1_%"])(
+  "repopulates a missing tracked index table %s",
+  async (tablePattern) => {
+    const f = await fixture();
+    await f.put("upgrade_note_1", "Upgrade sentinel", "lanternword body");
+    expect(await f.total({ query: "lanternword" })).toBe(1);
+    // Simulate the previous version: FTS rows and a matching state row, no tracking table.
+    f.store.withDatabase((db) => {
+      for (const { name } of db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE name LIKE ? AND (sql LIKE 'CREATE VIRTUAL%' OR name LIKE 'keyword_rows_v1_%')",
+        )
+        .all(tablePattern)) {
+        db.exec(`DROP TABLE ${String(name)}`);
+      }
+    });
+    expect(await f.total({ query: "lanternword" })).toBe(1);
+  },
+);
+
+it("matches canonical keyword spellings without changing record bytes", async () => {
   const f = await fixture();
-  await f.put("upgrade_note_1", "Upgrade sentinel", "lanternword body");
-  expect(await f.total({ query: "lanternword" })).toBe(1);
-  // Simulate the previous version: FTS rows and a matching state row, no tracking table.
+  const nfc = "άλφα";
+  const nfd = nfc.normalize("NFD");
+  const first = await f.put("canonical_nfc", "Greek", nfc);
+  const second = await f.put("canonical_nfd", "Greek", nfd);
+  const before = await Promise.all([readFile(first, "utf8"), readFile(second, "utf8")]);
+  for (const mode of ["all", "any", "phrase"] as const) {
+    for (const query of [nfc, nfd]) {
+      expect(ids(await f.service.grep({ query, mode }, f.owner)).toSorted()).toEqual([
+        "canonical_nfc",
+        "canonical_nfd",
+      ]);
+    }
+  }
+  const hits = await f.service.grep({ query: nfc, detail: "full" }, f.owner);
+  for (const hit of hits.hits.filter(isFullHit)) {
+    const body = hit.record.id === "canonical_nfc" ? nfc : nfd;
+    expect(hit.snippet.text).toBe(body.slice(hit.snippet.start, hit.snippet.end));
+  }
+  expect(await Promise.all([readFile(first, "utf8"), readFile(second, "utf8")])).toEqual(before);
+  const beta = "βήτα";
+  await f.put("canonical_mixed", "Greek", nfc + " " + beta.normalize("NFD"));
+  for (const mode of ["all", "any"] as const) {
+    expect(ids(await f.service.grep({ query: nfd + " " + beta, mode }, f.owner))).toContain(
+      "canonical_mixed",
+    );
+  }
+  expect(ids(await f.service.grep({ query: "αλφα" }, f.owner))).not.toContain("canonical_nfc");
+});
+
+it("canonical keyword forms preserve authored records and snippet offsets", async () => {
+  const f = await fixture();
+  const nfc = "άλφα",
+    nfd = nfc.normalize("NFD"),
+    beta = "βήτα";
+  const bodies = new Map([
+    ["nfc_note", nfc],
+    ["nfd_note", nfd],
+    ["mixed_note", nfc + " " + beta.normalize("NFD")],
+    ["hangul_note", "가나"],
+    ["hangul_nfc_note", "가나"],
+  ]);
+  for (const [id, body] of bodies) {
+    await f.put(id, "Canonical", body);
+  }
+  const read = async (id: string) =>
+    (await f.service.record({ id, includeMetadata: true }, f.owner)).record!;
+  const before = await Promise.all([...bodies.keys()].map(read));
+  for (const query of [nfc, nfd]) {
+    const result = await f.service.grep({ query, detail: "full" }, f.owner);
+    expect(ids(result).toSorted()).toStrictEqual(["mixed_note", "nfc_note", "nfd_note"]);
+    for (const hit of result.hits.filter(isFullHit)) {
+      const body = bodies.get(hit.record.id)!;
+      expect(hit.snippet.text).toBe(body.slice(hit.snippet.start, hit.snippet.end));
+    }
+  }
+  expect(await f.total({ query: "αλφα" })).toBe(1);
+  for (const mode of ["all", "any"] as const) {
+    expect(ids(await f.service.grep({ query: nfc + " " + beta, mode }, f.owner))).toContain(
+      "mixed_note",
+    );
+  }
+  expect(await f.total({ query: nfc + " " + beta, mode: "phrase" })).toBe(0);
+  expect(await f.total({ query: nfc + " " + beta.normalize("NFD"), mode: "phrase" })).toBe(1);
+  expect(ids(await f.service.grep({ query: "가나" }, f.owner)).toSorted()).toStrictEqual([
+    "hangul_nfc_note",
+    "hangul_note",
+  ]);
+  expect(await Promise.all([...bodies.keys()].map(read))).toStrictEqual(before);
+});
+
+it("filters FTS without rereading the indexed corpus", async () => {
+  const f = await fixture();
+  await f.put("title_record", "Needle", "text", { tags: ["chosen"] });
+  await f.put("body_record", "Other", "needle", { tags: ["chosen"] });
+  await f.put("outside_record", "Needle", "needle ".repeat(100));
+  const storage = new KnowledgeStorage(f.config, f.store);
+  const data = await storage.run(plainAccess(), (vault) => vault.scan());
   f.store.withDatabase((db) => {
-    for (const { name } of db
-      .prepare("SELECT name FROM sqlite_master WHERE name LIKE 'keyword_rows_v1_%'")
-      .all()) {
-      db.exec(`DROP TABLE ${String(name)}`);
+    expect(keywordSearch(db, data, { query: "needle" }, "test", "1").total).toBe(3);
+    let corpusReads = 0;
+    db.setAuthorizer((action, table) => {
+      if (action === constants.SQLITE_READ && table?.startsWith("keyword_fts_v1_")) {
+        corpusReads++;
+      }
+      return constants.SQLITE_OK;
+    });
+    try {
+      const result = keywordSearch(db, data, { query: "needle", tag: "chosen" }, "test", "1");
+      expect(result.index.state).toBe("ready");
+      expect(ids(result)).toEqual(["title_record", "body_record"]);
+      expect(result.total).toBe(2);
+      expect(corpusReads).toBe(0);
+    } finally {
+      db.setAuthorizer(null);
     }
   });
-  expect(await f.total({ query: "lanternword" })).toBe(1);
 });

@@ -33,6 +33,9 @@ type PromptDecisionParams = {
 };
 
 type AssistantDecisionParams = {
+  /** A listed model rejected chat; another account cannot repair it. */
+  listedModelRejected?: boolean;
+  errorMessage?: string;
   stage: "assistant";
   allowFormatRetry?: boolean;
   terminal: AgentRunAttemptTerminal;
@@ -163,9 +166,16 @@ export function resolveRunFailoverDecision(params: RunFailoverDecisionParams): R
     if (
       params.signalOwnedInterruption ||
       ((params.terminal.kind === "aborted" || params.terminal.kind === "timeout") &&
-        params.terminal.source === "external") ||
-      isTerminalFormatFailure(params)
+        params.terminal.source === "external")
     ) {
+      return surfaceError;
+    }
+    if (params.listedModelRejected) {
+      return params.fallbackConfigured
+        ? { action: "fallback_model", reason: "format" }
+        : { action: "surface_error", reason: "format" };
+    }
+    if (isTerminalFormatFailure(params)) {
       return surfaceError;
     }
     if (params.terminal.kind === "timeout" && params.terminal.source === "run_budget") {
@@ -177,9 +187,20 @@ export function resolveRunFailoverDecision(params: RunFailoverDecisionParams): R
         ? { action: "fallback_model", reason: "timeout" }
         : { action: "continue_normal" };
     }
-    if (params.failoverFailure && params.failoverReason === "tls_certificate") {
+    // Model absence is shared by credentials; account and plan denials still rotate.
+    if (
+      params.failoverFailure &&
+      (params.failoverReason === "tls_certificate" ||
+        (params.failoverReason === "model_not_found" &&
+          /\b(?:unknown model|invalid model|model[_\-\s]?not[_\-\s]?found|is not a valid model id|models?[/\s:].{0,120}?(?:not found|does not exist|retired|deprecated|no longer available)|[\w./:@-]+ was retired at \d{4}-\d{2}-\d{2}|no endpoints found for)\b/i.test(
+            params.errorMessage ?? "",
+          ) &&
+          !/\b(?:access|permissions?|accounts?|plans?|tiers?|subscriptions?|memberships?|entitlements?|unauthorized|forbidden)\b/i.test(
+            params.errorMessage ?? "",
+          )))
+    ) {
       return params.fallbackConfigured
-        ? { action: "fallback_model", reason: "tls_certificate" }
+        ? { action: "fallback_model", reason: fallbackReason }
         : surfaceError;
     }
     shouldRotate = shouldRotateAssistant(params);

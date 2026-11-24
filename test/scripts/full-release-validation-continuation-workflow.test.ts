@@ -30,6 +30,24 @@ function step(job: string, name: string) {
   return match;
 }
 
+it("binds both inline watchers to Q policy without replacing their owner", () => {
+  for (const { job, name } of [
+    { job: "release_decision", name: "Evaluate release decision" },
+    { job: "diagnostic_drain", name: "Drain child diagnostics" },
+  ]) {
+    const env = step(job, name).env as Record<string, string>;
+    expect(env.OPENCLAW_RELEASE_WAIVERS_PATH).toBe(
+      "${{ github.workspace }}/scripts/lib/release-validation-waivers.json",
+    );
+    expect(step(job, name).run).toContain(
+      'node "$RELEASE_STATE_SCRIPT" "$FULL_RELEASE_STATE_MODE"',
+    );
+    expect(workflow.jobs[job]?.steps).toContainEqual(
+      expect.objectContaining({ name: "Checkout admitted qualification verifier" }),
+    );
+  }
+});
+
 it("runs release tooling only from the trusted revision without persisted credentials", () => {
   const tooling = allSteps.filter((entry) =>
     /^Checkout (?:trusted workflow|.*tooling|release state verifier)/u.test(String(entry.name)),
@@ -224,15 +242,43 @@ describe("full release same-parent recovery workflow", () => {
     expect(source).not.toContain("continuation_plan_json");
   });
 
+  it.each([false, true])(
+    "seals the plan with the admitted evaluator when admitted=%s",
+    (admitted) => {
+      const seal = step("release_execution_plan", "Seal immutable release execution plan");
+      const env = seal.env as Record<string, unknown>;
+      assert(typeof env.RELEASE_STATE_SCRIPT === "string");
+      const selected = runInNewContext(env.RELEASE_STATE_SCRIPT.replace(/^\$\{\{|\}\}$/gu, ""), {
+        needs: {
+          resolve_target: {
+            result: "success",
+            outputs: {
+              source_admission_json: JSON.stringify(admitted ? { qualificationAdmission: {} } : {}),
+            },
+          },
+        },
+        github: { workspace: "/workspace" },
+        fromJSON: JSON.parse,
+        format: (pattern: string, value: string) => pattern.replace("{0}", value),
+      });
+      expect(selected).toBe(
+        admitted
+          ? "/workspace/qualification-verifier/scripts/full-release-validation-state.mjs"
+          : "/workspace/scripts/full-release-validation-state.mjs",
+      );
+      expect(seal.run).toContain('node "$RELEASE_STATE_SCRIPT" plan');
+    },
+  );
+
   it("routes compact reuse revalidation through the admitted verifier and exact target", () => {
     expect(step("evidence_reuse", "Find reusable validation evidence").env).toMatchObject({
       OPENCLAW_RELEASE_CI_SUMMARY_VALIDATOR:
-        "${{ fromJSON(needs.resolve_target.outputs.source_admission_json || '{}').qualificationAdmission != null && format('{0}/qualification-verifier/scripts/release-ci-summary.mjs', github.workspace) || format('{0}/workflow/scripts/release-ci-summary.mjs', github.workspace) }}",
+        "${{ needs.resolve_target.result == 'success' && fromJSON(needs.resolve_target.outputs.source_admission_json || '{}').qualificationAdmission != null && format('{0}/qualification-verifier/scripts/release-ci-summary.mjs', github.workspace) || format('{0}/workflow/scripts/release-ci-summary.mjs', github.workspace) }}",
       TARGET_SHA: "${{ needs.resolve_target.outputs.sha }}",
     });
     expect(step("summary", "Write release validation manifest").env).toMatchObject({
       OPENCLAW_RELEASE_CI_SUMMARY_VALIDATOR:
-        "${{ fromJSON(needs.resolve_target.outputs.source_admission_json || '{}').qualificationAdmission != null && format('{0}/qualification-verifier/scripts/release-ci-summary.mjs', github.workspace) || format('{0}/scripts/release-ci-summary.mjs', github.workspace) }}",
+        "${{ needs.resolve_target.result == 'success' && fromJSON(needs.resolve_target.outputs.source_admission_json || '{}').qualificationAdmission != null && format('{0}/qualification-verifier/scripts/release-ci-summary.mjs', github.workspace) || format('{0}/scripts/release-ci-summary.mjs', github.workspace) }}",
       TARGET_SHA: "${{ needs.resolve_target.outputs.sha }}",
     });
   });

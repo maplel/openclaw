@@ -67,7 +67,29 @@ describe("broadcast dispatch", () => {
     mockGetChatInfo,
     mockResolveStorePath,
     resolvedTurnCalls,
+    runtimeStub,
   } = setupFeishuBroadcastTestHarness();
+
+  it.each([
+    "@Ada /status",
+    "@Ada /model openai/gpt-4o-mini",
+    "Send /model to choose another model.",
+  ])("keeps mention-shaped prose as text through ingress: %j", async (text) => {
+    await handleFeishuMessage({
+      cfg: createBroadcastConfig(false),
+      event: createBroadcastEvent({ messageId: `msg-command-prose:${text}`, text }),
+      botOpenId: "bot-open-id",
+      runtime: createRuntimeEnv(),
+    });
+    expect(resolvedTurnCalls).toHaveLength(2);
+    for (const call of resolvedTurnCalls) {
+      expect(call.ctxPayload).toMatchObject({
+        CommandBody: text,
+        BodyForCommands: text,
+        CommandTurn: { kind: "normal", source: "message", body: text },
+      });
+    }
+  });
 
   function mockActiveDispatcher(ensureNoVisibleReplyFallback = vi.fn()) {
     const dispatcher = { ...createReplyDispatcher(), ensureNoVisibleReplyFallback };
@@ -95,6 +117,32 @@ describe("broadcast dispatch", () => {
       ...options,
     });
   }
+
+  it("settles observer commands without dispatching or replaying them", async () => {
+    const { broadcastClaim, susanClaim, mainClaim } = mockBroadcastClaims("broadcast-command");
+    const turnAdoptionLifecycle = createIngressLifecycle();
+    vi.spyOn(runtimeStub.channel.commands, "shouldComputeCommandAuthorized").mockReturnValue(true);
+    const cfg = createBroadcastConfig();
+    cfg.channels = {
+      ...cfg.channels,
+      feishu: { ...cfg.channels?.feishu, allowFrom: ["ou_sender"] },
+    };
+    const event = createBroadcastEvent({
+      messageId: "broadcast-command",
+      text: "/followup next task",
+      botMentioned: true,
+    });
+    event.sender.sender_id.open_id = "ou_sender";
+    await dispatchBroadcast("broadcast-command", { cfg, event, turnAdoptionLifecycle });
+    expect(mockDispatchReply).toHaveBeenCalledTimes(1);
+    expectClaim(susanClaim, true);
+    expectClaim(mainClaim, true);
+    expectClaim(broadcastClaim, true);
+    await dispatchBroadcast("broadcast-command", { cfg, event, turnAdoptionLifecycle });
+    expect(mockDispatchReply).toHaveBeenCalledTimes(1);
+    expect(turnAdoptionLifecycle.onAdopted).toHaveBeenCalledTimes(1);
+    expect(turnAdoptionLifecycle.onAbandoned).not.toHaveBeenCalled();
+  });
 
   it("sends no-visible-reply fallback for active broadcast failed final delivery", async () => {
     mockAgentReply("main", {

@@ -447,7 +447,7 @@ export function createGitRuntimeTransaction({
     stderrTail: message,
     ...(warning ? { advisory: { kind: "recoverable-maintenance" as const, message } } : {}),
   });
-  return {
+  const transaction: PackageUpdateTransaction = {
     backupRoot: promotion.backupRoot,
     assertRollbackSafe,
     rollback: (assertCurrent) => {
@@ -469,8 +469,9 @@ export function createGitRuntimeTransaction({
             `Git recovery is unverified; previous runtime retained at ${promotion.backupRoot}.`,
           );
         }
+        let retired: UpdateStepResult | void;
         try {
-          return await promotion.cleanup(assertCurrent);
+          retired = await promotion.cleanup(assertCurrent);
         } catch (error) {
           assertCurrent();
           if (
@@ -484,7 +485,27 @@ export function createGitRuntimeTransaction({
             true,
           );
         }
+        // Verified activation ends automatic database restoration, as for package
+        // updates. Capture and late refusals clear this root to keep manual recovery.
+        if (!outcome.activationVerified || !transaction.databaseBackupRoot) {
+          return retired;
+        }
+        const snapshots = `${transaction.databaseBackupRoot}.databases`;
+        assertCurrent();
+        try {
+          await fs.rm(snapshots, { recursive: true, force: true });
+        } catch (error) {
+          if (!isErrno(error)) {
+            throw error;
+          }
+          return retention(
+            `Git verification succeeded; database snapshot cleanup remains pending at ${snapshots}: ${formatErrorMessage(error)}`,
+            true,
+          );
+        }
+        return retired;
       })());
     },
   };
+  return transaction;
 }

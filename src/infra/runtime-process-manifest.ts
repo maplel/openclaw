@@ -103,6 +103,7 @@ export function createRuntimeProcessEntrypoints(currentModuleUrl: string) {
     fileToolPlanning: runtimeProcessEntrypoint("agents/sessions/tools/file-tool-planning.worker"),
     fileToolRead: runtimeProcessEntrypoint("agents/sessions/tools/read-file.worker"),
     attachmentProcessor: runtimeProcessEntrypoint("media/attachment-processor.worker"),
+    widgetScriptSyntax: runtimeProcessEntrypoint("canvas/widget-script-syntax.worker"),
     gitOperations: runtimeProcessEntrypoint("infra/git-operation.worker"),
     gitPackCleanup: runtimeProcessEntrypoint("agents/worktrees/git-pack-cleanup.worker"),
     fsSafeCopy: runtimeProcessEntrypoint("infra/fs-safe-copy.worker"),
@@ -276,6 +277,17 @@ export const pluginRuntimeProcessManifest = {
     package: {
       name: "@openclaw/document-extract-plugin",
       distWorkerPath: "document-extractor.worker.js",
+    },
+  },
+  webReadability: {
+    ...pluginRuntimeProcess(
+      "web-readability",
+      "web-content-extractor-worker.runtime",
+      "web-content-extractor.worker",
+    ),
+    package: {
+      name: "@openclaw/web-readability-plugin",
+      distWorkerPath: "web-content-extractor.worker.js",
     },
   },
   fileTransferDirFetch: {

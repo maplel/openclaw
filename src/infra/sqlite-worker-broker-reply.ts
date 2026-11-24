@@ -217,7 +217,7 @@ export async function dispatchSqliteWorkerJob(
           });
         }
       } catch (error) {
-        retained.admission.finish();
+        retained.admission.finish("not-entered");
         throw error;
       }
       job.operationAdmission = {
@@ -265,6 +265,7 @@ export async function dispatchSqliteWorkerJob(
     // Serialized commands are owned by this dispatch; custody keeps their byte charge until settlement.
     slot.worker.postMessage(request, [
       ...postgresPoolTransferList(request.postgresPool),
+      ...new Set(Object.values(request.transferredInput ?? {}).map((value) => value.buffer)),
       ...(request.operationAdmission ? [request.operationAdmission] : []),
       ...("input" in request ? [request.input.buffer] : []),
       ...(request.type === "open" && request.preparation ? [request.preparation.buffer] : []),
@@ -665,10 +666,12 @@ export function settleSqliteWorkerJob(
   settlement?: SqliteWorkerOperationSettlement,
 ): void {
   job.custody.retire();
-  job.settleNative?.(
-    settlement ?? (job.custody.dispatched ? { kind: "completed" } : { kind: "not-entered", error }),
+  const outcome: SqliteWorkerOperationSettlement =
+    settlement ?? (job.custody.dispatched ? { kind: "completed" } : { kind: "not-entered", error });
+  job.settleNative?.(outcome);
+  job.operationAdmission?.admission.finish(
+    outcome.kind === "not-entered" ? "not-entered" : undefined,
   );
-  job.operationAdmission?.admission.finish();
   job.operationAdmission?.releaseService();
   // finish() drains the receipt port before the separate command reply can acknowledge success.
   const admission = job.operationAdmission?.admission;

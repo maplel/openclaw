@@ -7,6 +7,7 @@ import {
   describeVideoFile,
   describeImageFile,
   describeImageFileWithModel,
+  describePreparedImageWithModel,
   extractStructuredWithModel,
   runMediaUnderstandingFile,
   transcribeAudioFile,
@@ -33,7 +34,9 @@ const mocks = vi.hoisted(() => {
     normalizeMediaProviderId: vi.fn((provider: string) => provider.trim().toLowerCase()),
     buildMediaUnderstandingRegistry: vi.fn(() => new Map()),
     getMediaUnderstandingProvider: vi.fn(),
-    describeImageWithModel: vi.fn(async () => ({ text: "generic image ok", model: "vision" })),
+    describeImageWithModel: vi.fn<typeof import("./image-runtime.js").describeImageWithModel>(
+      async () => ({ text: "generic image ok", model: "vision" }),
+    ),
     convertHeicToJpeg: vi.fn(async () => Buffer.from("jpeg-normalized")),
     optimizeImageDescriptionInput: vi.fn(
       async (params: { buffer: Buffer; fileName?: string; mime?: string }) => ({
@@ -167,6 +170,19 @@ describe("media-understanding runtime", () => {
     });
 
     expect(mocks.buildProviderRegistry).not.toHaveBeenCalled();
+    expect(mocks.runCapability).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["audio", transcribeAudioFile],
+    ["video", describeVideoFile],
+  ] as const)("refuses canceled %s before preparing media", async (_kind, describeFile) => {
+    const signal = AbortSignal.abort(new Error("Media request interrupted"));
+    const execution = { signal, assertCurrent: () => signal.throwIfAborted() };
+    await expect(describeFile({ filePath: "/tmp/media", cfg: {} }, execution)).rejects.toBe(
+      signal.reason,
+    );
+    expect(mocks.createMediaAttachmentCache).not.toHaveBeenCalled();
     expect(mocks.runCapability).not.toHaveBeenCalled();
   });
 
@@ -407,6 +423,25 @@ describe("media-understanding runtime", () => {
     expect(mocks.describeImageWithModel).toHaveBeenCalledWith(
       expect.objectContaining({ timeoutMs: MAX_TIMER_TIMEOUT_MS }),
     );
+  });
+
+  it("cancels an admitted explicit image provider request", async () => {
+    const controller = new AbortController();
+    const reason = new DOMException("interrupted", "AbortError");
+    mocks.describeImageWithModel.mockImplementationOnce(async (request) => {
+      controller.abort(reason);
+      request.signal?.throwIfAborted();
+      return { text: "late result", model: "vision" };
+    });
+    await expect(
+      describePreparedImageWithModel(
+        {
+          ...IMAGE_MODEL_DEFAULTS,
+          image: { buffer: Buffer.from("image"), fileName: "image.png" },
+        },
+        { signal: controller.signal, assertCurrent: () => controller.signal.throwIfAborted() },
+      ),
+    ).rejects.toBe(reason);
   });
 
   it("caps explicit structured extraction timeouts before provider execution", async () => {

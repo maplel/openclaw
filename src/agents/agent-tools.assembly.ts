@@ -47,7 +47,7 @@ import {
   getActiveAgentRingZeroTools,
   mergeAgentRingZeroTools,
 } from "./agent-tools.ring-zero-context.js";
-import { isSchedulerSystemTurn, resolveTurnToolSurface } from "./agent-tools.turn-authority.js";
+import { isHostSystemTurn, resolveTurnToolSurface } from "./agent-tools.turn-authority.js";
 import type { AnyAgentTool } from "./agent-tools.types.js";
 import { resolveAutomationsRunScope } from "./automations-run-scope.js";
 import { registerOneShotExecScopeCleanup } from "./bash-process-control.js";
@@ -292,6 +292,7 @@ export function* assembleOpenClawCodingTools(
               }),
               messageProvider: options?.messageProvider,
               currentChannelId: options?.currentChannelId,
+              currentMessagingTarget: options?.currentMessagingTarget,
               currentThreadTs: options?.currentThreadTs,
               channelContext: options?.channelContext,
               accountId: options?.agentAccountId,
@@ -494,9 +495,9 @@ export function* assembleOpenClawCodingTools(
             inheritedToolDenylist,
             delegatedToolDenyFloor,
             requesterToolDenylist,
-            readDelegationConfig: options?.config
-              ? createRuntimeConfigReader(options.config)
-              : undefined,
+            readDelegationConfig:
+              options?.readDelegationConfig ??
+              (options?.config ? createRuntimeConfigReader(options.config) : undefined),
             inheritedToolPolicySource: capabilityProfile.policy.inheritedToolPolicySource,
             processScopeKey: scopeKey,
           },
@@ -581,7 +582,7 @@ export function* assembleOpenClawCodingTools(
         ? completeTurnTools(messageInvocationPolicy.filter(capabilityProfile, undefined, "session"))
         : undefined,
     ownerOnlyDenied: new Set(ownerOnlyCoreToolDenylist),
-    schedulerSystemTurn: isSchedulerSystemTurn(options ?? {}),
+    hostSystemTurn: isHostSystemTurn(options ?? {}),
   });
   assertMemoryFlushPersistenceToolAvailable(authorizedTools, options?.memoryFlushTools);
   authorizedTools.forEach(bindAssembledAgentToolActionDescriptor);
@@ -611,6 +612,7 @@ export function* assembleOpenClawCodingTools(
   const requester = buildHarnessHostRequester(options ?? {});
   const hookContext = {
     awaitSessionDiffBaseline: options?.awaitSessionDiffBaseline,
+    getRunAbortDeadlineAtMs: options?.getRunAbortDeadlineAtMs,
     agentId: executionAgentId,
     ...(options?.config ? { config: options.config } : {}),
     cwd: codingRoot,

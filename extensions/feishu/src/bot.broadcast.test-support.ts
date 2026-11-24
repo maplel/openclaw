@@ -4,6 +4,7 @@ import {
   type ChannelInboundTurnPlan,
 } from "openclaw/plugin-sdk/channel-inbound";
 import { createPluginRuntimeMock } from "openclaw/plugin-sdk/channel-test-helpers";
+import { isControlCommandMessage } from "openclaw/plugin-sdk/command-detection";
 import { closeOpenClawStateDatabaseAsync } from "openclaw/plugin-sdk/sqlite-runtime-testing";
 import { afterEach, beforeEach, vi } from "vitest";
 import type { ClawdbotConfig, PluginRuntime } from "../runtime-api.js";
@@ -56,10 +57,6 @@ export function setupFeishuBroadcastTestHarness() {
   const mockGetChatInfo = vi.fn();
   const resolvedTurnCalls: ChannelInboundTurnPlan[] = [];
   const mockCurrentConfig = vi.fn(() => createBroadcastConfig());
-  const finalize: NonNullable<BuildChannelInboundEventContextParams["finalize"]> = (ctx) => {
-    mocks.builtInboundContextCalls.push(ctx);
-    return ctx;
-  };
   const runtimeStub = {
     config: { current: mockCurrentConfig },
     channel: {
@@ -68,11 +65,14 @@ export function setupFeishuBroadcastTestHarness() {
         resolveStorePath: mocks.mockResolveStorePath,
         recordInboundSession: mocks.mockRecordInboundSession,
       },
-      commands: { shouldComputeCommandAuthorized: vi.fn(() => false) },
+      commands: { shouldComputeCommandAuthorized: vi.fn(() => false), isControlCommandMessage },
       inbound: {
         ingress: createPluginRuntimeMock().channel.inbound.ingress,
-        buildContext: (params: BuildChannelInboundEventContextParams) =>
-          buildChannelInboundEventContext({ ...params, finalize }),
+        buildContext: (params: BuildChannelInboundEventContextParams) => {
+          const ctx = buildChannelInboundEventContext(params);
+          mocks.builtInboundContextCalls.push(ctx);
+          return ctx;
+        },
         run: vi.fn(async (params: Parameters<PluginRuntime["channel"]["inbound"]["run"]>[0]) => {
           const input = await params.adapter.ingest(params.raw);
           if (!input) {

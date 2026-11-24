@@ -196,6 +196,7 @@ describe("OpenAI completions output budgets", () => {
         { maxTokens: 0 },
       ),
       64_000,
+      "max_tokens",
     );
     expectBudget(
       request(
@@ -229,6 +230,7 @@ describe("OpenAI completions output budgets", () => {
         emptyContext("你好世界".repeat(1_000)),
       ),
       4_999,
+      "max_tokens",
     );
     expectBudget(
       request(proxy, undefined, {
@@ -945,4 +947,22 @@ describe("OpenAI completions compatibility and tools", () => {
       }
     }
   });
+});
+
+it.each([
+  "gpt-6-astra",
+  "gpt-6-sol",
+  "gpt-6.1-sol",
+  "gpt-5.6",
+  "openai/gpt-6.1-sol",
+  "openai/gpt-5.6",
+])("omits unsupported sampling for existing %s", (id) => {
+  const params = requestMode("managed", makeCompletionsModel({ id }), {
+    temperature: 0.7,
+    topP: 0.8,
+  });
+  expect(params.temperature).toBeUndefined();
+  if (id.includes("gpt-6")) {
+    expect(params.top_p).toBeUndefined();
+  }
 });

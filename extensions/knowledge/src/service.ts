@@ -218,7 +218,7 @@ export function createKnowledgeService(
         work(opened.runtime, access),
       );
       if (write && opened.access.scope.visibility === "private") {
-        opened.runtime.live.invalidate();
+        opened.runtime.client.invalidate();
       }
       return result;
     };
@@ -435,6 +435,15 @@ export function createKnowledgeService(
             recordResponseBytes: RECORD_RESPONSE_MAX_BYTES,
           },
         };
+        const canWrite =
+          policy.writesEnabled &&
+          ((context.source === "tool" && toolGrant(context, stores.grantFor) !== "read") ||
+            (context.source === "session-action" &&
+              Boolean(
+                context.action.client?.scopes.some(
+                  (s: string) => s === "operator.write" || s === "operator.admin",
+                ),
+              )));
         const notReady = (
           agentId: string,
           store: Exclude<StoreState, "ready">,
@@ -446,7 +455,7 @@ export function createKnowledgeService(
           agent: agentId,
           store,
           scope: "private",
-          writesEnabled: false,
+          writesEnabled: store === "unprovisioned" && canWrite,
           live: "stopped" as const,
           records: 0,
           validRecords: 0,
@@ -482,18 +491,7 @@ export function createKnowledgeService(
             `This store couldn't be opened. ${(e as Error).message}`,
           );
         }
-        if (scope === "private") {
-          runtime.live.ensureWatching();
-        }
-        const canWrite =
-          policy.writesEnabled &&
-          ((context.source === "tool" && toolGrant(context, stores.grantFor) !== "read") ||
-            (context.source === "session-action" &&
-              Boolean(
-                context.action.client?.scopes.some(
-                  (s: string) => s === "operator.write" || s === "operator.admin",
-                ),
-              )));
+
         return {
           ...base,
           checkedAt: catalog.checkedAt,
@@ -502,7 +500,7 @@ export function createKnowledgeService(
           store: "ready" as const,
           scope,
           writesEnabled: canWrite,
-          live: scope === "private" ? runtime.live.state : "stopped",
+          live: scope === "private" ? runtime.client.liveState : "stopped",
           snapshot: catalog.snapshot,
           records: catalog.records,
           validRecords: catalog.records,

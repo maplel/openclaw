@@ -553,7 +553,7 @@ async function runGatewayUpdateCheckOwned(
   }
 
   const channel = configuredChannel;
-  const resolved =
+  const resolved: Awaited<ReturnType<typeof resolveNpmChannelTag>> =
     shouldRunAutoUpdate || channel !== "stable"
       ? await resolveNpmChannelTag({ channel, signal: params.signal })
       : {
@@ -563,6 +563,13 @@ async function runGatewayUpdateCheckOwned(
   params.signal?.throwIfAborted();
   if (!isCurrent()) {
     return;
+  }
+  // A failed registry observation cannot advance the successful-check throttle
+  // or erase a previously observed update. Missing selectors remain valid absence.
+  const registryFailure =
+    resolved.error ?? (resolved.reason === "selector_missing" ? undefined : resolved.reason);
+  if (registryFailure) {
+    throw new Error(`npm ${resolved.tag} update check failed: ${registryFailure}`);
   }
   const tag = resolved.tag;
   if (!resolved.version) {

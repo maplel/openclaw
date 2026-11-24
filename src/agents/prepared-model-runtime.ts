@@ -5,6 +5,7 @@ import { throwSettledAggregate } from "../infra/error-graph-internal.js";
 import { readOnlyWorkerScope } from "../infra/sqlite-readonly-worker-context.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import { enqueueKeyedTask } from "../plugin-sdk/keyed-async-queue.js";
+import { pluginInvocationContext } from "../plugins/plugin-instance-scope.js";
 import { getPreparedSharedAuthStoreOwnership } from "./auth-profiles/path-resolve.js";
 import { registerRuntimeAuthProfileStoreMutationListener } from "./auth-profiles/runtime-snapshots.js";
 import type { ModelCatalogSnapshot } from "./model-catalog.types.js";
@@ -14,6 +15,10 @@ import {
   invalidatePreparedModelRuntimeOwnersForAuthMutation,
   type PreparedModelRuntimeAuthMutation,
 } from "./prepared-model-runtime-auth-publication.js";
+import {
+  isPreparedModelRuntimeGatewayLifecycleActive,
+  setPreparedModelRuntimeGatewayLifecycleActive,
+} from "./prepared-model-runtime-gateway-lifecycle.js";
 import { acquirePreparedModelRuntimeLeaseFromOwners } from "./prepared-model-runtime-lease.js";
 import {
   configuredOwnersAreRequestVisible,
@@ -105,7 +110,6 @@ const agentBuildCompletions = new Map<string, Promise<void>>();
 const standaloneActivationTails = new Map<string, Promise<void>>();
 const retainedDirectRunOwners = new PreparedModelRuntimeOwnerRetention(1);
 const retainedGatewayRunOwners = new PreparedModelRuntimeOwnerRetention(8);
-let gatewayLifecycleActive = false;
 const publicationQueue = new PreparedModelRuntimePublicationQueue();
 let refreshRequestEpoch = 0;
 let refreshCancellation = new AbortController();
@@ -140,7 +144,7 @@ const getAdmissionReplacement = (input?: PreparedModelRuntimeInput) =>
 
 const replyDispatchPublication = new PreparedReplyDispatchPublicationOwner({
   retainOwner: retainPublishedModelRuntimeOwner,
-  isGatewayLifecycleActive: () => gatewayLifecycleActive,
+  isGatewayLifecycleActive: isPreparedModelRuntimeGatewayLifecycleActive,
   getConfiguredOwner: (agentId) =>
     resolveConfiguredOwner(owners, { agentId, agentDir: ".", config: {} }),
   getPendingReplacement: (agentId) =>
@@ -185,7 +189,7 @@ async function closeModelRuntime(error: Error): Promise<void> {
   closingOwners.forEach(retirePreparedModelRuntimeGeneration);
   retainedDirectRunOwners.clear(owners);
   retainedGatewayRunOwners.clear(owners);
-  gatewayLifecycleActive = false;
+  setPreparedModelRuntimeGatewayLifecycleActive(false);
   replyDispatchPublication.clear();
   refreshCancellation.abort(error);
   const results = await Promise.allSettled([
@@ -334,7 +338,10 @@ export async function activateStandalonePreparedModelRuntime(
           (input.agentId === undefined || owner.input.agentId === input.agentId) &&
           (input.workspaceDir === undefined || owner.input.workspaceDir === input.workspaceDir),
       );
-      if (gatewayLifecycleActive && (!input.readOnly || overlapsConfiguredOwner)) {
+      if (
+        isPreparedModelRuntimeGatewayLifecycleActive() &&
+        (!input.readOnly || overlapsConfiguredOwner)
+      ) {
         // Gateway startup/reload owns configured identities. Isolated read-only drafts may publish
         // separately, but stale drafts must never replace an overlapping configured generation.
         return undefined;
@@ -359,7 +366,7 @@ const preparedModelRuntimeLeaseContext = {
   retainedGatewayRunOwners,
   replyDispatchPublication,
   getBuildTimeoutMs: () => modelRuntimeBuildTimeoutMs,
-  getGatewayLifecycleActive: () => gatewayLifecycleActive,
+  getGatewayLifecycleActive: isPreparedModelRuntimeGatewayLifecycleActive,
   getPendingReplacement: getAdmissionReplacement,
 };
 const publishedModelRuntime = createPublishedModelRuntimeAccess(
@@ -475,7 +482,8 @@ export function rejectPendingPreparedModelRuntimeReplacement(
 
 const modelRuntimeRecovery = createPreparedModelRuntimeRecovery({
   owners,
-  canRecover: () => gatewayLifecycleActive && !refreshCancellation.signal.aborted,
+  canRecover: () =>
+    isPreparedModelRuntimeGatewayLifecycleActive() && !refreshCancellation.signal.aborted,
   getReplacement: () => pendingModelRuntimeReplacement,
   getAdmissionReplacement: () => modelRuntimeDrain.pending ?? pendingModelRuntimeReplacement,
   captureLifetime: captureModelRuntimeLifetime,
@@ -513,7 +521,9 @@ export function refreshPreparedModelRuntimeSnapshots(
     waitForReplacement: true,
     agentIds: initialAgentIds,
   });
-  gatewayLifecycleActive ||= options.gatewayLifecycle === true;
+  if (options.gatewayLifecycle === true) {
+    setPreparedModelRuntimeGatewayLifecycleActive(true);
+  }
   const requestEpoch = refreshRequestEpoch;
   const acquisitionSignal = refreshCancellation.signal;
   const replacement = pendingModelRuntimeReplacement;
@@ -598,7 +608,7 @@ export function refreshPreparedModelRuntimeSnapshots(
         {
           owners,
           agentBuildCompletions,
-          gatewayLifecycleActive,
+          gatewayLifecycleActive: isPreparedModelRuntimeGatewayLifecycleActive(),
           isPublicationCurrent,
           buildTimeoutMs: modelRuntimeBuildTimeoutMs,
           progress: startup?.progress,
@@ -709,9 +719,9 @@ function invalidateForAuthMutation(event: PreparedModelRuntimeAuthMutation): voi
     });
   };
   // Wait for plugin replacement without occupying its queue. Publication owns its reads
-  // and must outlive the auth emitter's temporary SQLite reader scope.
-  const publication = readOnlyWorkerScope.exit(() =>
-    modelRuntimeDrain.runAfter(publicationQueue, publish),
+  // and plugin calls, independently of the auth emitter's finite invocation and reader scopes.
+  const publication = pluginInvocationContext.exit(() =>
+    readOnlyWorkerScope.exit(() => modelRuntimeDrain.runAfter(publicationQueue, publish)),
   );
   notifyPreparedModelRuntimePublication({ phase: "invalidated" });
   void publication.catch((error: unknown) => {

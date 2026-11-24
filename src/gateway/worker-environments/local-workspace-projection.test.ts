@@ -20,6 +20,7 @@ import {
   setRuntimeConfigSnapshot,
 } from "../../config/runtime-snapshot.js";
 import * as fsSafe from "../../infra/fs-safe.js";
+import { gitNullConfigPath } from "../../infra/git-exec.js";
 import { closeOpenClawAgentDatabasesAsync } from "../../state/openclaw-agent-db.js";
 import {
   closeOpenClawStateDatabaseAsync,
@@ -35,6 +36,7 @@ import {
   proveAcceptedDirectoryRetention,
   proveLastFileDirectoryRetention,
 } from "./local-workspace-directory-retention.test-support.js";
+import { proveGitIgnoredWorkspaceOutputs } from "./local-workspace-generated-paths.test-support.js";
 import {
   observeAcknowledgedUpdate,
   prepareLocalWorkspaceArchiveFixture,
@@ -98,8 +100,8 @@ beforeAll(() => {
 beforeEach(async () => {
   root = await fs.mkdtemp(path.join(os.tmpdir(), "openclaw-local-projection-"));
   vi.stubEnv("OPENCLAW_STATE_DIR", stateRoot);
-  vi.stubEnv("GIT_CONFIG_GLOBAL", os.devNull);
-  vi.stubEnv("GIT_CONFIG_SYSTEM", os.devNull);
+  vi.stubEnv("GIT_CONFIG_GLOBAL", gitNullConfigPath());
+  vi.stubEnv("GIT_CONFIG_SYSTEM", gitNullConfigPath());
   setRuntimeConfigSnapshot({});
   repo = path.join(root, "source");
   canonical = path.join(root, "canonical");
@@ -348,6 +350,9 @@ it.each([false, true])(
     await proveAcceptedInventoryRecovery(owner, retainedMembership);
   },
 );
+
+it("checkpoints Git changes without ignored build outputs or guest Git metadata", () =>
+  proveGitIgnoredWorkspaceOutputs(owner, root));
 
 it("never admits nested host secrets after guest de-ignore", async () => {
   const prefix = "nested/";

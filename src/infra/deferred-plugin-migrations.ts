@@ -23,12 +23,17 @@ import type { DB } from "../state/openclaw-state-db.generated.js";
 import { runOpenClawStateWriteTransaction } from "../state/openclaw-state-db.js";
 import { resolveOpenClawStateSqlitePath } from "../state/openclaw-state-db.paths.js";
 import { captureOpenClawStateWorkerContext } from "../state/openclaw-state-worker-context.js";
-import type { WorkerOperationHandlers } from "../state/worker-operation-registry.js";
 import {
   deferredPluginMigrationSchema,
   sameDeferredPluginMigrationInputs,
   type DeferredPluginMigration,
 } from "./deferred-plugin-migrations.contract.js";
+import {
+  RUN_PREFIX,
+  pendingMigrationRecords,
+  readPendingMigrationRecords,
+  readPendingMigrationRows,
+} from "./deferred-plugin-migrations.kernel.js";
 import { isTruthyEnvValue } from "./env.js";
 import { clearNodeSqliteKyselyCacheForDatabase } from "./kysely-sync-cache-state.js";
 import { executeSqliteQuerySync, getNodeSqliteKysely } from "./kysely-sync.js";
@@ -55,7 +60,6 @@ function invalidatePinnedMigrationReads(): void {
   }
 }
 
-const RUN_PREFIX = "deferred-plugin-migration:";
 const migrationReceipt: SqliteDatabaseAdmissionKey<object> = {
   name: "plugins.deferred-migrations",
   lifetime: "process",
@@ -184,18 +188,25 @@ function formatChangedObligationFields(
   expected: readonly DeferredPluginMigration[],
   current: readonly DeferredPluginMigration[],
 ): string {
+  const expectedIds = new Set(expected.map((entry) => entry.pluginId));
   const currentById = new Map(current.map((entry) => [entry.pluginId, entry]));
   const fields = deferredPluginMigrationSchema.keyof().options;
   const changed: string[] = [];
   for (const before of expected) {
     const after = currentById.get(before.pluginId);
     if (!after) {
+      changed.push(`${before.pluginId}:removed`);
       continue;
     }
     for (const field of fields) {
       if (!isDeepStrictEqual(before[field], after[field])) {
         changed.push(`${before.pluginId}:${field}`);
       }
+    }
+  }
+  for (const after of current) {
+    if (!expectedIds.has(after.pluginId)) {
+      changed.push(`${after.pluginId}:added`);
     }
   }
   return formatConflictIds(changed);
@@ -231,54 +242,12 @@ export function mergeDeferredPluginMigration(
   };
 }
 
-function readPendingMigrationRows(database: EngineConnection, includeDeferred = false) {
-  return executeSqliteQuerySync(
-    database,
-    getNodeSqliteKysely<Pick<DB, "migration_runs">>(database)
-      .selectFrom("migration_runs")
-      .select(["id", "report_json", "status"])
-      .where("id", "like", `${RUN_PREFIX}%`)
-      .where("status", "in", includeDeferred ? ["pending", "deferred"] : ["pending"])
-      .orderBy("id"),
-  ).rows;
-}
-
-function pendingMigrationRecords(rows: ReturnType<typeof readPendingMigrationRows>) {
-  return rows.map((row) => deferredPluginMigrationSchema.parse(JSON.parse(row.report_json)));
-}
-
-function readPendingMigrationRecords(database: EngineConnection, includeDeferred = false) {
-  return tableExists(database, "migration_runs")
-    ? pendingMigrationRecords(readPendingMigrationRows(database, includeDeferred))
-    : [];
-}
-
-export const deferredPluginMigrationReadOperations = {
-  "plugins.deferredMigrations.read": (input: { includeDeferred?: boolean } | undefined, db) => ({
-    type: "plugins.deferredMigrations.read" as const,
-    pending: readPendingMigrationRecords(db, input?.includeDeferred),
-  }),
-} satisfies WorkerOperationHandlers<EngineConnection>;
-
-function samePendingGeneration(
-  current: readonly DeferredPluginMigration[],
-  expected: readonly DeferredPluginMigration[],
-): boolean {
-  // Doctor appends newly discovered owners; SQLite reads rows in key order.
-  const byPluginId = (left: DeferredPluginMigration, right: DeferredPluginMigration) =>
-    left.pluginId < right.pluginId ? -1 : left.pluginId > right.pluginId ? 1 : 0;
-  return sameDeferredPluginMigrationInputs(
-    current.toSorted(byPluginId),
-    expected.toSorted(byPluginId),
-  );
-}
-
 function assertPendingGeneration(
   current: readonly DeferredPluginMigration[],
   expected: readonly DeferredPluginMigration[],
   phase: string,
 ): void {
-  if (!samePendingGeneration(current, expected)) {
+  if (!sameDeferredPluginMigrationInputs(current, expected)) {
     throw new DeferredPluginMigrationConflictError(current, { expected, phase });
   }
 }
@@ -467,7 +436,7 @@ export function withDeferredPluginMigrationsCurrent<T>(
   const result = runOpenClawStateWriteTransaction(
     ({ db }) => {
       const pending = pendingMigrationRecords(readPendingMigrationRows(db));
-      if (params.onConflict && !samePendingGeneration(pending, expectedPending)) {
+      if (params.onConflict && !sameDeferredPluginMigrationInputs(pending, expectedPending)) {
         // Commit preservation facts against these rows; callers refuse publication after return.
         return params.onConflict(pending);
       }

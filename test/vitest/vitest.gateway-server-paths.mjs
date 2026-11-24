@@ -200,6 +200,7 @@ export const gatewayDatabaseWorkerTestFiles = [
   "src/gateway/server-methods/native-hook-relay.test.ts",
   "src/gateway/server-methods/nodes.test.ts",
   "src/gateway/server-methods/projects.test.ts",
+  "src/gateway/server-methods/projects-access.test.ts",
   "src/gateway/server-methods/requester-cron-authority.integration.test.ts",
   "src/gateway/server-methods/send.qa-reply-ambiguity.integration.test.ts",
   "src/gateway/server-methods/send.scheduled-reads.integration.test.ts",
@@ -284,7 +285,10 @@ export const gatewayDatabaseWorkerTestFiles = [
   "src/gateway/session-produced-media-delivery.test.ts",
   "src/gateway/session-repository-materialization.test.ts",
   "src/gateway/session-repository-publication-handoff.test.ts",
+  "src/gateway/session-restart-resume-custody.test.ts",
   "src/gateway/session-restart-resume.test.ts",
+  "src/gateway/session-restart-resume.yield.test.ts",
+  "src/gateway/session-restart-resume.upgrade.test.ts",
   "src/gateway/session-restart-resume.workspace.test.ts",
   "src/gateway/session-row-event-ancestor-placement.test.ts",
   "src/gateway/session-row-event-trees.test.ts",
@@ -305,6 +309,7 @@ export const gatewayDatabaseWorkerTestFiles = [
   "src/gateway/session-sharing-groups.test.ts",
   "src/gateway/session-sharing-preparation.creation-settlement.test.ts",
   "src/gateway/session-sharing-preparation.test.ts",
+  "src/gateway/session-sharing-publication.integration.test.ts",
   "src/gateway/session-sharing.worker.test.ts",
   "src/gateway/session-startup-migration.test.ts",
   "src/gateway/session-subagent-reactivation.test.ts",
@@ -360,6 +365,7 @@ export const gatewayDatabaseWorkerTestFiles = [
   "src/gateway/tools-invoke-http.test.ts",
   "src/gateway/tui-session-description-wire.test.ts",
   "src/gateway/update-recovery-cleanup.authority.integration.test.ts",
+  "src/gateway/update-recovery-cleanup.destinations.integration.test.ts",
   "src/gateway/update-run-notice-target.test.ts",
   "src/gateway/update-run-notice.test.ts",
   "src/gateway/user-profiles-http.auth.test.ts",
@@ -381,6 +387,7 @@ export const gatewayDatabaseWorkerTestFiles = [
   "src/gateway/worker-environments/local-workspace-conversion.test.ts",
   "src/gateway/worker-environments/local-workspace-projection.test.ts",
   "src/gateway/worker-environments/local-workspace-store.test.ts",
+  "src/gateway/worker-environments/local-workspace-store.transfer.test.ts",
   "src/gateway/worker-environments/local-workspace-template.test.ts",
   "src/gateway/worker-environments/node-desktop-carrier.test.ts",
   "src/gateway/worker-environments/node-enrollment.test.ts",
@@ -501,6 +508,7 @@ export const gatewayDatabaseWorkerTestFiles = [
   "src/gateway/worker-environments/worker-turn-detached-context.test.ts",
   "src/gateway/worker-environments/worker-turn-early-final.test.ts",
   "src/gateway/worker-environments/worker-turn-execution.test.ts",
+  "src/gateway/worker-environments/worker-turn-runtime-lease.test.ts",
   "src/gateway/worker-environments/worker-turn-launcher-build-recovery.test.ts",
   "src/gateway/worker-environments/worker-turn-launcher-claim-admission.test.ts",
   "src/gateway/worker-environments/worker-turn-launcher-computer.test.ts",
@@ -608,6 +616,8 @@ export const gatewayMethodsTestExclude = [
 
 // Gateway server tests that need private process state or a private module graph.
 export const gatewayServerIsolatedTestFiles = [
+  // Forced V8 collection needs --expose-gc, which Node worker threads reject.
+  "src/gateway/control-ui-session-pr-prepared-read.retention.test.ts",
   // Real provider and subagent lifecycle registrations must survive the whole scenario.
   "src/gateway/gateway.prompt-cache.test.ts",
   "src/gateway/server.subagent-prompt-recent.gateway.test.ts",

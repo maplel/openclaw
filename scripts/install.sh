@@ -3424,7 +3424,7 @@ retire_git_wrapper_after_npm_install() {
     ui_success "Previous git wrapper retired"
 }
 
-# These metadata documents contain only objects and unescaped ASCII strings.
+# Metadata uses objects, unescaped ASCII strings, and boolean values.
 # Reject other JSON forms and duplicate keys instead of guessing their meaning.
 bun_metadata_string() {
     LC_ALL=C awk -v wanted="$2" '
@@ -3435,9 +3435,13 @@ bun_metadata_string() {
             if (match(json, /^[ \t\r\n]+/)) { json=substr(json,RLENGTH+1); continue }
             if (done) fail()
             quoted=match(json, /^"[A-Za-z0-9_.+\/-]*"/)
+            boolean=!quoted && match(json, /^(true|false)/)
             token=quoted ? substr(json,2,RLENGTH-2) : substr(json,1,1)
-            json=substr(json,quoted ? RLENGTH+1 : 2)
-            if (quoted) {
+            json=substr(json,(quoted || boolean) ? RLENGTH+1 : 2)
+            if (boolean) {
+                if (!depth || state[depth]!="value") fail()
+                state[depth]="end"
+            } else if (quoted) {
                 if (!depth) fail()
                 if (state[depth]=="first" || state[depth]=="key") {
                     if (token ~ /\// || seen[path[depth] "/" token]++) fail()
@@ -3935,18 +3939,6 @@ main() {
     OPENCLAW_BIN="$(resolve_installed_openclaw_bin || true)"
     warn_duplicate_openclaw_global_installs || true
 
-    # PATH warning: installs can succeed while the user's login shell still lacks npm's global bin dir.
-    local npm_bin=""
-    npm_bin="$(npm_global_bin_dir || true)"
-    if [[ "$INSTALL_METHOD" == "npm" ]]; then
-        warn_shell_path_missing_dir "$npm_bin" "npm global bin dir"
-    fi
-    if [[ "$INSTALL_METHOD" == "git" ]]; then
-        if [[ -x "$HOME/.local/bin/openclaw" ]]; then
-            warn_shell_path_missing_dir "$HOME/.local/bin" "user-local bin dir (~/.local/bin)"
-        fi
-    fi
-
     local config_present=false defer_success=false
     if has_openclaw_config; then
         config_present=true
@@ -4029,15 +4021,34 @@ main() {
         return 1
     fi
 
+    # Keep caller-shell setup separate from PATH changes in this child process.
+    local shell_bin="" shell_bin_label=""
+    if [[ "$INSTALL_METHOD" == "npm" ]]; then
+        shell_bin="$(npm_global_bin_dir || true)"
+        shell_bin_label="npm global bin dir"
+    elif [[ -x "$HOME/.local/bin/openclaw" ]]; then
+        shell_bin="$HOME/.local/bin"
+        shell_bin_label="user-local bin dir (~/.local/bin)"
+    fi
+    local shell_setup_needed=false
+    if [[ -n "$shell_bin" ]] && ! path_has_dir "$ORIGINAL_PATH" "$shell_bin"; then
+        shell_setup_needed=true
+    fi
+
     local installed_version=""
     installed_version="$(resolve_openclaw_version)"
     echo ""
-    if [[ -n "$installed_version" ]]; then
+    if [[ "$shell_setup_needed" == "true" ]]; then
+        ui_warn "Installed; one shell setup step remains${installed_version:+ (${installed_version})}"
+    elif [[ -n "$installed_version" ]]; then
         ui_celebrate "🦞 OpenClaw installed successfully (${installed_version})!"
     else
         ui_celebrate "🦞 OpenClaw installed successfully!"
     fi
-    if [[ "$is_upgrade" == "true" ]]; then
+    if [[ "$shell_setup_needed" == "true" ]]; then
+        echo "  A piped installer cannot change its parent shell environment."
+        warn_shell_path_missing_dir "$shell_bin" "$shell_bin_label"
+    elif [[ "$is_upgrade" == "true" ]]; then
         ui_info "Upgrade complete"
     else
         local completion_messages=(

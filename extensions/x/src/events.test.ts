@@ -5,31 +5,42 @@ import { createXTestApi as createXApiClient } from "./test-support/api-client.js
 import { budgetApi, post } from "./test-support/events.js";
 import { createXTestSpend } from "./test-support/spend.js";
 
-function streamFixture() {
+const mentionEvent = (payload: unknown) =>
+  JSON.stringify({ data: { event_type: "post.mention.create", payload } });
+
+function streamFixture(
+  options: Partial<Parameters<typeof runXEvents>[0]> & {
+    source?: UnderlyingDefaultSource<Uint8Array>;
+  } = {},
+) {
   const abort = new AbortController();
   const admitted: XPostEnvelope[] = [];
   const statuses: XEventStatus[] = [];
   const warning = vi.fn();
   const connected = Promise.withResolvers<void>();
   let stream!: ReadableStreamDefaultController<Uint8Array>;
-  const api = createXApiClient({
-    bearerToken: "bearer",
-    fetch: async (input) => {
-      if (input.endsWith("/oauth2/token")) {
-        return Response.json({ access_token: "access" });
-      }
-      if (input.endsWith("/stream")) {
-        return new Response(
-          new ReadableStream<Uint8Array>({
-            start: (value) => {
-              stream = value;
-            },
-          }),
-        );
-      }
-      return Response.json({ data: [] });
-    },
-  });
+  const api =
+    options.api ??
+    createXApiClient({
+      bearerToken: "bearer",
+      fetch: async (input) => {
+        if (input.endsWith("/oauth2/token")) {
+          return Response.json({ access_token: "access" });
+        }
+        if (input.endsWith("/stream")) {
+          return new Response(
+            new ReadableStream<Uint8Array>(
+              options.source ?? {
+                start: (value) => {
+                  stream = value;
+                },
+              },
+            ),
+          );
+        }
+        return Response.json({ data: [] });
+      },
+    });
   const run = runXEvents({
     api,
     userId: "9",
@@ -39,9 +50,11 @@ function streamFixture() {
     setCursor: async () => {},
     onPost: async (envelope) => {
       admitted.push(envelope);
+      await options.onPost?.(envelope);
     },
     onStatus: (value) => {
       statuses.push(value);
+      options.onStatus?.(value);
       if (value.streamConnected) {
         connected.resolve();
       }
@@ -52,6 +65,7 @@ function streamFixture() {
   return {
     connected: connected.promise,
     admitted,
+    run,
     statuses,
     warning,
     send: (line: string) => stream.enqueue(new TextEncoder().encode(`${line}\n`)),
@@ -67,6 +81,92 @@ afterEach(() => {
 });
 
 describe("X event transport", () => {
+  it("backs off consecutive failed opens but resets after each connected stream", async () => {
+    vi.useFakeTimers();
+    let attempt = 0;
+    const failed = Promise.withResolvers<void>();
+    let stream!: ReadableStreamDefaultController<Uint8Array>;
+    const api = budgetApi(createXTestSpend(), (url) => {
+      if (!url.pathname.endsWith("/stream")) {
+        return Response.json({ data: [] });
+      }
+      if (++attempt <= 3) {
+        return Response.json({}, { status: 503 });
+      }
+      return new Response(
+        new ReadableStream<Uint8Array>({
+          start: (value) => {
+            stream = value;
+          },
+        }),
+      );
+    });
+    const test = streamFixture({
+      api,
+      onStatus: (value) => {
+        if (value.streamBackoffMs) {
+          failed.resolve();
+        }
+      },
+    });
+    const waits = () =>
+      test.statuses.flatMap((value) => (value.streamBackoffMs ? [value.streamBackoffMs] : []));
+    try {
+      await failed.promise;
+      for (const delay of [1_000, 2_000, 4_000]) {
+        expect(waits().at(-1)).toBe(delay);
+        await vi.advanceTimersByTimeAsync(delay);
+      }
+      await test.connected;
+      for (let drop = 0; drop < 7; drop++) {
+        stream.close();
+        await vi.advanceTimersByTimeAsync(0);
+        expect(waits().at(-1)).toBe(1_000);
+        await vi.advanceTimersByTimeAsync(999);
+        expect(attempt).toBe(4 + drop);
+        await vi.advanceTimersByTimeAsync(1);
+        expect(attempt).toBe(5 + drop);
+      }
+    } finally {
+      await test.stop();
+    }
+  });
+
+  it.each([true, false])(
+    "checks buffered data after a synchronous stall (data=%s)",
+    async (hasData) => {
+      // Keep immediates real: advancing timers synchronously holds promise jobs and
+      // the simulated socket delivery until after the overdue idle callback runs.
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+      const test = streamFixture();
+      try {
+        await test.connected;
+        await vi.advanceTimersByTimeAsync(0);
+        const delivery = new Promise<void>((resolve) => {
+          setImmediate(resolve);
+        }).then(() => {
+          if (hasData) {
+            test.send(mentionEvent(post("20")));
+          }
+        });
+        vi.advanceTimersByTime(27_800);
+        await delivery;
+        await new Promise<void>((resolve) => {
+          setImmediate(resolve);
+        });
+        await vi.advanceTimersByTimeAsync(0);
+        expect(test.statuses.some((value) => value.streamConnected === false)).toBe(!hasData);
+        expect(test.admitted.map((value) => value.post.id)).toEqual(hasData ? ["20"] : []);
+        if (hasData) {
+          await vi.advanceTimersByTimeAsync(25_000);
+          expect(test.statuses).toContainEqual(expect.objectContaining({ streamBackoffMs: 1_000 }));
+        }
+      } finally {
+        await test.stop();
+      }
+    },
+  );
+
   it("warns once per unparseable streak without event content and clears on a good event", async () => {
     vi.useFakeTimers();
     const test = streamFixture();
@@ -273,7 +373,7 @@ describe("X event transport", () => {
   ])(
     "hydrates $label mentions and backfills after an idle reconnect",
     async ({ entities, sinceId }) => {
-      vi.useFakeTimers();
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
       const abort = new AbortController();
       const firstConnected = Promise.withResolvers<void>();
       const reconnected = Promise.withResolvers<void>();
@@ -496,6 +596,65 @@ describe("X event transport", () => {
             ? "X API network request failed; polling"
             : `X API /2/activity/${endpoint === "create" ? "subscriptions" : endpoint} failed (HTTP ${failure}): OauthAccessTokenRequired: OAuth user access token is required for this event type; polling`,
       });
+    },
+  );
+  it.each([
+    { label: "many small events", events: 180, text: "hello", maxReadsWhileHeld: 48 },
+    { label: "fewer large events", events: 24, text: "x".repeat(240_000), maxReadsWhileHeld: 12 },
+  ])(
+    "bounds queued $label while preserving FIFO delivery",
+    async ({ events, text, maxReadsWhileHeld }) => {
+      vi.useFakeTimers();
+      const held = Promise.withResolvers<void>();
+      const release = Promise.withResolvers<void>();
+      const finished = Promise.withResolvers<void>();
+      const admitted: string[] = [];
+      let reads = 0;
+      const encoder = new TextEncoder();
+      const test = streamFixture({
+        source: {
+          pull(controller) {
+            if (reads === events) {
+              controller.close();
+            } else {
+              controller.enqueue(
+                encoder.encode(`${mentionEvent({ ...post(String(++reads)), text })}\n`),
+              );
+            }
+          },
+        },
+        onPost: async ({ post: mention }) => {
+          if (!admitted.length) {
+            held.resolve();
+            await release.promise;
+          }
+          admitted.push(mention.id);
+          if (admitted.length === events) {
+            finished.resolve();
+          }
+        },
+      });
+      void test.run.catch((error: unknown) => {
+        held.reject(error);
+        finished.reject(error);
+      });
+      try {
+        await held.promise;
+        await vi.advanceTimersByTimeAsync(0);
+        const buffered = reads;
+        await vi.advanceTimersByTimeAsync(0);
+        expect(admitted).toEqual([]);
+        expect(buffered).toBeGreaterThan(1);
+        expect(buffered).toBeLessThanOrEqual(maxReadsWhileHeld);
+        expect(reads).toBe(buffered);
+        release.resolve();
+        await finished.promise;
+        expect(admitted).toEqual(Array.from({ length: events }, (_, index) => String(index + 1)));
+        expect(reads).toBe(events);
+      } finally {
+        release.resolve();
+        await test.stop();
+      }
     },
   );
 });

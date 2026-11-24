@@ -13,6 +13,10 @@ import {
 import { convertToLlm } from "../messages.js";
 import type { SessionTreeEntry as Entry } from "../types.js";
 import { buildSessionContext, projectSessionEntryMessage } from "./session.js";
+import {
+  classifyToolUseResultPairing,
+  normalizeLegacyToolResultId,
+} from "./tool-result-pairing.js";
 
 const timestamp = "2026-07-17T00:00:00.000Z";
 const historyPrelude = Symbol.for("openclaw.sessionHistoryPrelude");
@@ -349,3 +353,37 @@ it("keeps tool ownership within the latest reset when resets repeat", () => {
   expect(Object.getOwnPropertyDescriptor(keptAssistant ?? {}, historyPrelude)?.value).toBe(true);
   expect(JSON.stringify(context.messages)).not.toContain("discarded conversation");
 });
+
+it.each([false, true, undefined])(
+  "preserves inferred legacy result outcomes (%s) and shared reset aliases",
+  (isError) => {
+    const call = toolCall("call", "root", "legacy-id");
+    const legacy = resultMessage("legacy result", { toolName: "read", toolCallId: "" });
+    if (isError === undefined) {
+      // Persisted legacy rows can omit the current required outcome field.
+      Reflect.deleteProperty(legacy, "isError");
+    } else {
+      legacy.isError = isError;
+    }
+    expect(normalizeLegacyToolResultId(legacy, [{ id: "legacy-id", name: "read" }])).toStrictEqual({
+      ...legacy,
+      toolCallId: "legacy-id",
+    });
+    const frames = classifyToolUseResultPairing([call.message, legacy]);
+    expect(frames[0]?.occurrences[0]?.sourceResult).toBe(legacy);
+    expect(frames[0]?.occurrences[0]?.result).toStrictEqual({
+      ...legacy,
+      toolCallId: "legacy-id",
+    });
+    expect(legacy.toolCallId).not.toBe("legacy-id");
+
+    const result = resultMessage("result", { toolCallId: "legacy-id" });
+    const entries: [Entry, ...Entry[]] = [
+      call,
+      messageEntry("result-a", "call", result),
+      messageEntry("result-b", "result-a", result),
+    ];
+    const messages = resetContext(entries, "call").messages;
+    expect(messages.filter((message) => message === result)).toHaveLength(2);
+  },
+);

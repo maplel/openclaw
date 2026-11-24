@@ -12,6 +12,7 @@ import path from "node:path";
 import tls from "node:tls";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createTempDirTracker } from "../../../test/helpers/temp-dir.js";
+import { PROXY_ENV_KEYS } from "../../infra/net/proxy-env.js";
 import * as proxyCa from "../../proxy-capture/ca.js";
 import { createDeferredCore } from "../../shared/deferred.js";
 import { mintSecretSentinel } from "../sentinel.js";
@@ -119,6 +120,9 @@ beforeAll(async () => {
 afterAll(() => seedDirs.cleanup());
 
 beforeEach(async () => {
+  for (const key of [...PROXY_ENV_KEYS, "NO_PROXY", "no_proxy"]) {
+    vi.stubEnv(key, undefined);
+  }
   vi.stubEnv("OPENCLAW_SECRET_SENTINELS", undefined);
   observed = [];
   auditEvents = [];
@@ -188,6 +192,39 @@ afterEach(async () => {
 });
 
 describe("secret egress registration lifecycle", () => {
+  it("forwards successive credential requests through one keep-alive CONNECT tunnel", async () => {
+    origin.removeAllListeners("request");
+    origin.on("request", (request, response) => {
+      observed.push({ authorization: request.headers.authorization, body: "" });
+      request.resume();
+      request.once("end", () => response.end("ok"));
+    });
+    const socket = await openTlsTunnel();
+    const closed = onClose(socket);
+    for (const connection of ["keep-alive", "close"]) {
+      const replied = createDeferredCore();
+      let reply = "";
+      const readReply = (chunk: Buffer) => {
+        reply += chunk.toString();
+        if (reply.endsWith("\r\n\r\nok")) {
+          replied.resolve();
+        }
+      };
+      socket.on("data", readReply);
+      socket.write(
+        `GET / HTTP/1.1\r\nHost: localhost:${originPort}\r\nConnection: ${connection}\r\nAuthorization: Bearer ${sentinel}\r\n\r\n`,
+      );
+      await replied.promise;
+      socket.off("data", readReply);
+      expect(reply).toContain("HTTP/1.1 200 OK\r\n");
+    }
+    await closed;
+    expect(observed).toEqual([
+      { authorization: `Bearer ${value}`, body: "" },
+      { authorization: `Bearer ${value}`, body: "" },
+    ]);
+  });
+
   it.each(["keep-alive", "close"])(
     "rejects queued credentials after shared revocation before socket assignment (%s)",
     async (connection) => {

@@ -255,6 +255,14 @@ export function applyJobResult(
     if (shouldDelete || job.schedule.kind === "event") {
       job.state.nextRunAtMs = undefined;
     }
+    if (
+      ownsSchedule &&
+      result.status === "error" &&
+      previousScheduleState.pacedNextRunAtMs !== undefined
+    ) {
+      // A failed check has not consumed the paced occurrence; its backoff retry still owns it.
+      job.state.pacedNextRunAtMs = job.state.nextRunAtMs;
+    }
     // A parent pause is not a failure: its own notice below replaces the skipped-run alert.
     const failureNotification = result.parentUnavailable
       ? undefined
@@ -302,13 +310,17 @@ export function applyJobResult(
       if (!opts.replay) {
         // The gone conversation cannot accept the notice; its owning agent gets it instead.
         const notice = cronNotificationJob(job);
-        const { agentId } = resolveCronNotificationQueueOwner(notice, "auto-disabled");
-        const { sessionKey, ...ownerNotice } = notice;
+        const { agentId, sessionKey } = resolveCronNotificationQueueOwner(notice, "auto-disabled");
         opts.deferredNotifications.push({
           kind: "auto-disabled",
           job:
             sessionKey === result.parentUnavailable.parentSessionKey
-              ? { ...ownerNotice, ...(agentId ? { agentId } : {}) }
+              ? {
+                  ...notice,
+                  owner: undefined,
+                  sessionKey: undefined,
+                  ...(agentId ? { agentId } : {}),
+                }
               : notice,
           text: result.error ?? "Automation paused: its parent conversation is unavailable.",
         });
@@ -466,7 +478,9 @@ export function applyJobResult(
       let normalNextComputed = false;
       const computeNormalNext = () => {
         if (!normalNextComputed) {
-          normalNext = computeNaturalNext(retryDecision.retryable || previousConsecutiveErrors > 0);
+          normalNext =
+            previousScheduleState.pacedNextRunAtMs ??
+            computeNaturalNext(retryDecision.retryable || previousConsecutiveErrors > 0);
           normalNextComputed = true;
         }
         return normalNext;
