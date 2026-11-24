@@ -2,2789 +2,2761 @@
 export function isApprovalGetResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\approvals.js").ApprovalGetResultSchema
+  typeof import("../../schema/approvals.js").ApprovalGetResultSchema
 >;
 export function isApprovalHistoryResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\approvals.js").ApprovalHistoryResultSchema
+  typeof import("../../schema/approvals.js").ApprovalHistoryResultSchema
 >;
 export function isApprovalResolveResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\approvals.js").ApprovalResolveResultSchema
+  typeof import("../../schema/approvals.js").ApprovalResolveResultSchema
 >;
 export function isApprovalPresentation(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\approvals.js").ApprovalPresentationSchema
+  typeof import("../../schema/approvals.js").ApprovalPresentationSchema
 >;
 export function isDecisionReceiptV1(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\audit-run.js").DecisionReceiptV1Schema
+  typeof import("../../schema/audit-run.js").DecisionReceiptV1Schema
 >;
 export function isExecutionIdentityContextV1(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\audit-run.js").ExecutionIdentityContextV1Schema
+  typeof import("../../schema/audit-run.js").ExecutionIdentityContextV1Schema
 >;
 export function isMigrationsMemoryPlanParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\migrations.js").MigrationsMemoryPlanParamsSchema
+  typeof import("../../schema/migrations.js").MigrationsMemoryPlanParamsSchema
 >;
 export function isMigrationsMemoryApplyParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\migrations.js").MigrationsMemoryApplyParamsSchema
+  typeof import("../../schema/migrations.js").MigrationsMemoryApplyParamsSchema
 >;
 export function isDiagnosticsHeapProfileParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\diagnostics-schemas.js").DiagnosticsHeapProfileParamsSchema
+  typeof import("../../schema/diagnostics-schemas.js").DiagnosticsHeapProfileParamsSchema
 >;
 export function isDiagnosticsHeapSnapshotParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\diagnostics-schemas.js").DiagnosticsHeapSnapshotParamsSchema
+  typeof import("../../schema/diagnostics-schemas.js").DiagnosticsHeapSnapshotParamsSchema
 >;
 export function isPluginsCredentialsInspectParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\plugin-credentials.js").PluginsCredentialsInspectParamsSchema
+  typeof import("../../schema/plugin-credentials.js").PluginsCredentialsInspectParamsSchema
 >;
 export function isPluginsSkillsReadParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\plugin-skills.js").PluginsSkillsReadParamsSchema
+  typeof import("../../schema/plugin-skills.js").PluginsSkillsReadParamsSchema
 >;
 export function isPresenceActivityParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\presence-activity.js").PresenceActivityParamsSchema
+  typeof import("../../schema/presence-activity.js").PresenceActivityParamsSchema
 >;
 export function isPresenceQueryParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\presence.js").PresenceQueryParamsSchema
+  typeof import("../../schema/presence.js").PresenceQueryParamsSchema
 >;
 export function isSkillsLibraryListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\skill-library.js").SkillsLibraryListParamsSchema
+  typeof import("../../schema/skill-library.js").SkillsLibraryListParamsSchema
 >;
 export function isSkillsLibraryReadParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\skill-library.js").SkillsLibraryReadParamsSchema
+  typeof import("../../schema/skill-library.js").SkillsLibraryReadParamsSchema
 >;
 export function isSkillsLibrarySaveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\skill-library.js").SkillsLibrarySaveParamsSchema
+  typeof import("../../schema/skill-library.js").SkillsLibrarySaveParamsSchema
 >;
 export function isSkillsLibraryMutateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\skill-library.js").SkillsLibraryMutateParamsSchema
+  typeof import("../../schema/skill-library.js").SkillsLibraryMutateParamsSchema
 >;
 export function isSkillsLibraryActivateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\skill-library.js").SkillsLibraryActivateParamsSchema
+  typeof import("../../schema/skill-library.js").SkillsLibraryActivateParamsSchema
 >;
 export function isSkillsLibraryImportParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\skill-library.js").SkillsLibraryImportParamsSchema
+  typeof import("../../schema/skill-library.js").SkillsLibraryImportParamsSchema
 >;
 export function isSkillsLibraryUploadParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\skill-library.js").SkillsLibraryUploadParamsSchema
+  typeof import("../../schema/skill-library.js").SkillsLibraryUploadParamsSchema
 >;
 export function isSystemEventParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\system-event-schema.js").SystemEventParamsSchema
+  typeof import("../../schema/system-event-schema.js").SystemEventParamsSchema
 >;
 export function isWebSearchStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\web-search.js").WebSearchStatusParamsSchema
+  typeof import("../../schema/web-search.js").WebSearchStatusParamsSchema
 >;
 export function isWebSearchTestParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\web-search.js").WebSearchTestParamsSchema
+  typeof import("../../schema/web-search.js").WebSearchTestParamsSchema
 >;
 export function isWorkerExecApprovalParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\worker-exec-approval-schemas.js").WorkerExecApprovalParamsSchema
+  typeof import("../../schema/worker-exec-approval-schemas.js").WorkerExecApprovalParamsSchema
 >;
 export function isWorkerGatewayToolInvokeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\worker-gateway-tool.js").WorkerGatewayToolInvokeParamsSchema
+  typeof import("../../schema/worker-gateway-tool.js").WorkerGatewayToolInvokeParamsSchema
 >;
 export function isWorkerGatewayToolCancelParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\worker-gateway-tool.js").WorkerGatewayToolCancelParamsSchema
+  typeof import("../../schema/worker-gateway-tool.js").WorkerGatewayToolCancelParamsSchema
 >;
 export function isWorkerGatewayToolUpdateFrame(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\worker-gateway-tool.js").WorkerGatewayToolUpdateFrameSchema
+  typeof import("../../schema/worker-gateway-tool.js").WorkerGatewayToolUpdateFrameSchema
 >;
 export function isSessionsDispatchParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\session-placement.js").SessionsDispatchParamsSchema
+  typeof import("../../schema/session-placement.js").SessionsDispatchParamsSchema
 >;
 export function isSessionsMoveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\session-placement.js").SessionsMoveParamsSchema
+  typeof import("../../schema/session-placement.js").SessionsMoveParamsSchema
 >;
 export function isNativeSubagentsSnapshot(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\native-subagents.js").NativeSubagentsSnapshotSchema
+  typeof import("../../schema/native-subagents.js").NativeSubagentsSnapshotSchema
 >;
 export function isSessionsGoalMutationResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\sessions-goal.js").SessionsGoalMutationResultSchema
+  typeof import("../../schema/sessions-goal.js").SessionsGoalMutationResultSchema
 >;
 export function isSessionsResolveResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\sessions-resolve.js").SessionsResolveResultSchema
+  typeof import("../../schema/sessions-resolve.js").SessionsResolveResultSchema
 >;
 export function isSystemRunExecutionContext(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\system-run-execution-context.js").SystemRunExecutionContextSchema
+  typeof import("../../schema/system-run-execution-context.js").SystemRunExecutionContextSchema
 >;
 export function isTerminalOpenParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\terminal.js").TerminalOpenParamsSchema
+  typeof import("../../schema/terminal.js").TerminalOpenParamsSchema
 >;
 export function isTerminalInputParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\terminal.js").TerminalInputParamsSchema
+  typeof import("../../schema/terminal.js").TerminalInputParamsSchema
 >;
 export function isTerminalResizeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\terminal.js").TerminalResizeParamsSchema
+  typeof import("../../schema/terminal.js").TerminalResizeParamsSchema
 >;
 export function isTerminalCloseParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\terminal.js").TerminalCloseParamsSchema
+  typeof import("../../schema/terminal.js").TerminalCloseParamsSchema
 >;
 export function isTerminalAttachParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\terminal.js").TerminalAttachParamsSchema
+  typeof import("../../schema/terminal.js").TerminalAttachParamsSchema
 >;
 export function isTerminalUploadParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\terminal.js").TerminalUploadParamsSchema
+  typeof import("../../schema/terminal.js").TerminalUploadParamsSchema
 >;
 export function isTerminalUploadResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\terminal.js").TerminalUploadResultSchema
+  typeof import("../../schema/terminal.js").TerminalUploadResultSchema
 >;
 export function isAgentParams(
   value: unknown,
-): value is import("typebox").Static<typeof import("..\\..\\schema-modules.js").AgentParamsSchema>;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").AgentParamsSchema>;
 export function isAgentIdentityParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").AgentIdentityParamsSchema
+  typeof import("../../schema-modules.js").AgentIdentityParamsSchema
 >;
 export function isAgentWaitParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").AgentWaitParamsSchema
+  typeof import("../../schema-modules.js").AgentWaitParamsSchema
 >;
 export function isAgentsListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").AgentsListParamsSchema
+  typeof import("../../schema-modules.js").AgentsListParamsSchema
 >;
 export function isAgentsCreateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").AgentsCreateParamsSchema
+  typeof import("../../schema-modules.js").AgentsCreateParamsSchema
 >;
 export function isAgentsUpdateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").AgentsUpdateParamsSchema
+  typeof import("../../schema-modules.js").AgentsUpdateParamsSchema
 >;
 export function isAgentsAvatarGenerateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").AgentsAvatarGenerateParamsSchema
+  typeof import("../../schema-modules.js").AgentsAvatarGenerateParamsSchema
 >;
 export function isAgentsAvatarGenerateResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").AgentsAvatarGenerateResultSchema
+  typeof import("../../schema-modules.js").AgentsAvatarGenerateResultSchema
 >;
 export function isAgentsDeleteParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").AgentsDeleteParamsSchema
+  typeof import("../../schema-modules.js").AgentsDeleteParamsSchema
 >;
 export function isAgentsFilesListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").AgentsFilesListParamsSchema
+  typeof import("../../schema-modules.js").AgentsFilesListParamsSchema
 >;
 export function isAgentsFilesGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").AgentsFilesGetParamsSchema
+  typeof import("../../schema-modules.js").AgentsFilesGetParamsSchema
 >;
 export function isAgentsFilesSetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").AgentsFilesSetParamsSchema
+  typeof import("../../schema-modules.js").AgentsFilesSetParamsSchema
 >;
 export function isAgentsWorkspaceListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").AgentsWorkspaceListParamsSchema
+  typeof import("../../schema-modules.js").AgentsWorkspaceListParamsSchema
 >;
 export function isAgentsWorkspaceGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").AgentsWorkspaceGetParamsSchema
+  typeof import("../../schema-modules.js").AgentsWorkspaceGetParamsSchema
 >;
 export function isModelsAuthSetApiKeyParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ModelsAuthSetApiKeyParamsSchema
+  typeof import("../../schema-modules.js").ModelsAuthSetApiKeyParamsSchema
 >;
 export function isModelsAuthSetApiKeyResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ModelsAuthSetApiKeyResultSchema
+  typeof import("../../schema-modules.js").ModelsAuthSetApiKeyResultSchema
 >;
 export function isModelsAuthLogoutParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ModelsAuthLogoutParamsSchema
+  typeof import("../../schema-modules.js").ModelsAuthLogoutParamsSchema
 >;
 export function isModelsAuthOrderSetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ModelsAuthOrderSetParamsSchema
+  typeof import("../../schema-modules.js").ModelsAuthOrderSetParamsSchema
 >;
 export function isModelsAuthRefreshParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ModelsAuthRefreshParamsSchema
+  typeof import("../../schema-modules.js").ModelsAuthRefreshParamsSchema
 >;
 export function isModelsAuthStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ModelsAuthStatusParamsSchema
+  typeof import("../../schema-modules.js").ModelsAuthStatusParamsSchema
 >;
 export function isModelsListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ModelsListParamsSchema
+  typeof import("../../schema-modules.js").ModelsListParamsSchema
 >;
 export function isSkillsStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SkillsStatusParamsSchema
+  typeof import("../../schema-modules.js").SkillsStatusParamsSchema
 >;
 export function isToolsCatalogParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ToolsCatalogParamsSchema
+  typeof import("../../schema-modules.js").ToolsCatalogParamsSchema
 >;
 export function isToolsGitHubStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ToolsGitHubStatusParamsSchema
+  typeof import("../../schema-modules.js").ToolsGitHubStatusParamsSchema
 >;
 export function isToolsGitHubStatusResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ToolsGitHubStatusResultSchema
+  typeof import("../../schema-modules.js").ToolsGitHubStatusResultSchema
 >;
 export function isToolsGitHubConfigureParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ToolsGitHubConfigureParamsSchema
+  typeof import("../../schema-modules.js").ToolsGitHubConfigureParamsSchema
 >;
 export function isToolsGitHubAuthorizeStartParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ToolsGitHubAuthorizeStartParamsSchema
+  typeof import("../../schema-modules.js").ToolsGitHubAuthorizeStartParamsSchema
 >;
 export function isToolsGitHubAuthorizeStartResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ToolsGitHubAuthorizeStartResultSchema
+  typeof import("../../schema-modules.js").ToolsGitHubAuthorizeStartResultSchema
 >;
 export function isToolsGitHubAuthorizePollParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ToolsGitHubAuthorizePollParamsSchema
+  typeof import("../../schema-modules.js").ToolsGitHubAuthorizePollParamsSchema
 >;
 export function isToolsGitHubAuthorizePollResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ToolsGitHubAuthorizePollResultSchema
+  typeof import("../../schema-modules.js").ToolsGitHubAuthorizePollResultSchema
 >;
 export function isToolsGitHubAuthorizeCancelParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ToolsGitHubAuthorizeCancelParamsSchema
+  typeof import("../../schema-modules.js").ToolsGitHubAuthorizeCancelParamsSchema
 >;
 export function isToolsGitHubAuthorizeCancelResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ToolsGitHubAuthorizeCancelResultSchema
+  typeof import("../../schema-modules.js").ToolsGitHubAuthorizeCancelResultSchema
 >;
 export function isToolsEffectiveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ToolsEffectiveParamsSchema
+  typeof import("../../schema-modules.js").ToolsEffectiveParamsSchema
 >;
 export function isToolsInvokeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ToolsInvokeParamsSchema
+  typeof import("../../schema-modules.js").ToolsInvokeParamsSchema
 >;
 export function isSkillsBinsParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SkillsBinsParamsSchema
+  typeof import("../../schema-modules.js").SkillsBinsParamsSchema
 >;
 export function isSkillsInstallParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SkillsInstallParamsSchema
+  typeof import("../../schema-modules.js").SkillsInstallParamsSchema
 >;
 export function isSkillsUploadBeginParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SkillsUploadBeginParamsSchema
+  typeof import("../../schema-modules.js").SkillsUploadBeginParamsSchema
 >;
 export function isSkillsUploadChunkParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SkillsUploadChunkParamsSchema
+  typeof import("../../schema-modules.js").SkillsUploadChunkParamsSchema
 >;
 export function isSkillsUploadCommitParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SkillsUploadCommitParamsSchema
+  typeof import("../../schema-modules.js").SkillsUploadCommitParamsSchema
 >;
 export function isSkillsUpdateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SkillsUpdateParamsSchema
+  typeof import("../../schema-modules.js").SkillsUpdateParamsSchema
 >;
 export function isSkillsSearchParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SkillsSearchParamsSchema
+  typeof import("../../schema-modules.js").SkillsSearchParamsSchema
 >;
 export function isSkillsDetailParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SkillsDetailParamsSchema
+  typeof import("../../schema-modules.js").SkillsDetailParamsSchema
 >;
 export function isSkillsWorkshopListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SkillsWorkshopListParamsSchema
+  typeof import("../../schema-modules.js").SkillsWorkshopListParamsSchema
 >;
 export function isSkillsWorkshopChangesParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SkillsWorkshopChangesParamsSchema
+  typeof import("../../schema-modules.js").SkillsWorkshopChangesParamsSchema
 >;
 export function isSkillsWorkshopReadParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SkillsWorkshopReadParamsSchema
+  typeof import("../../schema-modules.js").SkillsWorkshopReadParamsSchema
 >;
 export function isSkillsWorkshopArchiveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SkillsWorkshopArchiveParamsSchema
+  typeof import("../../schema-modules.js").SkillsWorkshopArchiveParamsSchema
 >;
 export function isSkillsWorkshopRestoreParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SkillsWorkshopRestoreParamsSchema
+  typeof import("../../schema-modules.js").SkillsWorkshopRestoreParamsSchema
 >;
 export function isSkillsWorkshopUndoParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SkillsWorkshopUndoParamsSchema
+  typeof import("../../schema-modules.js").SkillsWorkshopUndoParamsSchema
 >;
 export function isSkillsSecurityVerdictsParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SkillsSecurityVerdictsParamsSchema
+  typeof import("../../schema-modules.js").SkillsSecurityVerdictsParamsSchema
 >;
 export function isSkillsSkillCardParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SkillsSkillCardParamsSchema
+  typeof import("../../schema-modules.js").SkillsSkillCardParamsSchema
 >;
 export function isSkillsFileGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SkillsFileGetParamsSchema
+  typeof import("../../schema-modules.js").SkillsFileGetParamsSchema
 >;
 export function isModelsProbeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ModelsProbeParamsSchema
+  typeof import("../../schema-modules.js").ModelsProbeParamsSchema
 >;
 export function isConversationListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ConversationListParamsSchema
+  typeof import("../../schema-modules.js").ConversationListParamsSchema
 >;
 export function isConversationSendParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ConversationSendParamsSchema
+  typeof import("../../schema-modules.js").ConversationSendParamsSchema
 >;
 export function isConversationTurnCancelParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ConversationTurnCancelParamsSchema
+  typeof import("../../schema-modules.js").ConversationTurnCancelParamsSchema
 >;
 export function isConversationTurnParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ConversationTurnParamsSchema
+  typeof import("../../schema-modules.js").ConversationTurnParamsSchema
 >;
 export function isUsersListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersListParamsSchema
+  typeof import("../../schema-modules.js").UsersListParamsSchema
 >;
 export function isUsersMentionableParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersMentionableParamsSchema
+  typeof import("../../schema-modules.js").UsersMentionableParamsSchema
 >;
 export function isUsersMentionableResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersMentionableResultSchema
+  typeof import("../../schema-modules.js").UsersMentionableResultSchema
 >;
 export function isMentionsListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").MentionsListParamsSchema
+  typeof import("../../schema-modules.js").MentionsListParamsSchema
 >;
 export function isMentionsDismissParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").MentionsDismissParamsSchema
+  typeof import("../../schema-modules.js").MentionsDismissParamsSchema
 >;
 export function isMentionsListResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").MentionsListResultSchema
+  typeof import("../../schema-modules.js").MentionsListResultSchema
 >;
 export function isMentionsChangedEvent(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").MentionsChangedEventSchema
+  typeof import("../../schema-modules.js").MentionsChangedEventSchema
 >;
 export function isMentionsFailedEvent(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").MentionsFailedEventSchema
+  typeof import("../../schema-modules.js").MentionsFailedEventSchema
 >;
 export function isUsersBackgroundGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersBackgroundGetParamsSchema
+  typeof import("../../schema-modules.js").UsersBackgroundGetParamsSchema
 >;
 export function isUsersBackgroundUploadParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersBackgroundUploadParamsSchema
+  typeof import("../../schema-modules.js").UsersBackgroundUploadParamsSchema
 >;
 export function isUsersBackgroundRemoveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersBackgroundRemoveParamsSchema
+  typeof import("../../schema-modules.js").UsersBackgroundRemoveParamsSchema
 >;
 export function isUsersPrefsGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersPrefsGetParamsSchema
+  typeof import("../../schema-modules.js").UsersPrefsGetParamsSchema
 >;
 export function isUsersPrefsSetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersPrefsSetParamsSchema
+  typeof import("../../schema-modules.js").UsersPrefsSetParamsSchema
 >;
 export function isUsersPersonalFileGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersPersonalFileGetParamsSchema
+  typeof import("../../schema-modules.js").UsersPersonalFileGetParamsSchema
 >;
 export function isUsersPersonalFileSetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersPersonalFileSetParamsSchema
+  typeof import("../../schema-modules.js").UsersPersonalFileSetParamsSchema
 >;
 export function isUsersSelfParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersSelfParamsSchema
+  typeof import("../../schema-modules.js").UsersSelfParamsSchema
 >;
 export function isUsersGitHubStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersGitHubStatusParamsSchema
+  typeof import("../../schema-modules.js").UsersGitHubStatusParamsSchema
 >;
 export function isUsersGitHubAuthorizeStartParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersGitHubAuthorizeStartParamsSchema
+  typeof import("../../schema-modules.js").UsersGitHubAuthorizeStartParamsSchema
 >;
 export function isUsersGitHubAuthorizePollParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersGitHubAuthorizePollParamsSchema
+  typeof import("../../schema-modules.js").UsersGitHubAuthorizePollParamsSchema
 >;
 export function isUsersGitHubAuthorizeCancelParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersGitHubAuthorizeCancelParamsSchema
+  typeof import("../../schema-modules.js").UsersGitHubAuthorizeCancelParamsSchema
 >;
 export function isUsersGitHubDisconnectParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersGitHubDisconnectParamsSchema
+  typeof import("../../schema-modules.js").UsersGitHubDisconnectParamsSchema
 >;
 export function isUsersSelfResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersSelfResultSchema
+  typeof import("../../schema-modules.js").UsersSelfResultSchema
 >;
 export function isUsersLinkEmailParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersLinkEmailParamsSchema
+  typeof import("../../schema-modules.js").UsersLinkEmailParamsSchema
 >;
 export function isUsersLinkEmailResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersLinkEmailResultSchema
+  typeof import("../../schema-modules.js").UsersLinkEmailResultSchema
 >;
 export function isUsersMergeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersMergeParamsSchema
+  typeof import("../../schema-modules.js").UsersMergeParamsSchema
 >;
 export function isUsersMergeResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersMergeResultSchema
+  typeof import("../../schema-modules.js").UsersMergeResultSchema
 >;
 export function isUsersLinkChannelIdentityParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersLinkChannelIdentityParamsSchema
+  typeof import("../../schema-modules.js").UsersLinkChannelIdentityParamsSchema
 >;
 export function isUsersLinkChannelIdentityResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersLinkChannelIdentityResultSchema
+  typeof import("../../schema-modules.js").UsersLinkChannelIdentityResultSchema
 >;
 export function isUsersUnlinkChannelIdentityParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersUnlinkChannelIdentityParamsSchema
+  typeof import("../../schema-modules.js").UsersUnlinkChannelIdentityParamsSchema
 >;
 export function isUsersUnlinkChannelIdentityResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersUnlinkChannelIdentityResultSchema
+  typeof import("../../schema-modules.js").UsersUnlinkChannelIdentityResultSchema
 >;
 export function isUsersListChannelIdentitiesParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersListChannelIdentitiesParamsSchema
+  typeof import("../../schema-modules.js").UsersListChannelIdentitiesParamsSchema
 >;
 export function isUsersListChannelIdentitiesResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersListChannelIdentitiesResultSchema
+  typeof import("../../schema-modules.js").UsersListChannelIdentitiesResultSchema
 >;
 export function isUsersSetDisplayNameParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersSetDisplayNameParamsSchema
+  typeof import("../../schema-modules.js").UsersSetDisplayNameParamsSchema
 >;
 export function isUsersSetDisplayNameResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersSetDisplayNameResultSchema
+  typeof import("../../schema-modules.js").UsersSetDisplayNameResultSchema
 >;
 export function isUsersSetRoleParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersSetRoleParamsSchema
+  typeof import("../../schema-modules.js").UsersSetRoleParamsSchema
 >;
 export function isUsersSetRoleResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersSetRoleResultSchema
+  typeof import("../../schema-modules.js").UsersSetRoleResultSchema
 >;
 export function isUsersSetAvatarParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersSetAvatarParamsSchema
+  typeof import("../../schema-modules.js").UsersSetAvatarParamsSchema
 >;
 export function isUsersSetAvatarResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersSetAvatarResultSchema
+  typeof import("../../schema-modules.js").UsersSetAvatarResultSchema
 >;
 export function isUsersListAuthLinksParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersListAuthLinksParamsSchema
+  typeof import("../../schema-modules.js").UsersListAuthLinksParamsSchema
 >;
 export function isUsersListModelAccountsParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersListModelAccountsParamsSchema
+  typeof import("../../schema-modules.js").UsersListModelAccountsParamsSchema
 >;
 export function isUsersSelectModelAccountParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersSelectModelAccountParamsSchema
+  typeof import("../../schema-modules.js").UsersSelectModelAccountParamsSchema
 >;
 export function isUsersAuthConnectCatalogParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersAuthConnectCatalogParamsSchema
+  typeof import("../../schema-modules.js").UsersAuthConnectCatalogParamsSchema
 >;
 export function isUsersAuthConnectStartParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersAuthConnectStartParamsSchema
+  typeof import("../../schema-modules.js").UsersAuthConnectStartParamsSchema
 >;
 export function isUsersAuthConnectAnswerParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersAuthConnectAnswerParamsSchema
+  typeof import("../../schema-modules.js").UsersAuthConnectAnswerParamsSchema
 >;
 export function isUsersAuthConnectStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersAuthConnectStatusParamsSchema
+  typeof import("../../schema-modules.js").UsersAuthConnectStatusParamsSchema
 >;
 export function isUsersAuthConnectCancelParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersAuthConnectCancelParamsSchema
+  typeof import("../../schema-modules.js").UsersAuthConnectCancelParamsSchema
 >;
 export function isUsersLinkAuthProfileParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersLinkAuthProfileParamsSchema
+  typeof import("../../schema-modules.js").UsersLinkAuthProfileParamsSchema
 >;
 export function isUsersUnlinkAuthProfileParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UsersUnlinkAuthProfileParamsSchema
+  typeof import("../../schema-modules.js").UsersUnlinkAuthProfileParamsSchema
 >;
 export function isChatHistoryParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ChatHistoryParamsSchema
+  typeof import("../../schema-modules.js").ChatHistoryParamsSchema
 >;
 export function isChatStartupParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ChatStartupParamsSchema
+  typeof import("../../schema-modules.js").ChatStartupParamsSchema
 >;
 export function isChatMetadataParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ChatMetadataParamsSchema
+  typeof import("../../schema-modules.js").ChatMetadataParamsSchema
 >;
 export function isChatMessageGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ChatMessageGetParamsSchema
+  typeof import("../../schema-modules.js").ChatMessageGetParamsSchema
 >;
 export function isChatToolTitlesParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ChatToolTitlesParamsSchema
+  typeof import("../../schema-modules.js").ChatToolTitlesParamsSchema
 >;
 export function isChatPendingInputsDismissParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ChatPendingInputsDismissParamsSchema
+  typeof import("../../schema-modules.js").ChatPendingInputsDismissParamsSchema
 >;
 export function isChatPredictParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ChatPredictParamsSchema
+  typeof import("../../schema-modules.js").ChatPredictParamsSchema
 >;
 export function isChatSendParams(
   value: unknown,
-): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ChatSendParamsSchema
->;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").ChatSendParamsSchema>;
 export function isChatAbortParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ChatAbortParamsSchema
+  typeof import("../../schema-modules.js").ChatAbortParamsSchema
 >;
 export function isChatInjectParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ChatInjectParamsSchema
+  typeof import("../../schema-modules.js").ChatInjectParamsSchema
 >;
 export function isTranscriptsListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TranscriptsListParamsSchema
+  typeof import("../../schema-modules.js").TranscriptsListParamsSchema
 >;
 export function isTranscriptsSummarizeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TranscriptsSummarizeParamsSchema
+  typeof import("../../schema-modules.js").TranscriptsSummarizeParamsSchema
 >;
 export function isTranscriptsGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TranscriptsGetParamsSchema
+  typeof import("../../schema-modules.js").TranscriptsGetParamsSchema
 >;
 export function isTranscriptsExportParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TranscriptsExportParamsSchema
+  typeof import("../../schema-modules.js").TranscriptsExportParamsSchema
 >;
 export function isTranscriptsStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TranscriptsStatusParamsSchema
+  typeof import("../../schema-modules.js").TranscriptsStatusParamsSchema
 >;
 export function isMessageActionParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").MessageActionParamsSchema
+  typeof import("../../schema-modules.js").MessageActionParamsSchema
 >;
 export function isSendParams(
   value: unknown,
-): value is import("typebox").Static<typeof import("..\\..\\schema-modules.js").SendParamsSchema>;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").SendParamsSchema>;
 export function isPollParams(
   value: unknown,
-): value is import("typebox").Static<typeof import("..\\..\\schema-modules.js").PollParamsSchema>;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").PollParamsSchema>;
 export function isWebPushVapidPublicKeyParams(
   value: unknown,
-): value is import("..\\..\\schema\\push.js").WebPushVapidPublicKeyParams;
+): value is import("../../schema/push.js").WebPushVapidPublicKeyParams;
 export function isWebPushSubscribeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WebPushSubscribeParamsSchema
+  typeof import("../../schema-modules.js").WebPushSubscribeParamsSchema
 >;
 export function isWebPushUnsubscribeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WebPushUnsubscribeParamsSchema
+  typeof import("../../schema-modules.js").WebPushUnsubscribeParamsSchema
 >;
 export function isWebPushTestParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WebPushTestParamsSchema
+  typeof import("../../schema-modules.js").WebPushTestParamsSchema
 >;
 export function isWebPushPreferencesGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WebPushPreferencesGetParamsSchema
+  typeof import("../../schema-modules.js").WebPushPreferencesGetParamsSchema
 >;
 export function isWebPushPreferencesSetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WebPushPreferencesSetParamsSchema
+  typeof import("../../schema-modules.js").WebPushPreferencesSetParamsSchema
 >;
 export function isTalkModeParams(
   value: unknown,
-): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkModeParamsSchema
->;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").TalkModeParamsSchema>;
 export function isTalkCatalogParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkCatalogParamsSchema
+  typeof import("../../schema-modules.js").TalkCatalogParamsSchema
 >;
 export function isTalkVoiceGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkVoiceGetParamsSchema
+  typeof import("../../schema-modules.js").TalkVoiceGetParamsSchema
 >;
 export function isTalkVoiceSetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkVoiceSetParamsSchema
+  typeof import("../../schema-modules.js").TalkVoiceSetParamsSchema
 >;
 export function isTalkVoiceCompleteParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkVoiceCompleteParamsSchema
+  typeof import("../../schema-modules.js").TalkVoiceCompleteParamsSchema
 >;
 export function isTalkVoiceChangeEvent(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkVoiceChangeEventSchema
+  typeof import("../../schema-modules.js").TalkVoiceChangeEventSchema
 >;
 export function isTalkConfigParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkConfigParamsSchema
+  typeof import("../../schema-modules.js").TalkConfigParamsSchema
 >;
 export function isTalkConfigResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkConfigResultSchema
+  typeof import("../../schema-modules.js").TalkConfigResultSchema
 >;
 export function isTalkClientCreateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkClientCreateParamsSchema
+  typeof import("../../schema-modules.js").TalkClientCreateParamsSchema
 >;
 export function isTalkClientCreateResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkClientCreateResultSchema
+  typeof import("../../schema-modules.js").TalkClientCreateResultSchema
 >;
 export function isTalkClientCloseParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkClientCloseParamsSchema
+  typeof import("../../schema-modules.js").TalkClientCloseParamsSchema
 >;
 export function isTalkClientMutationResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkClientMutationResultSchema
+  typeof import("../../schema-modules.js").TalkClientMutationResultSchema
 >;
 export function isTalkClientToolCallParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkClientToolCallParamsSchema
+  typeof import("../../schema-modules.js").TalkClientToolCallParamsSchema
 >;
 export function isTalkClientToolCallResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkClientToolCallResultSchema
+  typeof import("../../schema-modules.js").TalkClientToolCallResultSchema
 >;
 export function isTalkClientTranscriptParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkClientTranscriptParamsSchema
+  typeof import("../../schema-modules.js").TalkClientTranscriptParamsSchema
 >;
 export function isTalkClientSayParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkClientSayParamsSchema
+  typeof import("../../schema-modules.js").TalkClientSayParamsSchema
 >;
 export function isTalkClientSteerParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkClientSteerParamsSchema
+  typeof import("../../schema-modules.js").TalkClientSteerParamsSchema
 >;
 export function isTalkSessionCreateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkSessionCreateParamsSchema
+  typeof import("../../schema-modules.js").TalkSessionCreateParamsSchema
 >;
 export function isTalkSessionAppendAudioParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkSessionAppendAudioParamsSchema
+  typeof import("../../schema-modules.js").TalkSessionAppendAudioParamsSchema
 >;
 export function isTalkSessionAcknowledgeMarkParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkSessionAcknowledgeMarkParamsSchema
+  typeof import("../../schema-modules.js").TalkSessionAcknowledgeMarkParamsSchema
 >;
 export function isTalkSessionCancelOutputParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkSessionCancelOutputParamsSchema
+  typeof import("../../schema-modules.js").TalkSessionCancelOutputParamsSchema
 >;
 export function isTalkSessionCancelOutputResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkSessionCancelOutputResultSchema
+  typeof import("../../schema-modules.js").TalkSessionCancelOutputResultSchema
 >;
 export function isTalkSessionSteerParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkSessionSteerParamsSchema
+  typeof import("../../schema-modules.js").TalkSessionSteerParamsSchema
 >;
 export function isTalkSessionSubmitToolResultParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkSessionSubmitToolResultParamsSchema
+  typeof import("../../schema-modules.js").TalkSessionSubmitToolResultParamsSchema
 >;
 export function isTalkSessionCloseParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkSessionCloseParamsSchema
+  typeof import("../../schema-modules.js").TalkSessionCloseParamsSchema
 >;
 export function isTalkSpeakParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TalkSpeakParamsSchema
+  typeof import("../../schema-modules.js").TalkSpeakParamsSchema
 >;
 export function isChannelsStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ChannelsStatusParamsSchema
+  typeof import("../../schema-modules.js").ChannelsStatusParamsSchema
 >;
 export function isChannelsPairingListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ChannelsPairingListParamsSchema
+  typeof import("../../schema-modules.js").ChannelsPairingListParamsSchema
 >;
 export function isChannelsPairingApproveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ChannelsPairingApproveParamsSchema
+  typeof import("../../schema-modules.js").ChannelsPairingApproveParamsSchema
 >;
 export function isChannelsPairingDismissParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ChannelsPairingDismissParamsSchema
+  typeof import("../../schema-modules.js").ChannelsPairingDismissParamsSchema
 >;
 export function isChannelsStartParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ChannelsStartParamsSchema
+  typeof import("../../schema-modules.js").ChannelsStartParamsSchema
 >;
 export function isChannelsStopParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ChannelsStopParamsSchema
+  typeof import("../../schema-modules.js").ChannelsStopParamsSchema
 >;
 export function isChannelsLogoutParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ChannelsLogoutParamsSchema
+  typeof import("../../schema-modules.js").ChannelsLogoutParamsSchema
 >;
 export function isPluginApprovalRequestParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginApprovalRequestParamsSchema
+  typeof import("../../schema-modules.js").PluginApprovalRequestParamsSchema
 >;
 export function isPluginApprovalResolveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginApprovalResolveParamsSchema
+  typeof import("../../schema-modules.js").PluginApprovalResolveParamsSchema
 >;
 export function isPluginsListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsListParamsSchema
+  typeof import("../../schema-modules.js").PluginsListParamsSchema
 >;
 export function isPluginsInspectParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsInspectParamsSchema
+  typeof import("../../schema-modules.js").PluginsInspectParamsSchema
 >;
 export function isPluginsRefreshParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsRefreshParamsSchema
+  typeof import("../../schema-modules.js").PluginsRefreshParamsSchema
 >;
 export function isPluginsReloadParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsReloadParamsSchema
+  typeof import("../../schema-modules.js").PluginsReloadParamsSchema
 >;
 export function isPluginsSearchParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsSearchParamsSchema
+  typeof import("../../schema-modules.js").PluginsSearchParamsSchema
 >;
 export function isPluginsCatalogBrowseParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsCatalogBrowseParamsSchema
+  typeof import("../../schema-modules.js").PluginsCatalogBrowseParamsSchema
 >;
 export function isPluginsCatalogCategoriesParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsCatalogCategoriesParamsSchema
+  typeof import("../../schema-modules.js").PluginsCatalogCategoriesParamsSchema
 >;
 export function isPluginsCatalogGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsCatalogGetParamsSchema
+  typeof import("../../schema-modules.js").PluginsCatalogGetParamsSchema
 >;
 export function isPluginsInstallParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsInstallParamsSchema
+  typeof import("../../schema-modules.js").PluginsInstallParamsSchema
 >;
 export function isPluginsSetEnabledParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsSetEnabledParamsSchema
+  typeof import("../../schema-modules.js").PluginsSetEnabledParamsSchema
 >;
 export function isPluginsUninstallParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsUninstallParamsSchema
+  typeof import("../../schema-modules.js").PluginsUninstallParamsSchema
 >;
 export function isPluginsUiDescriptorsParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsUiDescriptorsParamsSchema
+  typeof import("../../schema-modules.js").PluginsUiDescriptorsParamsSchema
 >;
 export function isPluginsUiDescriptorsResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsUiDescriptorsResultSchema
+  typeof import("../../schema-modules.js").PluginsUiDescriptorsResultSchema
 >;
 export function isPluginsControlUiListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsControlUiListParamsSchema
+  typeof import("../../schema-modules.js").PluginsControlUiListParamsSchema
 >;
 export function isPluginsControlUiReloadParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsControlUiReloadParamsSchema
+  typeof import("../../schema-modules.js").PluginsControlUiReloadParamsSchema
 >;
 export function isPluginsControlUiReportParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsControlUiReportParamsSchema
+  typeof import("../../schema-modules.js").PluginsControlUiReportParamsSchema
 >;
 export function isPluginsControlUiStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsControlUiStatusParamsSchema
+  typeof import("../../schema-modules.js").PluginsControlUiStatusParamsSchema
 >;
 export function isPluginsSessionActionParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsSessionActionParamsSchema
+  typeof import("../../schema-modules.js").PluginsSessionActionParamsSchema
 >;
 export function isPluginsSessionActionResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PluginsSessionActionResultSchema
+  typeof import("../../schema-modules.js").PluginsSessionActionResultSchema
 >;
 export function isWebLoginStartParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WebLoginStartParamsSchema
+  typeof import("../../schema-modules.js").WebLoginStartParamsSchema
 >;
 export function isWebLoginWaitParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WebLoginWaitParamsSchema
+  typeof import("../../schema-modules.js").WebLoginWaitParamsSchema
 >;
 export function isCommandsListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").CommandsListParamsSchema
+  typeof import("../../schema-modules.js").CommandsListParamsSchema
 >;
 export function isBackupStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").BackupStatusParamsSchema
+  typeof import("../../schema-modules.js").BackupStatusParamsSchema
 >;
 export function isBackupRecordOutcomeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").BackupRecordOutcomeParamsSchema
+  typeof import("../../schema-modules.js").BackupRecordOutcomeParamsSchema
 >;
 export function isStorageLocationsListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").StorageLocationsListParamsSchema
+  typeof import("../../schema-modules.js").StorageLocationsListParamsSchema
 >;
 export function isStorageLocationsProbeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").StorageLocationsProbeParamsSchema
+  typeof import("../../schema-modules.js").StorageLocationsProbeParamsSchema
 >;
 export function isComputerStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ComputerStatusParamsSchema
+  typeof import("../../schema-modules.js").ComputerStatusParamsSchema
 >;
 export function isComputerInvokeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ComputerInvokeParamsSchema
+  typeof import("../../schema-modules.js").ComputerInvokeParamsSchema
 >;
 export function isAuditActivityListParams(
   value: unknown,
-): value is import("..\\..\\schema\\audit-activity.js").AuditActivityListParams;
+): value is import("../../schema/audit-activity.js").AuditActivityListParams;
 export function isAuditRunInspectParams(
   value: unknown,
-): value is import("..\\..\\schema\\audit-run.js").AuditRunInspectParams;
+): value is import("../../schema/audit-run.js").AuditRunInspectParams;
 export function isAuditListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").AuditListParamsSchema
+  typeof import("../../schema-modules.js").AuditListParamsSchema
 >;
 export function isWakeParams(
   value: unknown,
-): value is import("typebox").Static<typeof import("..\\..\\schema-modules.js").WakeParamsSchema>;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").WakeParamsSchema>;
 export function isProgressCardGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ProgressCardGetParamsSchema
+  typeof import("../../schema-modules.js").ProgressCardGetParamsSchema
 >;
 export function isProgressCardPutParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ProgressCardPutParamsSchema
+  typeof import("../../schema-modules.js").ProgressCardPutParamsSchema
 >;
 export function isProgressCardRefreshParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ProgressCardRefreshParamsSchema
+  typeof import("../../schema-modules.js").ProgressCardRefreshParamsSchema
 >;
 export function isArtifactsListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ArtifactsListParamsSchema
+  typeof import("../../schema-modules.js").ArtifactsListParamsSchema
 >;
 export function isArtifactsGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ArtifactsGetParamsSchema
+  typeof import("../../schema-modules.js").ArtifactsGetParamsSchema
 >;
 export function isArtifactsDownloadParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ArtifactsDownloadParamsSchema
+  typeof import("../../schema-modules.js").ArtifactsDownloadParamsSchema
 >;
 export function isEnvironmentsCreateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").EnvironmentsCreateParamsSchema
+  typeof import("../../schema-modules.js").EnvironmentsCreateParamsSchema
 >;
 export function isEnvironmentsSessionCreateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").EnvironmentsSessionCreateParamsSchema
+  typeof import("../../schema-modules.js").EnvironmentsSessionCreateParamsSchema
 >;
 export function isEnvironmentsSessionStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").EnvironmentsSessionStatusParamsSchema
+  typeof import("../../schema-modules.js").EnvironmentsSessionStatusParamsSchema
 >;
 export function isEnvironmentsSessionDestroyParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").EnvironmentsSessionDestroyParamsSchema
+  typeof import("../../schema-modules.js").EnvironmentsSessionDestroyParamsSchema
 >;
 export function isEnvironmentsSessionExecParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").EnvironmentsSessionExecParamsSchema
+  typeof import("../../schema-modules.js").EnvironmentsSessionExecParamsSchema
 >;
 export function isEnvironmentsPrepareParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").EnvironmentsPrepareParamsSchema
+  typeof import("../../schema-modules.js").EnvironmentsPrepareParamsSchema
 >;
 export function isEnvironmentsPrepareResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").EnvironmentsPrepareResultSchema
+  typeof import("../../schema-modules.js").EnvironmentsPrepareResultSchema
 >;
 export function isEnvironmentsDestroyParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").EnvironmentsDestroyParamsSchema
+  typeof import("../../schema-modules.js").EnvironmentsDestroyParamsSchema
 >;
 export function isEnvironmentsListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").EnvironmentsListParamsSchema
+  typeof import("../../schema-modules.js").EnvironmentsListParamsSchema
 >;
 export function isEnvironmentsAdoptSuggestedProfileParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").EnvironmentsAdoptSuggestedProfileParamsSchema
+  typeof import("../../schema-modules.js").EnvironmentsAdoptSuggestedProfileParamsSchema
 >;
 export function isEnvironmentsStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").EnvironmentsStatusParamsSchema
+  typeof import("../../schema-modules.js").EnvironmentsStatusParamsSchema
 >;
 export function isPortalListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PortalListParamsSchema
+  typeof import("../../schema-modules.js").PortalListParamsSchema
 >;
 export function isPortalOpenParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PortalOpenParamsSchema
+  typeof import("../../schema-modules.js").PortalOpenParamsSchema
 >;
 export function isPortalCloseParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PortalCloseParamsSchema
+  typeof import("../../schema-modules.js").PortalCloseParamsSchema
 >;
 export function isDesktopObserveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").DesktopObserveParamsSchema
+  typeof import("../../schema-modules.js").DesktopObserveParamsSchema
 >;
 export function isDesktopObserveResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").DesktopObserveResultSchema
+  typeof import("../../schema-modules.js").DesktopObserveResultSchema
 >;
 export function isDesktopLaunchParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").DesktopLaunchParamsSchema
+  typeof import("../../schema-modules.js").DesktopLaunchParamsSchema
 >;
 export function isDesktopReleaseParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").DesktopReleaseParamsSchema
+  typeof import("../../schema-modules.js").DesktopReleaseParamsSchema
 >;
 export function isDesktopReleaseResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").DesktopReleaseResultSchema
+  typeof import("../../schema-modules.js").DesktopReleaseResultSchema
 >;
 export function isSystemInfoParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SystemInfoParamsSchema
+  typeof import("../../schema-modules.js").SystemInfoParamsSchema
 >;
 export function isSystemInfoResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SystemInfoResultSchema
+  typeof import("../../schema-modules.js").SystemInfoResultSchema
 >;
 export function isPresenceQueryResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PresenceQueryResultSchema
+  typeof import("../../schema-modules.js").PresenceQueryResultSchema
 >;
 export function isPushTestParams(
   value: unknown,
-): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").PushTestParamsSchema
->;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").PushTestParamsSchema>;
 export function isSecretsResolveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SecretsResolveParamsSchema
+  typeof import("../../schema-modules.js").SecretsResolveParamsSchema
 >;
 export function isSecretsResolveResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SecretsResolveResultSchema
+  typeof import("../../schema-modules.js").SecretsResolveResultSchema
 >;
 export function isSecretsStoreListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SecretsStoreListParamsSchema
+  typeof import("../../schema-modules.js").SecretsStoreListParamsSchema
 >;
 export function isSecretsStoreListResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SecretsStoreListResultSchema
+  typeof import("../../schema-modules.js").SecretsStoreListResultSchema
 >;
 export function isSecretsStoreSetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SecretsStoreSetParamsSchema
+  typeof import("../../schema-modules.js").SecretsStoreSetParamsSchema
 >;
 export function isSecretsStoreDeleteParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SecretsStoreDeleteParamsSchema
+  typeof import("../../schema-modules.js").SecretsStoreDeleteParamsSchema
 >;
 export function isSecretsStoreImportParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SecretsStoreImportParamsSchema
+  typeof import("../../schema-modules.js").SecretsStoreImportParamsSchema
 >;
 export function isSecretsStoreAllowedHostsParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SecretsStoreAllowedHostsParamsSchema
+  typeof import("../../schema-modules.js").SecretsStoreAllowedHostsParamsSchema
 >;
 export function isSecretsStoreMutationResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SecretsStoreMutationResultSchema
+  typeof import("../../schema-modules.js").SecretsStoreMutationResultSchema
 >;
 export function isTaskSuggestionsListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TaskSuggestionsListParamsSchema
+  typeof import("../../schema-modules.js").TaskSuggestionsListParamsSchema
 >;
 export function isTaskSuggestionsCreateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TaskSuggestionsCreateParamsSchema
+  typeof import("../../schema-modules.js").TaskSuggestionsCreateParamsSchema
 >;
 export function isTaskSuggestionsAcceptParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TaskSuggestionsAcceptParamsSchema
+  typeof import("../../schema-modules.js").TaskSuggestionsAcceptParamsSchema
 >;
 export function isTaskSuggestionsDismissParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TaskSuggestionsDismissParamsSchema
+  typeof import("../../schema-modules.js").TaskSuggestionsDismissParamsSchema
 >;
 export function isConfigGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ConfigGetParamsSchema
+  typeof import("../../schema-modules.js").ConfigGetParamsSchema
 >;
 export function isConfigSetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ConfigSetParamsSchema
+  typeof import("../../schema-modules.js").ConfigSetParamsSchema
 >;
 export function isConfigApplyParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ConfigApplyParamsSchema
+  typeof import("../../schema-modules.js").ConfigApplyParamsSchema
 >;
 export function isConfigPatchParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ConfigPatchParamsSchema
+  typeof import("../../schema-modules.js").ConfigPatchParamsSchema
 >;
 export function isConfigSchemaParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ConfigSchemaParamsSchema
+  typeof import("../../schema-modules.js").ConfigSchemaParamsSchema
 >;
 export function isConfigSchemaLookupParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ConfigSchemaLookupParamsSchema
+  typeof import("../../schema-modules.js").ConfigSchemaLookupParamsSchema
 >;
 export function isConfigSchemaLookupResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ConfigSchemaLookupResultSchema
+  typeof import("../../schema-modules.js").ConfigSchemaLookupResultSchema
 >;
 export function isSystemAgentChatParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SystemAgentChatParamsSchema
+  typeof import("../../schema-modules.js").SystemAgentChatParamsSchema
 >;
 export function isSystemAgentChatHistoryParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SystemAgentChatHistoryParamsSchema
+  typeof import("../../schema-modules.js").SystemAgentChatHistoryParamsSchema
 >;
 export function isSystemChangesListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SystemChangesListParamsSchema
+  typeof import("../../schema-modules.js").SystemChangesListParamsSchema
 >;
 export function isSystemAgentSetupAutoParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SystemAgentSetupAutoParamsSchema
+  typeof import("../../schema-modules.js").SystemAgentSetupAutoParamsSchema
 >;
 export function isSystemAgentSetupDetectParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SystemAgentSetupDetectParamsSchema
+  typeof import("../../schema-modules.js").SystemAgentSetupDetectParamsSchema
 >;
 export function isSystemAgentSetupVerifyParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SystemAgentSetupVerifyParamsSchema
+  typeof import("../../schema-modules.js").SystemAgentSetupVerifyParamsSchema
 >;
 export function isSystemAgentSetupActivateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SystemAgentSetupActivateParamsSchema
+  typeof import("../../schema-modules.js").SystemAgentSetupActivateParamsSchema
 >;
 export function isSystemAgentSetupActivateStartParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SystemAgentSetupActivateStartParamsSchema
+  typeof import("../../schema-modules.js").SystemAgentSetupActivateStartParamsSchema
 >;
 export function isSystemAgentSetupAuthStartParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SystemAgentSetupAuthStartParamsSchema
+  typeof import("../../schema-modules.js").SystemAgentSetupAuthStartParamsSchema
 >;
 export function isSystemAgentSetupRuntimeStartParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SystemAgentSetupRuntimeStartParamsSchema
+  typeof import("../../schema-modules.js").SystemAgentSetupRuntimeStartParamsSchema
 >;
 export function isWizardStartParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WizardStartParamsSchema
+  typeof import("../../schema-modules.js").WizardStartParamsSchema
 >;
 export function isMcpAuthLoginParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").McpAuthLoginParamsSchema
+  typeof import("../../schema-modules.js").McpAuthLoginParamsSchema
 >;
 export function isWizardNextParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WizardNextParamsSchema
+  typeof import("../../schema-modules.js").WizardNextParamsSchema
 >;
 export function isWizardCancelParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WizardCancelParamsSchema
+  typeof import("../../schema-modules.js").WizardCancelParamsSchema
 >;
 export function isWizardStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WizardStatusParamsSchema
+  typeof import("../../schema-modules.js").WizardStatusParamsSchema
 >;
 export function isTtsSpeakParams(
   value: unknown,
-): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TtsSpeakParamsSchema
->;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").TtsSpeakParamsSchema>;
 export function isHooksStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").HooksStatusParamsSchema
+  typeof import("../../schema-modules.js").HooksStatusParamsSchema
 >;
 export function isCronListParams(
   value: unknown,
-): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").CronListParamsSchema
->;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").CronListParamsSchema>;
 export function isCronStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").CronStatusParamsSchema
+  typeof import("../../schema-modules.js").CronStatusParamsSchema
 >;
 export function isCronGetParams(
   value: unknown,
-): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").CronGetParamsSchema
->;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").CronGetParamsSchema>;
 export function isCronAddParams(
   value: unknown,
-): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").CronAddParamsSchema
->;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").CronAddParamsSchema>;
 export function isCronUpdateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").CronUpdateParamsSchema
+  typeof import("../../schema-modules.js").CronUpdateParamsSchema
 >;
 export function isCronRemoveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").CronRemoveParamsSchema
+  typeof import("../../schema-modules.js").CronRemoveParamsSchema
 >;
 export function isCronRunParams(
   value: unknown,
-): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").CronRunParamsSchema
->;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").CronRunParamsSchema>;
 export function isCronBindParams(
   value: unknown,
-): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").CronBindParamsSchema
->;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").CronBindParamsSchema>;
 export function isCronRunsParams(
   value: unknown,
-): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").CronRunsParamsSchema
->;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").CronRunsParamsSchema>;
 export function isCronHistoryParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").CronHistoryParamsSchema
+  typeof import("../../schema-modules.js").CronHistoryParamsSchema
 >;
 export function isCronScratchGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").CronScratchGetParamsSchema
+  typeof import("../../schema-modules.js").CronScratchGetParamsSchema
 >;
 export function isCronScratchSetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").CronScratchSetParamsSchema
+  typeof import("../../schema-modules.js").CronScratchSetParamsSchema
 >;
 export function isScopeUpgradeRequest(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ScopeUpgradeRequestSchema
+  typeof import("../../schema-modules.js").ScopeUpgradeRequestSchema
 >;
 export function isScopeUpgradeWait(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ScopeUpgradeWaitSchema
+  typeof import("../../schema-modules.js").ScopeUpgradeWaitSchema
 >;
 export function isApprovalGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ApprovalGetParamsSchema
+  typeof import("../../schema-modules.js").ApprovalGetParamsSchema
 >;
 export function isApprovalHistoryParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ApprovalHistoryParamsSchema
+  typeof import("../../schema-modules.js").ApprovalHistoryParamsSchema
 >;
 export function isApprovalResolveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ApprovalResolveParamsSchema
+  typeof import("../../schema-modules.js").ApprovalResolveParamsSchema
 >;
 export function isExecApprovalsGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ExecApprovalsGetParamsSchema
+  typeof import("../../schema-modules.js").ExecApprovalsGetParamsSchema
 >;
 export function isExecApprovalsSetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ExecApprovalsSetParamsSchema
+  typeof import("../../schema-modules.js").ExecApprovalsSetParamsSchema
 >;
 export function isExecApprovalsNativeCommitParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ExecApprovalsNativeCommitParamsSchema
+  typeof import("../../schema-modules.js").ExecApprovalsNativeCommitParamsSchema
 >;
 export function isExecApprovalsNativeRequest(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ExecApprovalsNativeRequestSchema
+  typeof import("../../schema-modules.js").ExecApprovalsNativeRequestSchema
 >;
 export function isExecApprovalGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ExecApprovalGetParamsSchema
+  typeof import("../../schema-modules.js").ExecApprovalGetParamsSchema
 >;
 export function isExecApprovalRequestParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ExecApprovalRequestParamsSchema
+  typeof import("../../schema-modules.js").ExecApprovalRequestParamsSchema
 >;
 export function isExecApprovalResolveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ExecApprovalResolveParamsSchema
+  typeof import("../../schema-modules.js").ExecApprovalResolveParamsSchema
 >;
 export function isExecApprovalGrantsListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ExecApprovalGrantsListParamsSchema
+  typeof import("../../schema-modules.js").ExecApprovalGrantsListParamsSchema
 >;
 export function isExecApprovalGrantsRevokeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ExecApprovalGrantsRevokeParamsSchema
+  typeof import("../../schema-modules.js").ExecApprovalGrantsRevokeParamsSchema
 >;
 export function isQuestionRequestParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").QuestionRequestParamsSchema
+  typeof import("../../schema-modules.js").QuestionRequestParamsSchema
 >;
 export function isQuestionWaitAnswerParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").QuestionWaitAnswerParamsSchema
+  typeof import("../../schema-modules.js").QuestionWaitAnswerParamsSchema
 >;
 export function isQuestionResolveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").QuestionResolveParamsSchema
+  typeof import("../../schema-modules.js").QuestionResolveParamsSchema
 >;
 export function isQuestionGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").QuestionGetParamsSchema
+  typeof import("../../schema-modules.js").QuestionGetParamsSchema
 >;
 export function isQuestionListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").QuestionListParamsSchema
+  typeof import("../../schema-modules.js").QuestionListParamsSchema
 >;
 export function isCapabilityConsentErrorDetails(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").CapabilityConsentErrorDetailsSchema
+  typeof import("../../schema-modules.js").CapabilityConsentErrorDetailsSchema
 >;
 export function isLogsTailParams(
   value: unknown,
-): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").LogsTailParamsSchema
->;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").LogsTailParamsSchema>;
 export function isUpdateStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UpdateStatusParamsSchema
+  typeof import("../../schema-modules.js").UpdateStatusParamsSchema
 >;
 export function isUpdateStatusResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UpdateStatusResultSchema
+  typeof import("../../schema-modules.js").UpdateStatusResultSchema
 >;
 export function isUpdateHoldParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UpdateHoldParamsSchema
+  typeof import("../../schema-modules.js").UpdateHoldParamsSchema
 >;
 export function isUpdateHoldResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UpdateHoldResultSchema
+  typeof import("../../schema-modules.js").UpdateHoldResultSchema
 >;
 export function isUpdateRunParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UpdateRunParamsSchema
+  typeof import("../../schema-modules.js").UpdateRunParamsSchema
 >;
 export function isUpdateRunRecord(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UpdateRunRecordSchema
+  typeof import("../../schema-modules.js").UpdateRunRecordSchema
 >;
 export function isUpdateRunResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UpdateRunResultSchema
+  typeof import("../../schema-modules.js").UpdateRunResultSchema
 >;
 export function isUpdateRecoveryCleanupParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UpdateRecoveryCleanupParamsSchema
+  typeof import("../../schema-modules.js").UpdateRecoveryCleanupParamsSchema
 >;
 export function isUpdateRunsGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UpdateRunsGetParamsSchema
+  typeof import("../../schema-modules.js").UpdateRunsGetParamsSchema
 >;
 export function isUpdateRunsGetResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UpdateRunsGetResultSchema
+  typeof import("../../schema-modules.js").UpdateRunsGetResultSchema
 >;
 export function isUpdateRunsListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UpdateRunsListParamsSchema
+  typeof import("../../schema-modules.js").UpdateRunsListParamsSchema
 >;
 export function isUpdateRunsListResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UpdateRunsListResultSchema
+  typeof import("../../schema-modules.js").UpdateRunsListResultSchema
 >;
 export function isUpdateRunChangedEvent(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UpdateRunChangedEventSchema
+  typeof import("../../schema-modules.js").UpdateRunChangedEventSchema
 >;
 export function isUpdateReportParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UpdateReportParamsSchema
+  typeof import("../../schema-modules.js").UpdateReportParamsSchema
 >;
 export function isUpdateReportResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UpdateReportResultSchema
+  typeof import("../../schema-modules.js").UpdateReportResultSchema
 >;
 export function isUiCommandParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UiCommandParamsSchema
+  typeof import("../../schema-modules.js").UiCommandParamsSchema
 >;
 export function isUiCommandReportParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").UiCommandReportParamsSchema
+  typeof import("../../schema-modules.js").UiCommandReportParamsSchema
 >;
 export function isThemesListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ThemesListParamsSchema
+  typeof import("../../schema-modules.js").ThemesListParamsSchema
 >;
 export function isThemesGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ThemesGetParamsSchema
+  typeof import("../../schema-modules.js").ThemesGetParamsSchema
 >;
 export function isThemesSetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ThemesSetParamsSchema
+  typeof import("../../schema-modules.js").ThemesSetParamsSchema
 >;
 export function isThemesImportParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ThemesImportParamsSchema
+  typeof import("../../schema-modules.js").ThemesImportParamsSchema
 >;
 export function isCatalogBrowseParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").CatalogBrowseParamsSchema
+  typeof import("../../schema-modules.js").CatalogBrowseParamsSchema
 >;
 export function isCatalogSearchKeywordsParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").CatalogSearchKeywordsParamsSchema
+  typeof import("../../schema-modules.js").CatalogSearchKeywordsParamsSchema
 >;
 export function isSessionPortalListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionPortalListParamsSchema
+  typeof import("../../schema-modules.js").SessionPortalListParamsSchema
 >;
 export function isSessionPortalOpenParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionPortalOpenParamsSchema
+  typeof import("../../schema-modules.js").SessionPortalOpenParamsSchema
 >;
 export function isSessionPortalCloseParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionPortalCloseParamsSchema
+  typeof import("../../schema-modules.js").SessionPortalCloseParamsSchema
 >;
 export function isSessionsListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsListParamsSchema
+  typeof import("../../schema-modules.js").SessionsListParamsSchema
 >;
 export function isSessionsSubscribeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsSubscribeParamsSchema
+  typeof import("../../schema-modules.js").SessionsSubscribeParamsSchema
 >;
 export function isSessionCatalogShareRoute(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionCatalogShareRouteSchema
+  typeof import("../../schema-modules.js").SessionCatalogShareRouteSchema
 >;
 export function isSessionsCatalogListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsCatalogListParamsSchema
+  typeof import("../../schema-modules.js").SessionsCatalogListParamsSchema
 >;
 export function isSessionsCatalogReadParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsCatalogReadParamsSchema
+  typeof import("../../schema-modules.js").SessionsCatalogReadParamsSchema
 >;
 export function isSessionsCatalogContinueParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsCatalogContinueParamsSchema
+  typeof import("../../schema-modules.js").SessionsCatalogContinueParamsSchema
 >;
 export function isSessionsCatalogImportParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsCatalogImportParamsSchema
+  typeof import("../../schema-modules.js").SessionsCatalogImportParamsSchema
 >;
 export function isSessionsCatalogArchiveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsCatalogArchiveParamsSchema
+  typeof import("../../schema-modules.js").SessionsCatalogArchiveParamsSchema
 >;
 export function isSessionsCatalogStartTerminalParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsCatalogStartTerminalParamsSchema
+  typeof import("../../schema-modules.js").SessionsCatalogStartTerminalParamsSchema
 >;
 export function isSessionsSearchParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsSearchParamsSchema
+  typeof import("../../schema-modules.js").SessionsSearchParamsSchema
 >;
 export function isSessionsCleanupParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsCleanupParamsSchema
+  typeof import("../../schema-modules.js").SessionsCleanupParamsSchema
 >;
 export function isSessionsStorageParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsStorageParamsSchema
+  typeof import("../../schema-modules.js").SessionsStorageParamsSchema
 >;
 export function isSessionsPreviewParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsPreviewParamsSchema
+  typeof import("../../schema-modules.js").SessionsPreviewParamsSchema
 >;
 export function isSessionsDescribeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsDescribeParamsSchema
+  typeof import("../../schema-modules.js").SessionsDescribeParamsSchema
 >;
 export function isSessionsResolveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsResolveParamsSchema
+  typeof import("../../schema-modules.js").SessionsResolveParamsSchema
 >;
 export function isSessionsFilesListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsFilesListParamsSchema
+  typeof import("../../schema-modules.js").SessionsFilesListParamsSchema
 >;
 export function isSessionsFilesGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsFilesGetParamsSchema
+  typeof import("../../schema-modules.js").SessionsFilesGetParamsSchema
 >;
 export function isSessionsFilesDownloadParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsFilesDownloadParamsSchema
+  typeof import("../../schema-modules.js").SessionsFilesDownloadParamsSchema
 >;
 export function isSessionsFilesAssetsParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsFilesAssetsParamsSchema
+  typeof import("../../schema-modules.js").SessionsFilesAssetsParamsSchema
 >;
 export function isSessionsFilesSetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsFilesSetParamsSchema
+  typeof import("../../schema-modules.js").SessionsFilesSetParamsSchema
 >;
 export function isSessionsFilesRevealParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsFilesRevealParamsSchema
+  typeof import("../../schema-modules.js").SessionsFilesRevealParamsSchema
 >;
 export function isSessionsDiffParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsDiffParamsSchema
+  typeof import("../../schema-modules.js").SessionsDiffParamsSchema
 >;
 export function isSessionsCompanionAskParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsCompanionAskParamsSchema
+  typeof import("../../schema-modules.js").SessionsCompanionAskParamsSchema
 >;
 export function isSessionsCompanionStateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsCompanionStateParamsSchema
+  typeof import("../../schema-modules.js").SessionsCompanionStateParamsSchema
 >;
 export function isSessionsCompanionResetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsCompanionResetParamsSchema
+  typeof import("../../schema-modules.js").SessionsCompanionResetParamsSchema
 >;
 export function isSessionsActivitySummaryEnsureParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsActivitySummaryEnsureParamsSchema
+  typeof import("../../schema-modules.js").SessionsActivitySummaryEnsureParamsSchema
 >;
 export function isSessionsObserverVisibilityParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsObserverVisibilityParamsSchema
+  typeof import("../../schema-modules.js").SessionsObserverVisibilityParamsSchema
 >;
 export function isSessionVisibilitySetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionVisibilitySetParamsSchema
+  typeof import("../../schema-modules.js").SessionVisibilitySetParamsSchema
 >;
 export function isSessionPublicShareSetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionPublicShareSetParamsSchema
+  typeof import("../../schema-modules.js").SessionPublicShareSetParamsSchema
 >;
 export function isSessionMembersListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionMembersListParamsSchema
+  typeof import("../../schema-modules.js").SessionMembersListParamsSchema
 >;
 export function isSessionMemberAddParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionMemberAddParamsSchema
+  typeof import("../../schema-modules.js").SessionMemberAddParamsSchema
 >;
 export function isSessionMemberRemoveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionMemberRemoveParamsSchema
+  typeof import("../../schema-modules.js").SessionMemberRemoveParamsSchema
 >;
 export function isSessionSuggestionsAddParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionSuggestionsAddParamsSchema
+  typeof import("../../schema-modules.js").SessionSuggestionsAddParamsSchema
 >;
 export function isSessionSuggestionsListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionSuggestionsListParamsSchema
+  typeof import("../../schema-modules.js").SessionSuggestionsListParamsSchema
 >;
 export function isSessionSuggestionsResolveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionSuggestionsResolveParamsSchema
+  typeof import("../../schema-modules.js").SessionSuggestionsResolveParamsSchema
 >;
 export function isSessionTypingParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionTypingParamsSchema
+  typeof import("../../schema-modules.js").SessionTypingParamsSchema
 >;
 export function isSessionReactionsSetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionReactionsSetParamsSchema
+  typeof import("../../schema-modules.js").SessionReactionsSetParamsSchema
 >;
 export function isSessionReactionsListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionReactionsListParamsSchema
+  typeof import("../../schema-modules.js").SessionReactionsListParamsSchema
 >;
 export function isSessionReactionEvent(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionReactionEventSchema
+  typeof import("../../schema-modules.js").SessionReactionEventSchema
 >;
 export function isSessionsCreateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsCreateParamsSchema
+  typeof import("../../schema-modules.js").SessionsCreateParamsSchema
 >;
 export function isSessionsTitlePrepareParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsTitlePrepareParamsSchema
+  typeof import("../../schema-modules.js").SessionsTitlePrepareParamsSchema
 >;
 export function isSessionsSendParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsSendParamsSchema
+  typeof import("../../schema-modules.js").SessionsSendParamsSchema
 >;
 export function isSessionsReclaimParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsReclaimParamsSchema
+  typeof import("../../schema-modules.js").SessionsReclaimParamsSchema
 >;
 export function isSessionsReclaimResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsReclaimResultSchema
+  typeof import("../../schema-modules.js").SessionsReclaimResultSchema
 >;
 export function isSessionsMoveResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsMoveResultSchema
+  typeof import("../../schema-modules.js").SessionsMoveResultSchema
 >;
 export function isSessionsMessagesSubscribeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsMessagesSubscribeParamsSchema
+  typeof import("../../schema-modules.js").SessionsMessagesSubscribeParamsSchema
 >;
 export function isSessionsMessagesUnsubscribeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsMessagesUnsubscribeParamsSchema
+  typeof import("../../schema-modules.js").SessionsMessagesUnsubscribeParamsSchema
 >;
 export function isSessionsViewerPresenceSetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsViewerPresenceSetParamsSchema
+  typeof import("../../schema-modules.js").SessionsViewerPresenceSetParamsSchema
 >;
 export function isSessionsAbortParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsAbortParamsSchema
+  typeof import("../../schema-modules.js").SessionsAbortParamsSchema
 >;
 export function isSessionsPatchParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsPatchParamsSchema
+  typeof import("../../schema-modules.js").SessionsPatchParamsSchema
 >;
 export function isSessionsGoalUpdateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsGoalUpdateParamsSchema
+  typeof import("../../schema-modules.js").SessionsGoalUpdateParamsSchema
 >;
 export function isSessionsGoalClearParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsGoalClearParamsSchema
+  typeof import("../../schema-modules.js").SessionsGoalClearParamsSchema
 >;
 export function isSessionsProviderReviewContinueParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsProviderReviewContinueParamsSchema
+  typeof import("../../schema-modules.js").SessionsProviderReviewContinueParamsSchema
 >;
 export function isSessionsPatchManyParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsPatchManyParamsSchema
+  typeof import("../../schema-modules.js").SessionsPatchManyParamsSchema
 >;
 export function isSessionsPluginPatchParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsPluginPatchParamsSchema
+  typeof import("../../schema-modules.js").SessionsPluginPatchParamsSchema
 >;
 export function isSessionsResetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsResetParamsSchema
+  typeof import("../../schema-modules.js").SessionsResetParamsSchema
 >;
 export function isSessionsDeleteParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsDeleteParamsSchema
+  typeof import("../../schema-modules.js").SessionsDeleteParamsSchema
 >;
 export function isSessionsAssignOwnerParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsAssignOwnerParamsSchema
+  typeof import("../../schema-modules.js").SessionsAssignOwnerParamsSchema
 >;
 export function isSessionsSetInvolvementParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsSetInvolvementParamsSchema
+  typeof import("../../schema-modules.js").SessionsSetInvolvementParamsSchema
 >;
 export function isSessionsGroupsListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsGroupsListParamsSchema
+  typeof import("../../schema-modules.js").SessionsGroupsListParamsSchema
 >;
 export function isSessionsGroupsListResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsGroupsListResultSchema
+  typeof import("../../schema-modules.js").SessionsGroupsListResultSchema
 >;
 export function isSessionsGroupsDefaultsParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsGroupsDefaultsParamsSchema
+  typeof import("../../schema-modules.js").SessionsGroupsDefaultsParamsSchema
 >;
 export function isSessionsGroupsDefaultsResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsGroupsDefaultsResultSchema
+  typeof import("../../schema-modules.js").SessionsGroupsDefaultsResultSchema
 >;
 export function isSessionsGroupsPutParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsGroupsPutParamsSchema
+  typeof import("../../schema-modules.js").SessionsGroupsPutParamsSchema
 >;
 export function isSessionsGroupsRenameParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsGroupsRenameParamsSchema
+  typeof import("../../schema-modules.js").SessionsGroupsRenameParamsSchema
 >;
 export function isSessionsGroupsUpdateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsGroupsUpdateParamsSchema
+  typeof import("../../schema-modules.js").SessionsGroupsUpdateParamsSchema
 >;
 export function isSessionsGroupsUpdateResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsGroupsUpdateResultSchema
+  typeof import("../../schema-modules.js").SessionsGroupsUpdateResultSchema
 >;
 export function isSessionsGroupsDeleteParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsGroupsDeleteParamsSchema
+  typeof import("../../schema-modules.js").SessionsGroupsDeleteParamsSchema
 >;
 export function isSessionsGroupsMutationResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsGroupsMutationResultSchema
+  typeof import("../../schema-modules.js").SessionsGroupsMutationResultSchema
 >;
 export function isSessionsCompactParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsCompactParamsSchema
+  typeof import("../../schema-modules.js").SessionsCompactParamsSchema
 >;
 export function isSessionsBranchesListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsBranchesListParamsSchema
+  typeof import("../../schema-modules.js").SessionsBranchesListParamsSchema
 >;
 export function isSessionsBranchesSwitchParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsBranchesSwitchParamsSchema
+  typeof import("../../schema-modules.js").SessionsBranchesSwitchParamsSchema
 >;
 export function isSessionsRewindParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsRewindParamsSchema
+  typeof import("../../schema-modules.js").SessionsRewindParamsSchema
 >;
 export function isSessionsForkParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsForkParamsSchema
+  typeof import("../../schema-modules.js").SessionsForkParamsSchema
 >;
 export function isSessionsUsageParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionsUsageParamsSchema
+  typeof import("../../schema-modules.js").SessionsUsageParamsSchema
 >;
 export function isSessionDiscussionInfoParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionDiscussionInfoParamsSchema
+  typeof import("../../schema-modules.js").SessionDiscussionInfoParamsSchema
 >;
 export function isSessionDiscussionInfoResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionDiscussionInfoResultSchema
+  typeof import("../../schema-modules.js").SessionDiscussionInfoResultSchema
 >;
 export function isSessionDiscussionOpenParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionDiscussionOpenParamsSchema
+  typeof import("../../schema-modules.js").SessionDiscussionOpenParamsSchema
 >;
 export function isSessionDiscussionOpenResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionDiscussionOpenResultSchema
+  typeof import("../../schema-modules.js").SessionDiscussionOpenResultSchema
 >;
 export function isSessionGitHubPublishParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionGitHubPublishParamsSchema
+  typeof import("../../schema-modules.js").SessionGitHubPublishParamsSchema
 >;
 export function isSessionGitHubActionParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionGitHubActionParamsSchema
+  typeof import("../../schema-modules.js").SessionGitHubActionParamsSchema
 >;
 export function isSessionGitHubReadinessParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionGitHubReadinessParamsSchema
+  typeof import("../../schema-modules.js").SessionGitHubReadinessParamsSchema
 >;
 export function isSessionGitHubReadinessResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionGitHubReadinessResultSchema
+  typeof import("../../schema-modules.js").SessionGitHubReadinessResultSchema
 >;
 export function isSessionGitHubOptionsParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionGitHubOptionsParamsSchema
+  typeof import("../../schema-modules.js").SessionGitHubOptionsParamsSchema
 >;
 export function isSessionGitHubStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionGitHubStatusParamsSchema
+  typeof import("../../schema-modules.js").SessionGitHubStatusParamsSchema
 >;
 export function isSessionGitHubConfirmParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").SessionGitHubConfirmParamsSchema
+  typeof import("../../schema-modules.js").SessionGitHubConfirmParamsSchema
 >;
 export function isConnectParams(
   value: unknown,
-): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ConnectParamsSchema
->;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").ConnectParamsSchema>;
 export function isWorkerAdmissionHandshake(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorkerAdmissionHandshakeSchema
+  typeof import("../../schema-modules.js").WorkerAdmissionHandshakeSchema
 >;
 export function isWorkerConnectRequestFrame(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorkerConnectRequestFrameSchema
+  typeof import("../../schema-modules.js").WorkerConnectRequestFrameSchema
 >;
 export function isWorkerHeartbeatParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorkerHeartbeatParamsSchema
+  typeof import("../../schema-modules.js").WorkerHeartbeatParamsSchema
 >;
 export function isWorkerSessionsSpawnParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorkerSessionsSpawnParamsSchema
+  typeof import("../../schema-modules.js").WorkerSessionsSpawnParamsSchema
 >;
 export function isWorkerSessionsSendParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorkerSessionsSendParamsSchema
+  typeof import("../../schema-modules.js").WorkerSessionsSendParamsSchema
 >;
 export function isWorkerPortalParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorkerPortalParamsSchema
+  typeof import("../../schema-modules.js").WorkerPortalParamsSchema
 >;
 export function isWorkerPresenceParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorkerPresenceParamsSchema
+  typeof import("../../schema-modules.js").WorkerPresenceParamsSchema
 >;
 export function isWorkerComputerParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\worker-computer.js").WorkerComputerParamsSchema
+  typeof import("../../schema/worker-computer.js").WorkerComputerParamsSchema
 >;
 export function isWorkerTranscriptCommitParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorkerTranscriptCommitParamsSchema
+  typeof import("../../schema-modules.js").WorkerTranscriptCommitParamsSchema
 >;
 export function isWorkerLiveEventParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorkerLiveEventParamsSchema
+  typeof import("../../schema-modules.js").WorkerLiveEventParamsSchema
 >;
 export function isGatewaySuspendPrepareParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").GatewaySuspendPrepareParamsSchema
+  typeof import("../../schema-modules.js").GatewaySuspendPrepareParamsSchema
 >;
 export function isGatewaySuspendPrepareResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").GatewaySuspendPrepareResultSchema
+  typeof import("../../schema-modules.js").GatewaySuspendPrepareResultSchema
 >;
 export function isGatewaySuspendStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").GatewaySuspendStatusParamsSchema
+  typeof import("../../schema-modules.js").GatewaySuspendStatusParamsSchema
 >;
 export function isGatewaySuspendStatusResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").GatewaySuspendStatusResultSchema
+  typeof import("../../schema-modules.js").GatewaySuspendStatusResultSchema
 >;
 export function isGatewaySuspendResumeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").GatewaySuspendResumeParamsSchema
+  typeof import("../../schema-modules.js").GatewaySuspendResumeParamsSchema
 >;
 export function isGatewaySuspendHandoffParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").GatewaySuspendHandoffParamsSchema
+  typeof import("../../schema-modules.js").GatewaySuspendHandoffParamsSchema
 >;
 export function isRequestFrame(
   value: unknown,
-): value is import("typebox").Static<typeof import("..\\..\\schema-modules.js").RequestFrameSchema>;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").RequestFrameSchema>;
 export function isNodePairListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").NodePairListParamsSchema
+  typeof import("../../schema-modules.js").NodePairListParamsSchema
 >;
 export function isNodePairApproveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").NodePairApproveParamsSchema
+  typeof import("../../schema-modules.js").NodePairApproveParamsSchema
 >;
 export function isNodePairRejectParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").NodePairRejectParamsSchema
+  typeof import("../../schema-modules.js").NodePairRejectParamsSchema
 >;
 export function isNodePairRemoveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").NodePairRemoveParamsSchema
+  typeof import("../../schema-modules.js").NodePairRemoveParamsSchema
 >;
 export function isNodeRenameParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").NodeRenameParamsSchema
+  typeof import("../../schema-modules.js").NodeRenameParamsSchema
 >;
 export function isNodeListParams(
   value: unknown,
-): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").NodeListParamsSchema
->;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").NodeListParamsSchema>;
 export function isNodePluginToolsUpdateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").NodePluginToolsUpdateParamsSchema
+  typeof import("../../schema-modules.js").NodePluginToolsUpdateParamsSchema
 >;
 export function isNodeSkillsUpdateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").NodeSkillsUpdateParamsSchema
+  typeof import("../../schema-modules.js").NodeSkillsUpdateParamsSchema
 >;
 export function isWorkerDesktopObserveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorkerDesktopObserveParamsSchema
+  typeof import("../../schema-modules.js").WorkerDesktopObserveParamsSchema
 >;
 export function isWorkerDesktopObserveResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorkerDesktopObserveResultSchema
+  typeof import("../../schema-modules.js").WorkerDesktopObserveResultSchema
 >;
 export function isWorkerDesktopLaunchParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorkerDesktopLaunchParamsSchema
+  typeof import("../../schema-modules.js").WorkerDesktopLaunchParamsSchema
 >;
 export function isWorkerDesktopLaunchResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorkerDesktopLaunchResultSchema
+  typeof import("../../schema-modules.js").WorkerDesktopLaunchResultSchema
 >;
 export function isNodePendingAckParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").NodePendingAckParamsSchema
+  typeof import("../../schema-modules.js").NodePendingAckParamsSchema
 >;
 export function isNodeDescribeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").NodeDescribeParamsSchema
+  typeof import("../../schema-modules.js").NodeDescribeParamsSchema
 >;
 export function isNodeInvokeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").NodeInvokeParamsSchema
+  typeof import("../../schema-modules.js").NodeInvokeParamsSchema
 >;
 export function isNodeInvokeResultParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").NodeInvokeResultParamsSchema
+  typeof import("../../schema-modules.js").NodeInvokeResultParamsSchema
 >;
 export function isNodeInvokeProgressParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").NodeInvokeProgressParamsSchema
+  typeof import("../../schema-modules.js").NodeInvokeProgressParamsSchema
 >;
 export function isNodeEventParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").NodeEventParamsSchema
+  typeof import("../../schema-modules.js").NodeEventParamsSchema
 >;
 export function isNodePresenceActivityPayload(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").NodePresenceActivityPayloadSchema
+  typeof import("../../schema-modules.js").NodePresenceActivityPayloadSchema
 >;
 export function isNodeHostStatsPayload(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").NodeHostStatsPayloadSchema
+  typeof import("../../schema-modules.js").NodeHostStatsPayloadSchema
 >;
 export function isNodePendingDrainParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").NodePendingDrainParamsSchema
+  typeof import("../../schema-modules.js").NodePendingDrainParamsSchema
 >;
 export function isNodePendingEnqueueParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").NodePendingEnqueueParamsSchema
+  typeof import("../../schema-modules.js").NodePendingEnqueueParamsSchema
 >;
 export function isDevicePairListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").DevicePairListParamsSchema
+  typeof import("../../schema-modules.js").DevicePairListParamsSchema
 >;
 export function isDevicePairApproveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").DevicePairApproveParamsSchema
+  typeof import("../../schema-modules.js").DevicePairApproveParamsSchema
 >;
 export function isDevicePairRejectParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").DevicePairRejectParamsSchema
+  typeof import("../../schema-modules.js").DevicePairRejectParamsSchema
 >;
 export function isDevicePairRemoveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").DevicePairRemoveParamsSchema
+  typeof import("../../schema-modules.js").DevicePairRemoveParamsSchema
 >;
 export function isDevicePairSetupCodeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").DevicePairSetupCodeParamsSchema
+  typeof import("../../schema-modules.js").DevicePairSetupCodeParamsSchema
 >;
 export function isDevicePairSetupStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").DevicePairSetupStatusParamsSchema
+  typeof import("../../schema-modules.js").DevicePairSetupStatusParamsSchema
 >;
 export function isDevicePairRenameParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").DevicePairRenameParamsSchema
+  typeof import("../../schema-modules.js").DevicePairRenameParamsSchema
 >;
 export function isDeviceTokenRotateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").DeviceTokenRotateParamsSchema
+  typeof import("../../schema-modules.js").DeviceTokenRotateParamsSchema
 >;
 export function isDeviceTokenRevokeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").DeviceTokenRevokeParamsSchema
+  typeof import("../../schema-modules.js").DeviceTokenRevokeParamsSchema
 >;
 export function isExecApprovalsNodeGetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ExecApprovalsNodeGetParamsSchema
+  typeof import("../../schema-modules.js").ExecApprovalsNodeGetParamsSchema
 >;
 export function isExecApprovalsNodeSetParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ExecApprovalsNodeSetParamsSchema
+  typeof import("../../schema-modules.js").ExecApprovalsNodeSetParamsSchema
 >;
 export function isExecApprovalsNodeSnapshot(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ExecApprovalsNodeSnapshotSchema
+  typeof import("../../schema-modules.js").ExecApprovalsNodeSnapshotSchema
 >;
 export function isTemplatesCatalogSearchParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesCatalogSearchParamsSchema
+  typeof import("../../schema-modules.js").TemplatesCatalogSearchParamsSchema
 >;
 export function isTemplateDraftDocument(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplateDraftDocumentSchema
+  typeof import("../../schema-modules.js").TemplateDraftDocumentSchema
 >;
 export function isTemplatesDraftsCreateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesDraftsCreateParamsSchema
+  typeof import("../../schema-modules.js").TemplatesDraftsCreateParamsSchema
 >;
 export function isTemplatesDraftsReadParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesDraftsReadParamsSchema
+  typeof import("../../schema-modules.js").TemplatesDraftsReadParamsSchema
 >;
 export function isTemplatesDraftsSaveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesDraftsSaveParamsSchema
+  typeof import("../../schema-modules.js").TemplatesDraftsSaveParamsSchema
 >;
 export function isTemplatesDraftsReviewParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesDraftsReviewParamsSchema
+  typeof import("../../schema-modules.js").TemplatesDraftsReviewParamsSchema
 >;
 export function isTemplatesDraftsPublishParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesDraftsPublishParamsSchema
+  typeof import("../../schema-modules.js").TemplatesDraftsPublishParamsSchema
 >;
 export function isTemplatesCatalogSearchResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesCatalogSearchResultSchema
+  typeof import("../../schema-modules.js").TemplatesCatalogSearchResultSchema
 >;
 export function isTemplatesCatalogDetailParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesCatalogDetailParamsSchema
+  typeof import("../../schema-modules.js").TemplatesCatalogDetailParamsSchema
 >;
 export function isTemplatesCatalogDetailResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesCatalogDetailResultSchema
+  typeof import("../../schema-modules.js").TemplatesCatalogDetailResultSchema
 >;
 export function isTemplatesCatalogPreviewParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesCatalogPreviewParamsSchema
+  typeof import("../../schema-modules.js").TemplatesCatalogPreviewParamsSchema
 >;
 export function isTemplatesCatalogPreviewResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesCatalogPreviewResultSchema
+  typeof import("../../schema-modules.js").TemplatesCatalogPreviewResultSchema
 >;
 export function isTemplatesStatusParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesStatusParamsSchema
+  typeof import("../../schema-modules.js").TemplatesStatusParamsSchema
 >;
 export function isTemplatesStatusResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesStatusResultSchema
+  typeof import("../../schema-modules.js").TemplatesStatusResultSchema
 >;
 export function isTemplatesAddPlanParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesAddPlanParamsSchema
+  typeof import("../../schema-modules.js").TemplatesAddPlanParamsSchema
 >;
 export function isTemplatesAddApplyParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesAddApplyParamsSchema
+  typeof import("../../schema-modules.js").TemplatesAddApplyParamsSchema
 >;
 export function isTemplatesUpdatePlanParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesUpdatePlanParamsSchema
+  typeof import("../../schema-modules.js").TemplatesUpdatePlanParamsSchema
 >;
 export function isTemplatesUpdateApplyParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesUpdateApplyParamsSchema
+  typeof import("../../schema-modules.js").TemplatesUpdateApplyParamsSchema
 >;
 export function isTemplatesRemovePlanParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesRemovePlanParamsSchema
+  typeof import("../../schema-modules.js").TemplatesRemovePlanParamsSchema
 >;
 export function isTemplatesRemoveApplyParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplatesRemoveApplyParamsSchema
+  typeof import("../../schema-modules.js").TemplatesRemoveApplyParamsSchema
 >;
 export function isTemplateLifecyclePlanResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").TemplateLifecyclePlanResultSchema
+  typeof import("../../schema-modules.js").TemplateLifecyclePlanResultSchema
 >;
 export function isCanvasDocumentPreviewParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").CanvasDocumentPreviewParamsSchema
+  typeof import("../../schema-modules.js").CanvasDocumentPreviewParamsSchema
 >;
 export function isCanvasDocumentViewParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").CanvasDocumentViewParamsSchema
+  typeof import("../../schema-modules.js").CanvasDocumentViewParamsSchema
 >;
 export function isProjectsCheckoutOptionsParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ProjectsCheckoutOptionsParamsSchema
+  typeof import("../../schema-modules.js").ProjectsCheckoutOptionsParamsSchema
 >;
 export function isProjectsListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ProjectsListParamsSchema
+  typeof import("../../schema-modules.js").ProjectsListParamsSchema
 >;
 export function isProjectsRegisterParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ProjectsRegisterParamsSchema
+  typeof import("../../schema-modules.js").ProjectsRegisterParamsSchema
 >;
 export function isProjectsAddParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ProjectsAddParamsSchema
+  typeof import("../../schema-modules.js").ProjectsAddParamsSchema
 >;
 export function isProjectsSearchRemoteParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ProjectsSearchRemoteParamsSchema
+  typeof import("../../schema-modules.js").ProjectsSearchRemoteParamsSchema
 >;
 export function isProjectsRemoveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").ProjectsRemoveParamsSchema
+  typeof import("../../schema-modules.js").ProjectsRemoveParamsSchema
 >;
 export function isWorktreesListParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorktreesListParamsSchema
+  typeof import("../../schema-modules.js").WorktreesListParamsSchema
 >;
 export function isBoardGetParams(
   value: unknown,
-): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").BoardGetParamsSchema
->;
+): value is import("typebox").Static<typeof import("../../schema-modules.js").BoardGetParamsSchema>;
 export function isBoardUpdateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").BoardUpdateParamsSchema
+  typeof import("../../schema-modules.js").BoardUpdateParamsSchema
 >;
 export function isBoardWidgetContent(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").BoardWidgetContentSchema
+  typeof import("../../schema-modules.js").BoardWidgetContentSchema
 >;
 export function isBoardWidgetAppViewParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").BoardWidgetAppViewParamsSchema
+  typeof import("../../schema-modules.js").BoardWidgetAppViewParamsSchema
 >;
 export function isBoardWidgetPutParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").BoardWidgetPutParamsSchema
+  typeof import("../../schema-modules.js").BoardWidgetPutParamsSchema
 >;
 export function isBoardWidgetGrantParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").BoardWidgetGrantParamsSchema
+  typeof import("../../schema-modules.js").BoardWidgetGrantParamsSchema
 >;
 export function isBoardEventParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").BoardEventParamsSchema
+  typeof import("../../schema-modules.js").BoardEventParamsSchema
 >;
 export function isBoardPromptAuthorizeParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").BoardPromptAuthorizeParamsSchema
+  typeof import("../../schema-modules.js").BoardPromptAuthorizeParamsSchema
 >;
 export function isBoardDataReadParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").BoardDataReadParamsSchema
+  typeof import("../../schema-modules.js").BoardDataReadParamsSchema
 >;
 export function isBoardActionParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").BoardActionParamsSchema
+  typeof import("../../schema-modules.js").BoardActionParamsSchema
 >;
 export function isWorktreesCreateParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorktreesCreateParamsSchema
+  typeof import("../../schema-modules.js").WorktreesCreateParamsSchema
 >;
 export function isWorktreesRemoveParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorktreesRemoveParamsSchema
+  typeof import("../../schema-modules.js").WorktreesRemoveParamsSchema
 >;
 export function isWorktreesRestoreParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorktreesRestoreParamsSchema
+  typeof import("../../schema-modules.js").WorktreesRestoreParamsSchema
 >;
 export function isWorktreesGcParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorktreesGcParamsSchema
+  typeof import("../../schema-modules.js").WorktreesGcParamsSchema
 >;
 export function isWorktreesRecoverFileParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorktreesRecoverFileParamsSchema
+  typeof import("../../schema-modules.js").WorktreesRecoverFileParamsSchema
 >;
 export function isWorktreesRecoverRemovalParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorktreesRecoverRemovalParamsSchema
+  typeof import("../../schema-modules.js").WorktreesRecoverRemovalParamsSchema
 >;
 export function isWorktreesRetireSnapshotParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorktreesRetireSnapshotParamsSchema
+  typeof import("../../schema-modules.js").WorktreesRetireSnapshotParamsSchema
 >;
 export function isWorktreesBranchesParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").WorktreesBranchesParamsSchema
+  typeof import("../../schema-modules.js").WorktreesBranchesParamsSchema
 >;
 export function isFsListDirParams(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").FsListDirParamsSchema
+  typeof import("../../schema-modules.js").FsListDirParamsSchema
 >;
 export function isFsListDirResult(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema-modules.js").FsListDirResultSchema
+  typeof import("../../schema-modules.js").FsListDirResultSchema
 >;
 export function isWorkerAdmissionResponseFrame(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\worker-admission.js").WorkerAdmissionResponseFrameSchema
+  typeof import("../../schema/worker-admission.js").WorkerAdmissionResponseFrameSchema
 >;
 export function isWorkerProtocolCloseReason(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\worker-admission.js").WorkerProtocolCloseReasonSchema
+  typeof import("../../schema/worker-admission.js").WorkerProtocolCloseReasonSchema
 >;
 export function isWorkerTurnAdmissionResponseFrame(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\worker-turn-admission.js").WorkerTurnAdmissionResponseFrameSchema
+  typeof import("../../schema/worker-turn-admission.js").WorkerTurnAdmissionResponseFrameSchema
 >;
 export function isWorkerGatewayToolResponseFrame(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\worker-gateway-tool.js").WorkerGatewayToolResponseFrameSchema
+  typeof import("../../schema/worker-gateway-tool.js").WorkerGatewayToolResponseFrameSchema
 >;
 export function isWorkerGatewayToolCancelResponseFrame(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\worker-gateway-tool.js").WorkerGatewayToolCancelResponseFrameSchema
+  typeof import("../../schema/worker-gateway-tool.js").WorkerGatewayToolCancelResponseFrameSchema
 >;
 export function isWorkerHeartbeatResponseFrame(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\worker-admission.js").WorkerHeartbeatResponseFrameSchema
+  typeof import("../../schema/worker-admission.js").WorkerHeartbeatResponseFrameSchema
 >;
 export function isWorkerTranscriptCommitResponseFrame(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\worker-admission.js").WorkerTranscriptCommitResponseFrameSchema
+  typeof import("../../schema/worker-admission.js").WorkerTranscriptCommitResponseFrameSchema
 >;
 export function isWorkerLiveEventResponseFrame(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\worker-admission.js").WorkerLiveEventResponseFrameSchema
+  typeof import("../../schema/worker-admission.js").WorkerLiveEventResponseFrameSchema
 >;
 export function isWorkerComputerResponseFrame(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\worker-computer.js").WorkerComputerResponseFrameSchema
+  typeof import("../../schema/worker-computer.js").WorkerComputerResponseFrameSchema
 >;
 export function isWorkerInferenceStartResponseFrame(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\worker-inference.js").WorkerInferenceStartResponseFrameSchema
+  typeof import("../../schema/worker-inference.js").WorkerInferenceStartResponseFrameSchema
 >;
 export function isWorkerInferenceCancelResponseFrame(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\worker-inference.js").WorkerInferenceCancelResponseFrameSchema
+  typeof import("../../schema/worker-inference.js").WorkerInferenceCancelResponseFrameSchema
 >;
 export function isWorkerExecApprovalResponseFrame(
   value: unknown,
 ): value is import("typebox").Static<
-  typeof import("..\\..\\schema\\worker-exec-approval-schemas.js").WorkerExecApprovalResponseFrameSchema
+  typeof import("../../schema/worker-exec-approval-schemas.js").WorkerExecApprovalResponseFrameSchema
 >;
