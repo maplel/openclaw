@@ -1239,6 +1239,7 @@ describe("capability cli", () => {
         agent: "beta",
         prompt: "portrait",
         quality: "max",
+        complexity: "low",
         resolution: " 2k ",
         "openai-moderation": "low",
         json: true,
@@ -1249,7 +1250,7 @@ describe("capability cli", () => {
       agentDir: "/tmp/agent-beta",
       quality: "max",
       resolution: "2K",
-      providerOptions: { openai: { moderation: "low" } },
+      providerOptions: { openai: { complexity: "low", moderation: "low" } },
     });
   });
 
@@ -1277,6 +1278,7 @@ describe("capability cli", () => {
         "output-format": "png",
         "openai-background": "transparent",
         "openai-moderation": "auto",
+        complexity: "high",
         quality: "high",
         output: outputPath,
         json: true,
@@ -1298,10 +1300,7 @@ describe("capability cli", () => {
       timeoutMs: 180000,
     });
     expect(generationCall?.providerOptions).toEqual({
-      openai: {
-        background: "transparent",
-        moderation: "auto",
-      },
+      openai: { background: "transparent", complexity: "high", moderation: "auto" },
     });
     expect(firstJsonOutput()?.outputs).toEqual([
       expect.objectContaining({ path: outputPath, mimeType: "image/png" }),

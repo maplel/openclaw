@@ -1330,8 +1330,6 @@ describe("createImageGenerateTool", () => {
   });
 
   it("forwards max quality and OpenAI provider options", async () => {
-    const quality = "max";
-
     const generateImage = mockGeneratedImage({
       model: "gpt-image-2",
       images: [imageAsset("jpg-out", "preview.jpg", "image/jpeg")],
@@ -1343,7 +1341,8 @@ describe("createImageGenerateTool", () => {
     const tool = createToolWithPrimaryImageModel("openai/gpt-image-2");
     const result = await tool.execute("call-openai-hints", {
       prompt: "Cheap preview",
-      quality,
+      quality: "max",
+      complexity: "medium",
       outputFormat: "jpeg",
       openai: {
         background: "opaque",
@@ -1354,19 +1353,18 @@ describe("createImageGenerateTool", () => {
     });
 
     const generateArgs = mockCallArg(generateImage, 0, "generateImage");
-    expect(generateArgs.quality).toBe(quality);
+    expect(generateArgs.quality).toBe("max");
     expect(generateArgs.outputFormat).toBe("jpeg");
     expect(generateArgs.providerOptions).toEqual({
       openai: {
         background: "opaque",
+        complexity: "medium",
         moderation: "low",
         outputCompression: 60,
         user: "end-user-42",
       },
     });
-    const details = resultDetails(result);
-    expect(details.quality).toBe(quality);
-    expect(details.outputFormat).toBe("jpeg");
+    expect(resultDetails(result)).toMatchObject({ quality: "max", outputFormat: "jpeg" });
   });
 
   it("forwards generic fal provider options", async () => {

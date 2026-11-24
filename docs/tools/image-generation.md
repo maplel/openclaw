@@ -201,6 +201,13 @@ the peer who requested the image.
   Quality hint when the model supports it. GPT Image 2.5 supports `xhigh`
   and `max` through OpenAI and fal.
 </ParamField>
+
+<ParamField path="complexity" type='"low" | "medium" | "high"'>
+  Planning depth for GPT Image 2.6 through the direct OpenAI Images API, for
+  example with `openai/gpt-image-2.6-sunburst`.
+  The API chooses the default when omitted. For CLI generation and edits, use
+  `--complexity`.
+</ParamField>
 <ParamField path="outputFormat" type='"png" | "jpeg" | "webp"'>
   Output format hint when the provider supports it.
 </ParamField>

@@ -22,8 +22,11 @@ type ImageGenerationBackground = "transparent" | "opaque" | "auto";
 
 export type ImageGenerationOpenAIBackground = ImageGenerationBackground;
 
+export const IMAGE_GENERATION_COMPLEXITIES = ["low", "medium", "high"] as const;
+
 export type ImageGenerationOpenAIOptions = {
   background?: ImageGenerationOpenAIBackground;
+  complexity?: (typeof IMAGE_GENERATION_COMPLEXITIES)[number];
   moderation?: "low" | "auto";
   outputCompression?: number;
   user?: string;

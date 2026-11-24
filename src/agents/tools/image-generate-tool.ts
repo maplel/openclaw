@@ -3,6 +3,7 @@ import { extensionForMime } from "@openclaw/media-core/mime";
 import { Type } from "typebox";
 import { normalizeImageGenerationResolution } from "../../image-generation/resolution.js";
 import { generateImage } from "../../image-generation/runtime.js";
+import { IMAGE_GENERATION_COMPLEXITIES } from "../../image-generation/types.js";
 import type {
   ImageGenerationOpenAIOptions,
   ImageGenerationProviderOptions,
@@ -132,6 +133,10 @@ const ImageGenerateToolSchema = Type.Object({
   quality: optionalStringEnum(SUPPORTED_QUALITIES, {
     description: "Quality: low, medium, high, xhigh, max, auto; model-specific.",
   }),
+  complexity: optionalStringEnum(IMAGE_GENERATION_COMPLEXITIES, {
+    description:
+      "GPT Image 2.6 planning depth through the direct OpenAI Images API: low, medium, high. Omit to use the API default.",
+  }),
   outputFormat: optionalStringEnum(SUPPORTED_OUTPUT_FORMATS, {
     description: "Output format: png, jpeg, webp.",
   }),
@@ -253,6 +258,11 @@ async function inferImageGenerationResolution(
 
 function normalizeOpenAIOptions(args: Record<string, unknown>): ImageGenerationOpenAIOptions {
   const raw = asToolParamsRecord(args.openai);
+  const complexity = parseImageOption(
+    readToolStringParam(args, "complexity"),
+    IMAGE_GENERATION_COMPLEXITIES,
+    "complexity",
+  );
   const background = parseImageOption(
     readToolStringParam(raw, "background"),
     SUPPORTED_BACKGROUNDS,
@@ -273,6 +283,7 @@ function normalizeOpenAIOptions(args: Record<string, unknown>): ImageGenerationO
   const user = readToolStringParam(raw, "user");
   return {
     ...(background ? { background } : {}),
+    ...(complexity ? { complexity } : {}),
     ...(moderation ? { moderation } : {}),
     ...(outputCompression !== undefined ? { outputCompression } : {}),
     ...(user ? { user } : {}),

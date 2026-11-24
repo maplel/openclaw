@@ -3,6 +3,7 @@ import { detectMime } from "@openclaw/media-core/mime";
 import { normalizeOptionalString } from "@openclaw/normalization-core/string-coerce";
 import type { Command } from "commander";
 import { normalizeImageGenerationResolution } from "../../image-generation/resolution.js";
+import { IMAGE_GENERATION_COMPLEXITIES } from "../../image-generation/types.js";
 import { resolveFilesystemPath } from "../../infra/home-dir.js";
 import { createEnumOptionParser } from "../../shared/enum-option.js";
 import { parseOptionalPositiveInteger } from "../parse-positive-integer.js";
@@ -44,6 +45,10 @@ export function registerImageCapabilityCommands(capabilityCommand: Command): voi
       .option("--openai-background <value>", "OpenAI background hint: transparent, opaque, or auto")
       .option("--openai-moderation <value>", "OpenAI moderation hint: low or auto")
       .option("--quality <value>", "Quality hint: low, medium, high, xhigh, max, or auto")
+      .option(
+        "--complexity <value>",
+        "GPT Image 2.6 planning depth through the direct OpenAI Images API: low, medium, or high",
+      )
       .option("--timeout-ms <ms>", "Provider request timeout in milliseconds")
       .option("--output <path>", "Output path")
       .option(
@@ -95,6 +100,11 @@ export function registerImageCapabilityCommands(capabilityCommand: Command): voi
             "--openai-moderation",
           );
           const quality = parseImageOption(opts.quality, IMAGE_QUALITIES, "--quality");
+          const complexity = parseImageOption(
+            opts.complexity,
+            IMAGE_GENERATION_COMPLEXITIES,
+            "--complexity",
+          );
           const timeoutMs = parseOptionalTimeoutMs(opts.timeoutMs as string | number | undefined);
           const output = opts.output as string | undefined;
           const { getModelsCommandSecretTargetIds } = await import("../command-secret-targets.js");
@@ -132,10 +142,11 @@ export function registerImageCapabilityCommands(capabilityCommand: Command): voi
             outputFormat,
             background,
             providerOptions:
-              openaiBackground || openaiModeration
+              openaiBackground || openaiModeration || complexity
                 ? {
                     openai: {
                       ...(openaiBackground ? { background: openaiBackground } : {}),
+                      ...(complexity ? { complexity } : {}),
                       ...(openaiModeration ? { moderation: openaiModeration } : {}),
                     },
                   }

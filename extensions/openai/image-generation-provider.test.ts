@@ -368,6 +368,34 @@ describe("openai image generation provider", () => {
       ],
     });
   });
+
+  it.each(["medium", undefined] as const)(
+    "serializes GPT Image 2.6 complexity %s in generation and edit requests",
+    async (complexity) => {
+      const model = "gpt-image-2.6-sunburst";
+      const options = complexity
+        ? { model, providerOptions: { openai: { complexity } } }
+        : { model };
+      await generateOpenAIImage("Draw a blue cup", options);
+      const body = jsonRequestCall().body;
+      expect(body).toMatchObject({ model });
+      if (complexity) {
+        expect(body).toHaveProperty("complexity", complexity);
+      } else {
+        expect(body).not.toHaveProperty("complexity");
+      }
+
+      await generateOpenAIImage("Change the cup to red", {
+        ...options,
+        inputImages: [{ buffer: Buffer.from("png-bytes"), mimeType: "image/png" }],
+      });
+      const form = multipartRequestCall().body;
+      if (!(form instanceof FormData)) {
+        throw new Error("Expected multipart edit");
+      }
+      expect(form.get("complexity")).toBe(complexity ?? null);
+    },
+  );
   describe("when OpenAI chat models are configured", () => {
     const configuredOpenAIFallback: OpenClawConfig = {
       agents: {

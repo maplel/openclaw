@@ -831,15 +831,15 @@ export function buildOpenAIImageGenerationProvider(
       const url = isAzure
         ? buildAzureImageUrl(rawBaseUrl, model, isEdit ? "edits" : "generations")
         : `${baseUrl}/images/${isEdit ? "edits" : "generations"}`;
+      const { complexity, user } = req.providerOptions?.openai ?? {};
       const body: Record<string, unknown> = {
         ...(!isAzure ? { model } : {}),
         prompt: req.prompt,
         n: count,
         size: sizeResolution.size,
         ...resolveOpenAIImageOptions(req),
-        ...(req.providerOptions?.openai?.user !== undefined
-          ? { user: req.providerOptions.openai.user }
-          : {}),
+        ...(complexity !== undefined ? { complexity } : {}),
+        ...(user !== undefined ? { user } : {}),
       };
       const requestOptions = {
         url,
